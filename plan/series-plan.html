@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Series Plan — Software Knowledge Base · 软件知识库系列计划</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0a0e17;
+    --bg-surface: #0f1420;
+    --bg-card: #141b2d;
+    --bg-card-hover: #1a2340;
+    --border: #1e2a45;
+    --border-accent: #2d4a7a;
+    --cyan: #22d3ee;
+    --cyan-dim: #0e7490;
+    --cyan-glow: rgba(34, 211, 238, 0.12);
+    --purple: #a78bfa;
+    --purple-glow: rgba(167,139,250,0.12);
+    --orange: #f97316;
+    --orange-glow: rgba(249,115,22,0.12);
+    --green: #10b981;
+    --green-glow: rgba(16,185,129,0.12);
+    --rose: #f43f5e;
+    --rose-glow: rgba(244,63,94,0.12);
+    --yellow: #eab308;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-dim: #64748b;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: 'IBM Plex Sans', sans-serif;
+    line-height: 1.7;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container { max-width: 1080px; margin: 0 auto; padding: 0 32px; }
+
+  /* ── HEADER ── */
+  .page-header {
+    padding: 60px 0 48px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .page-header::before {
+    content:'';
+    position:absolute;
+    top:0;left:0;right:0;bottom:0;
+    background:
+      radial-gradient(ellipse 700px 350px at 15% 60%, rgba(34,211,238,0.05), transparent),
+      radial-gradient(ellipse 500px 250px at 85% 30%, rgba(167,139,250,0.04), transparent);
+  }
+  .header-inner { position: relative; }
+  .badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--cyan);
+    border: 1px solid var(--cyan-dim);
+    padding: 3px 10px;
+    border-radius: 3px;
+    background: var(--cyan-glow);
+    margin-bottom: 16px;
+  }
+  .page-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  .page-subtitle {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 18px;
+    color: var(--text-dim);
+    font-style: italic;
+    margin-bottom: 20px;
+  }
+  .header-stats {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .stat {
+    text-align: center;
+    padding: 12px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    min-width: 120px;
+  }
+  .stat-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    display: block;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  /* ── SECTIONS ── */
+  .section {
+    padding: 48px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .section:last-child { border-bottom: none; }
+  .section-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--cyan);
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+  .section-title .num {
+    color: var(--text-dim);
+    font-weight: 400;
+    margin-right: 8px;
+  }
+  .section-subtitle {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 13px;
+    color: var(--text-dim);
+    font-style: italic;
+    margin-bottom: 24px;
+  }
+
+  /* ── VISION BOX ── */
+  .vision-box {
+    background: linear-gradient(135deg, rgba(34,211,238,0.05), rgba(167,139,250,0.03));
+    border: 1px solid var(--border-accent);
+    border-radius: 8px;
+    padding: 28px;
+    margin: 20px 0;
+  }
+  .vision-box p { font-size: 15px; margin-bottom: 12px; }
+  .vision-box p:last-child { margin-bottom: 0; }
+  .cn { font-family: 'Noto Serif SC', serif; font-style: italic; color: var(--text-dim); font-size: 13.5px; }
+
+  /* ── LAYER BLOCKS ── */
+  .layer-block {
+    margin: 32px 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .layer-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .layer-header .layer-num {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 3px 10px;
+    border-radius: 3px;
+  }
+  .layer-header .count {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-dim);
+  }
+
+  .layer-0 .layer-header { background: rgba(34,211,238,0.08); color: var(--cyan); border-bottom: 1px solid rgba(34,211,238,0.15); }
+  .layer-0 .layer-num { background: rgba(34,211,238,0.15); color: var(--cyan); }
+  .layer-1 .layer-header { background: rgba(167,139,250,0.08); color: var(--purple); border-bottom: 1px solid rgba(167,139,250,0.15); }
+  .layer-1 .layer-num { background: rgba(167,139,250,0.15); color: var(--purple); }
+  .layer-2 .layer-header { background: rgba(249,115,22,0.08); color: var(--orange); border-bottom: 1px solid rgba(249,115,22,0.15); }
+  .layer-2 .layer-num { background: rgba(249,115,22,0.15); color: var(--orange); }
+  .layer-3 .layer-header { background: rgba(16,185,129,0.08); color: var(--green); border-bottom: 1px solid rgba(16,185,129,0.15); }
+  .layer-3 .layer-num { background: rgba(16,185,129,0.15); color: var(--green); }
+  .layer-4 .layer-header { background: rgba(244,63,94,0.08); color: var(--rose); border-bottom: 1px solid rgba(244,63,94,0.15); }
+  .layer-4 .layer-num { background: rgba(244,63,94,0.15); color: var(--rose); }
+
+  /* ── ARTICLE CARD ── */
+  .article-card {
+    display: grid;
+    grid-template-columns: 56px 1fr 200px;
+    gap: 0;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+    align-items: start;
+  }
+  .article-card:last-child { border-bottom: none; }
+  .article-card:hover { background: rgba(255,255,255,0.015); }
+
+  .card-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    padding-top: 2px;
+  }
+  .card-body { }
+  .card-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+    line-height: 1.4;
+  }
+  .card-title-cn {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 12px;
+    color: var(--text-dim);
+    font-style: italic;
+    margin-bottom: 8px;
+  }
+  .card-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 8px;
+  }
+  .card-books {
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+  .card-books span { color: var(--text-secondary); }
+  .card-meta {
+    text-align: right;
+    padding-top: 2px;
+  }
+  .card-tags { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .tag-ai { background: rgba(34,211,238,0.1); color: var(--cyan); border: 1px solid rgba(34,211,238,0.2); }
+  .tag-nrs { background: rgba(249,115,22,0.1); color: var(--orange); border: 1px solid rgba(249,115,22,0.2); }
+  .tag-dr { background: rgba(16,185,129,0.1); color: var(--green); border: 1px solid rgba(16,185,129,0.2); }
+  .tag-team { background: rgba(244,63,94,0.1); color: var(--rose); border: 1px solid rgba(244,63,94,0.2); }
+  .tag-done { background: rgba(16,185,129,0.2); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .card-phase {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 6px;
+  }
+
+  /* ── TIMELINE ── */
+  .timeline {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 2px;
+    margin: 24px 0;
+  }
+  .tl-month {
+    text-align: center;
+    padding: 8px 4px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+  }
+  .tl-month .month-label { display: block; font-weight: 600; margin-bottom: 4px; }
+  .tl-month .month-articles { font-size: 9px; color: var(--text-dim); line-height: 1.4; }
+
+  /* ── STRUCTURE TABLE ── */
+  .structure-grid {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 0;
+    margin: 20px 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .struct-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-dim);
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border);
+    padding: 16px 0;
+  }
+  .struct-content {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .struct-content:last-child { border-bottom: none; }
+  .struct-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .struct-desc { font-size: 13px; color: var(--text-secondary); }
+
+  /* ── DESIGN SYSTEM ── */
+  .color-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .color-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+  }
+  .chip-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .chip-info {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+  .chip-name { font-weight: 600; display: block; }
+  .chip-use { font-weight: 400; color: var(--text-dim); display: block; margin-top: 1px; }
+
+  /* ── BOOK REGISTRY ── */
+  .book-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    margin: 16px 0;
+  }
+  .book-table th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--border-accent);
+    color: var(--text-dim);
+    background: var(--bg-surface);
+  }
+  .book-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    color: var(--text-secondary);
+  }
+  .book-table tr:hover td { background: rgba(34,211,238,0.02); }
+  .book-table .bt { font-weight: 500; color: var(--text-primary); }
+
+  /* ── FOOTER ── */
+  .page-footer {
+    padding: 32px 0;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 768px) {
+    .article-card { grid-template-columns: 48px 1fr; }
+    .card-meta { display: none; }
+    .header-stats { gap: 12px; }
+    .stat { min-width: 90px; padding: 10px 12px; }
+    .stat-num { font-size: 22px; }
+    .timeline { grid-template-columns: repeat(5, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- HEADER -->
+<!-- ══════════════════════════════════════════════ -->
+<header class="page-header">
+  <div class="container header-inner">
+    <div class="badge">Series Production Plan · 系列制作计划</div>
+    <h1 class="page-title">Software Knowledge Base</h1>
+    <div class="page-subtitle">经典基础 × AI协同进化 · 面向未来的软件架构师图文知识库</div>
+
+    <div class="header-stats">
+      <div class="stat">
+        <span class="stat-num" style="color:var(--cyan)">20</span>
+        <span class="stat-label">Articles 篇文章</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" style="color:var(--purple)">5</span>
+        <span class="stat-label">Layers 层级</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" style="color:var(--orange)">30+</span>
+        <span class="stat-label">Source Books 源书</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" style="color:var(--green)">10</span>
+        <span class="stat-label">Months 月周期</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" style="color:var(--rose)">80+</span>
+        <span class="stat-label">Diagrams 图表</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SECTION 1: VISION & POSITIONING -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title"><span class="num">§1</span> Vision & Positioning</div>
+  <div class="section-subtitle">愿景与定位</div>
+
+  <div class="vision-box">
+    <p><strong>Target Audience</strong>: Software architects, technical leads, and senior engineers who want a structured, visual knowledge system that connects classical engineering wisdom to AI-era practice. Not beginners — this series assumes 5+ years of industry experience.</p>
+    <p class="cn"><strong>目标读者</strong>：软件架构师、技术负责人和资深工程师，希望建立连接经典工程智慧与AI时代实践的结构化视觉知识体系。非入门级——假设5年以上行业经验。</p>
+  </div>
+
+  <div class="vision-box">
+    <p><strong>Core Thesis</strong>: Classical software engineering books are not obsolete in the AI era — they are the <em>foundation</em> that makes AI augmentation effective. Every article in this series follows a dual axis: grounded in established book knowledge, extended through the lens of AI co-evolution. The architect who has read Martin, Fowler, Kleppmann, and Evans will outperform an AI-only practitioner because they bring <em>judgment</em> that no model can replicate.</p>
+    <p class="cn"><strong>核心论点</strong>：经典软件工程书籍在AI时代并未过时——它们是使AI增强有效的基础。每篇文章沿双轴展开：扎根于成熟的书本知识，通过AI协同进化的视角延伸。读过Martin、Fowler、Kleppmann和Evans的架构师将胜过纯AI实践者，因为他们带来模型无法复制的判断力。</p>
+  </div>
+
+  <div class="vision-box">
+    <p><strong>Unique Value Proposition</strong>: Unlike generic "top 10 books" lists, this series synthesizes <em>multiple books per topic</em>, resolves contradictions between authors, and projects each topic forward into the 2026-2030 AI horizon. Unlike pure AI trend reports, every claim is anchored in battle-tested engineering principles. The output is not just "content" — it's a reusable, RAG-ready knowledge base for architectural decision-making.</p>
+    <p class="cn"><strong>独特价值主张</strong>：与泛泛的"十大书单"不同，本系列每个主题综合多本书，解决作者之间的矛盾，并将每个主题投射到2026-2030的AI地平线。与纯AI趋势报告不同，每个观点都锚定在经过验证的工程原则上。产出不仅是"内容"——而是可复用的、RAG就绪的架构决策知识库。</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SECTION 2: ARTICLE STRUCTURE TEMPLATE -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title"><span class="num">§2</span> Article Structure Template</div>
+  <div class="section-subtitle">文章结构模板 · 每篇文章的六段式骨架</div>
+
+  <p style="margin-bottom:16px; color:var(--text-secondary)">Every article follows the same six-section skeleton. This consistency creates a predictable reading experience across the 10-month series — readers know where to find what they need.</p>
+
+  <div class="structure-grid">
+    <div class="struct-num" style="color:var(--cyan)">01</div>
+    <div class="struct-content">
+      <div class="struct-label" style="color:var(--cyan)">Core Insight — The Thesis 核心洞察</div>
+      <div class="struct-desc">One big idea in 60 seconds. The mental model shift. If a reader only reads this section, they still walk away with the key takeaway. Includes the Hero Diagram — the one picture that captures the entire article's concept.</div>
+    </div>
+    <div class="struct-num" style="color:var(--purple)">02</div>
+    <div class="struct-content">
+      <div class="struct-label" style="color:var(--purple)">Classical Foundation — Source Books 经典基础</div>
+      <div class="struct-desc">3-4 books that ground the topic. Book cards with title, author, key insight, and which spectrum stage they cover. This section answers "why should I trust this framework?" before any AI claims appear.</div>
+    </div>
+    <div class="struct-num" style="color:var(--orange)">03</div>
+    <div class="struct-content">
+      <div class="struct-label" style="color:var(--orange)">AI Co-Evolution — Four Angles AI协同进化</div>
+      <div class="struct-desc">4 concrete angles where AI reshapes the topic. Each follows: classical principle → AI-era extension → concrete example (code, diagram, or real-world case). This is the novel contribution of the series.</div>
+    </div>
+    <div class="struct-num" style="color:var(--green)">04</div>
+    <div class="struct-content">
+      <div class="struct-label" style="color:var(--green)">Decision Table 决策表</div>
+      <div class="struct-desc">6-8 row table: Scenario | Classical Approach | AI-Augmented Approach. The "what do I do Monday morning?" deliverable. Designed to be screenshot-able and shareable with teams.</div>
+    </div>
+    <div class="struct-num" style="color:var(--rose)">05</div>
+    <div class="struct-content">
+      <div class="struct-label" style="color:var(--rose)">Practical Checklist 实践检查表</div>
+      <div class="struct-desc">10-12 concrete action items tagged by maturity stage. The "take it back to your team" deliverable. Ordered by dependency — don't skip stages.</div>
+    </div>
+    <div class="struct-num" style="color:var(--text-dim)">06</div>
+    <div class="struct-content">
+      <div class="struct-label" style="color:var(--text-secondary)">Architect's Takeaway 架构师要点</div>
+      <div class="struct-desc">Close the loop back to the thesis. Reinforce "both/and" message. Tease the next article. 2-3 paragraphs max.</div>
+    </div>
+  </div>
+
+  <p style="margin-top:16px; color:var(--text-secondary)"><strong>Bilingual Convention</strong>: English paragraphs carry the full argument. Chinese appears as italicized notes below each paragraph — compressed, essential, serving as comprehension anchor. Not duplication; distillation.</p>
+  <p class="cn" style="margin-top:4px">双语约定：英文段落承载完整论证。中文以斜体注释出现在每段下方——压缩的、精华的、作为理解锚点。不是复制而是蒸馏。</p>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SECTION 3: FULL ARTICLE MAP -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title"><span class="num">§3</span> Full Article Map — 20 Articles × 5 Layers</div>
+  <div class="section-subtitle">全文章地图 · 20篇 × 5层</div>
+
+  <!-- ── LAYER 0 ── -->
+  <div class="layer-block layer-0">
+    <div class="layer-header">
+      <span class="layer-num">L0</span>
+      CODE CRAFT — 代码工艺层
+      <span class="count">4 articles · Phase 1</span>
+    </div>
+
+    <div class="article-card">
+      <div class="card-id" style="color:var(--cyan)">0.1</div>
+      <div class="card-body">
+        <div class="card-title">The Craft Spectrum — From Clean Code to AI-Readable Code</div>
+        <div class="card-title-cn">从整洁代码到AI可读代码：工艺的进化光谱</div>
+        <div class="card-desc">Six-stage code maturity model. Why clean code principles become MORE critical in AI era. The .ai/ context directory. Evolution from linter to AI quality gate.</div>
+        <div class="card-books">📖 <span>Clean Code</span> · <span>Code Complete</span> · <span>Philosophy of SW Design</span> · <span>Art of Readable Code</span></div>
+      </div>
+      <div class="card-meta">
+        <div class="card-tags">
+          <span class="tag tag-ai">AI CODE REVIEW</span>
+          <span class="tag tag-done">✓ DRAFTED</span>
+        </div>
+        <div class="card-phase">Month 1</div>
+      </div>
+    </div>
+
+    <div class="article-card">
+      <div class="card-id" style="color:var(--cyan)">0.2</div>
+      <div class="card-body">
+        <div class="card-title">AI-Era Refactoring — Machines Propose, Humans Dispose</div>
+        <div class="card-title-cn">AI时代的重构：机器提议，人类决策</div>
+        <div class="card-desc">AI-powered hotspot detection via git history. AI-generated characterization tests for legacy code. Strangler Fig pattern accelerated by AI scaffolding. Continuous refactoring signals in CI/CD.</div>
+        <div class="card-books">📖 <span>Refactoring (Fowler)</span> · <span>Working with Legacy Code (Feathers)</span> · <span>Tidy First? (Beck)</span> · <span>Your Code as a Crime Scene (Tornhill)</span></div>
+      </div>
+      <div class="card-meta">
+        <div class="card-tags"><span class="tag tag-ai">AI REFACTORING</span></div>
+        <div class="card-phase">Month 1</div>
+      </div>
+    </div>
+
+    <div class="article-card">
+      <div class="card-id" style="color:var(--cyan)">0.3</div>
+      <div class="card-body">
+        <div class="card-title">Testing Strategies for Human + AI Codebases</div>
+        <div class="card-title-cn">人机混合代码库的测试策略</div>
+        <div class="card-desc">AI-generated test suites (who tests AI code?). Mutation testing renaissance. Contract-first + AI verification. Building trust in AI-generated code through coverage and invariants.</div>
+        <div class="card-books">📖 <span>TDD By Example (Beck)</span> · <span>GOOS (Freeman & Pryce)</span> · <span>Unit Testing (Khorikov)</span></div>
+      </div>
+      <div class="card-meta">
+        <div class="card-tags"><span class="tag tag-ai">AI TESTING</span></div>
+        <div class="card-phase">Month 2</div>
+      </div>
+    </div>
+
+    <div class="article-card">
+      <div class="card-id" style="color:var(--cyan)">0.4</div>
+      <div class="card-body">
+        <div class="card-title">The Developer's New Toolkit — From IDE to AI-Augmented Workbench</div>
+        <div class="card-title-cn">开发者新工具箱：从IDE到AI增强工作台</div>
+        <div class="card-desc">MCP protocol for AI-tool integration. Claude Code headless pipelines (-p mode). GitLab + AI integration patterns (4 modes). From "vibe coding" to Objective-Validation Protocol.</div>
+        <div class="card-books">📖 <span>Pragmatic Programmer (Hunt & Thomas)</span> · <span>SW Engineering at Google</span></div>
+      </div>
+      <div class="card-meta">
+        <div class="card-tags">
+          <span class="tag tag-ai">MCP / CLAUDE CODE</span>
+          <span class="tag tag-nrs">GITLAB INTEGRATION</span>
+        </div>
+        <div class="card-phase">Month 2</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LAYER 1 ── -->
+  <div class="layer-block layer-1">
+    <div class="layer-header">
+      <span class="layer-num">L1</span>
+      DESIGN THINKING — 设计思维层
+      <span class="count">4 articles · Phase 2</span>
+    </div>
+
+    <div class="article-card">
+      <div class="card-id" style="color:var(--purple)">1.1</div>
+      <div class="card-body">
+        <div class="card-title">Design Patterns Revisited — Which Survive the AI Transition?</div>
+        <div class="card-title-cn">设计模式再审视：哪些在AI时代存活？</div>
+        <div class="card-desc">Survival matrix of 23 GoF patterns in AI context. Strategy/Observer/Chain thrive in agent architectures. New AI-native patterns: RAG, Prompt Template, Tool-Use, Human-in-the-Loop, Multi-Agent Orchestration.</div>
+        <div class="card-books">📖 <span>Design Patterns (GoF)</span> · <span>Head First Design Patterns</span> · <span>PoEAA (Fowler)</span></div>
+      </div>
+      <div class="card-meta">
+        <div class="card-tags"><span class="tag tag-ai">AI-NATIVE PATTERNS</span></div>
+        <div class="card-phase">Month 3</div>
+      </div>
+    </div>
+
+    <div class="article-card">
+      <div class="card-id" style="color:var(--purple)">1.2</div>
+      <div class="card-body">
+        <div class="card-title">DDD Meets AI — Bounded Contexts as AI Service Boundaries</div>
+        <div class="card-title-cn">DDD遇见AI：限界上下文作为AI服务边界</div>
+        <div class="card-desc">Ubiquitous Language as AI training data. ACL pattern as AI guardrail. Domain Events as AI triggers. Context Maps for multi-agent systems. Running example: NRS multi-country invoicing.</div>
+        <div class="card-books">📖 <span>Domain-Driven Design (Evans)</span> · <span>Implementing DDD (Vernon)</span> · <span>DDD Distilled</span></div>
+      </div>
+      <div class="card-meta">
+        <div class="card-tags">
+          <span class="tag tag-ai">RAG PER CONTEXT</span>
+          <span class="tag tag-nrs">NRS MULTI-COUNTRY</span>
+        </div>
+        <div class="card-phase">Month 3</div>
+      </div>
+    </div>
+
+    <div class="article-card">
+      <div class="card-id" style="color:var(--purple)">1.3</div>
+      <div class="card-body">
+        <div class="card-title">API Design as a First-Class Architectural Decision</div>
+        <div class="card-title-cn">API设计作为一等架构决策</div>
+        <div class="card-desc">API-first for AI consumers. OpenAPI spec as "AI prompt". AI-powered API gateways. Webhook evolution from fire-and-forget to AI-monitored. Running example: NRS OpenAPI dual-credential auth.</div>
+        <div class="card-books">📖 <span>API Design Patterns (Geewax)</span> · <span>RESTful Web APIs</span> · <span>Building Microservices (Newman)</span></div>
+      </div>
+      <div class="card-meta">
+        <div class="card-tags">
+          <span class="tag tag-nrs">NRS OPENAPI AUTH</span>
+          <span class="tag tag-nrs">BSALE INTEGRATION</span>
+        </div>
+        <div class="card-phase">Month 4</div>
+      </div>
+    </div>
+
+    <div class="article-card">
+      <div class="card-id" style="color:var(--purple)">1.4</div>
+      <div class="card-body">
+        <div class="card-title">Error Handling & Observability — The Signal Architecture</div>
+        <div class="card-title-cn">错误处理与可观测性：信号架构</div>
+        <div class="card-desc">From threshold alerts to AI anomaly detection. Structured errors as training data. Auto-remediation pipelines. Observability for AI components (token usage, hallucination rate).</div>
+        <div class="card-books">📖 <span>Release It! (Nygard)</span> · <span>Observability Engineering (Majors)</span> · <span>SRE Book (Google)</span></div>
+      </div>
+      <div class="card-meta">
+        <div class="card-tags">
+          <span class="tag tag-nrs">JSON ERROR ENVELOPE</span>
+          <span class="tag tag-ai">AI ANOMALY DETECT</span>
+        </div>
+        <div class="card-phase">Month 4</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LAYER 2 ── -->
+  <div class="layer-block layer-2">
+    <div class="layer-header">
+      <span class="layer-num">L2</span>
+      ARCHITECTURE — 架构决策层
+      <span class="count">5 articles · Phase 3</span>
+    </div>
+
+    <div class="article-card">
+      <div class="card-id" style="color:var(--orange)">2.1</div>
+      <div class="card-body">
+        <div class="card-title">Architecture Styles Landscape — Choosing in a World of AI Services</div>
+        <div class="card-title-cn">架构风格全景：在AI服务世界中做选择</div>
+        <div class="card-desc">2D landscape map of all major styles + AI-native additions. AI Sidecar pattern. Macro+Micro+Agent topology. Cell-Based Architecture. AI-evaluated fitness functions.</div>
+        <div class="card-books">📖 <span>Fundamentals of SA (Richards & Ford)</span> · <span>Hard Parts</span> · <span>Clean Architecture (Martin)</span></div>
+      </div>
+      <div class="card-meta">
+        <div class="card-tags"><span class="tag tag-ai">AI SIDECAR / CELL-BASED</span></div>
+        <div class="card-phase">Month 5</div>
+      </div>
+    </div>
+
+    <div class="article-card">
+      <div class="card-id" style="color:var(--orange)">2.2</div>
+      <div class="card-body">
+        <div class="card-title">Distributed Data — Replication, Consistency, and the DR Architecture</div>
+        <div class="card-title-cn">分布式数据：复制、一致性与灾备架构</div>
+        <div class="card-desc">AI-assisted failover decisions. Intelligent data routing. AI consistency verification. Vector DBs as DR-tier citizens. Running example: NRS MySQL Beijing/Shanghai DR.</div>
+        <div class="card-books">📖 <span>DDIA (Kleppmann)</span> · <span>Database Internals (Petrov)</span> · <span>Hard Parts — data ownership</span></div>
+      </div>
+      <div class="card-meta">
+        <div class="card-tags">
+          <span class="tag tag-dr">MYSQL DR</span>
+          <span class="tag tag-ai">AI FAILOVER</span>
+        </div>
+        <div class="card-phase">Month 5</div>
+      </div>
+    </div>
+
+    <div class="article-card">
+      <div class="card-id" style="color:var(--orange)">2.3</div>
+      <div class="card-body">
+        <div class="card-title">Integration Patterns for a Multi-Country Platform</div>
+        <div class="card-title-cn">多国平台的集成模式</div>
+        <div class="card-desc">AI-powered schema mapping across countries. Intelligent retry & error classification. Compliance-as-Code with AI monitoring. Two-phase async return pattern. Running example: NRS ↔ Bsale/Greece/Brazil.</div>
+        <div class="card-books">📖 <span>Enterprise Integration Patterns (Hohpe & Woolf)</span> · <span>Microservices Patterns (Richardson)</span></div>
+      </div>
+      <div class="card-meta">
+        <div class="card-tags">
+          <span class="tag tag-nrs">BSALE / GREECE / BRAZIL</span>
+          <span class="tag tag-ai">AI DATA MAPPING</span>
+        </div>
+        <div class="card-phase">Month 6</div>
+      </div>
+    </div>
+
+    <div class="article-card">
+      <div class="card-id" style="color:var(--orange)">2.4</div>
+      <div class="card-body">
+        <div class="card-title">Saga Patterns & Distributed Workflows</div>
+        <div class="card-title-cn">Saga模式与分布式工作流</div>
+        <div class="card-desc">Orchestration vs. Choreography for invoice workflows. AI as saga monitor. Dynamic orchestration. Multi-agent saga execution. 8 generic saga patterns + the "Horror Story" anti-pattern.</div>
+        <div class="card-books">📖 <span>Hard Parts — 8 saga patterns</span> · <span>Microservices Patterns (Richardson)</span> · <span>EIP — Process Manager</span></div>
+      </div>
+      <div class="card-meta">
+        <div class="card-tags">
+          <span class="tag tag-nrs">INVOICE WORKFLOW</span>
+          <span class="tag tag-ai">AI SAGA MONITOR</span>
+        </div>
+        <div class="card-phase">Month 6</div>
+      </div>
+    </div>
+
+    <div class="article-card">
+      <div class="card-id" style="color:var(--orange)">2.5</div>
+      <div class="card-body">
+        <div class="card-title">Security Architecture for API Platforms</div>
+        <div class="card-title-cn">API平台的安全架构</div>
+        <div class="card-desc">AI-powered abuse detection. LLM as attack vector (prompt injection via API). AI-assisted threat modeling from OpenAPI specs. Running example: NRS Nginx security config for /openapi/.</div>
+        <div class="card-books">📖 <span>OAuth 2 in Action</span> · <span>API Security in Action</span> · <span>Threat Modeling (Shostack)</span></div>
+      </div>
+      <div class="card-meta">
+        <div class="card-tags">
+          <span class="tag tag-nrs">NGINX /OPENAPI/ SEC</span>
+          <span class="tag tag-ai">AI THREAT MODEL</span>
+        </div>
+        <div class="card-phase">Month 7</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LAYER 3 ── -->
+  <div class="layer-block layer-3">
+    <div class="layer-header">
+      <span class="layer-num">L3</span>
+      INFRASTRUCTURE — 基础设施层
+      <span class="count">4 articles · Phase 4</span>
+    </div>
+
+    <div class="article-card">
+      <div class="card-id" style="color:var(--green)">3.1</div>
+      <div class="card-body">
+        <div class="card-title">CI/CD as Architecture — Pipeline Design for AI-Augmented Teams</div>
+        <div class="card-title-cn">CI/CD即架构：AI增强团队的流水线设计</div>
+        <div class="card-desc">AI quality gates in CI (code-review-gate). DORA metrics + AI prediction. GitLab CI + Claude Code 4-pattern integration. Nightly headless AI audit platform (SARIF, 6-dimension scoring, Feishu push).</div>
+        <div class="card-books">📖 <span>Continuous Delivery (Humble & Farley)</span> · <span>Accelerate</span> · <span>SW Engineering at Google</span></div>
+      </div>
+      <div class="card-meta">
+        <div class="card-tags">
+          <span class="tag tag-nrs">GITLAB + CLAUDE</span>
+          <span class="tag tag-ai">CODE-REVIEW-GATE</span>
+        </div>
+        <div class="card-phase">Month 7</div>
+      </div>
+    </div>
+
+    <div class="article-card">
+      <div class="card-id" style="color:var(--green)">3.2</div>
+      <div class="card-body">
+        <div class="card-title">DNS, Load Balancing, and Network Architecture for Multi-DC</div>
+        <div class="card-title-cn">DNS、负载均衡与多数据中心网络架构</div>
+        <div class="card-desc">AI-powered traffic routing. Predictive scaling. Chaos engineering + AI. NL queries against network telemetry. Running example: CoreDNS/VRRP two-datacenter DNS sync.</div>
+        <div class="card-books">📖 <span>SRE Book (Google)</span> · <span>SRE Workbook</span> · <span>Release It! (Nygard)</span></div>
+      </div>
+      <div class="card-meta">
+        <div class="card-tags">
+          <span class="tag tag-dr">COREDNS / VRRP</span>
+          <span class="tag tag-ai">AI TRAFFIC ROUTING</span>
+        </div>
+        <div class="card-phase">Month 8</div>
+      </div>
+    </div>
+
+    <div class="article-card">
+      <div class="card-id" style="color:var(--green)">3.3</div>
+      <div class="card-body">
+        <div class="card-title">Infrastructure as Code — From Scripts to AI-Managed Infrastructure</div>
+        <div class="card-title-cn">基础设施即代码：从脚本到AI管理的声明式基础设施</div>
+        <div class="card-desc">Intent-based infrastructure ("handle 1000 RPS at p99 < 200ms"). AWS Agent Plugins. AI drift detection + auto-remediation. AI cost optimization.</div>
+        <div class="card-books">📖 <span>Infrastructure as Code (Morris)</span> · <span>Terraform Up & Running</span> · <span>K8s in Action</span></div>
+      </div>
+      <div class="card-meta">
+        <div class="card-tags"><span class="tag tag-ai">INTENT-BASED INFRA</span></div>
+        <div class="card-phase">Month 8</div>
+      </div>
+    </div>
+
+    <div class="article-card">
+      <div class="card-id" style="color:var(--green)">3.4</div>
+      <div class="card-body">
+        <div class="card-title">Observability Stack — Metrics, Logs, Traces, and AI-Powered Analysis</div>
+        <div class="card-title-cn">可观测性栈：指标、日志、链路追踪与AI驱动分析</div>
+        <div class="card-desc">Natural language log analysis. ML anomaly detection without manual thresholds. AI-generated runbooks. Observability for AI components (token usage, hallucination rates, cost/inference).</div>
+        <div class="card-books">📖 <span>Observability Engineering (Majors)</span> · <span>Distributed Systems Observability (Sridharan)</span> · <span>SRE Book + Workbook</span></div>
+      </div>
+      <div class="card-meta">
+        <div class="card-tags">
+          <span class="tag tag-ai">NL LOG ANALYSIS</span>
+          <span class="tag tag-ai">AI-GEN RUNBOOKS</span>
+        </div>
+        <div class="card-phase">Month 9</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LAYER 4 ── -->
+  <div class="layer-block layer-4">
+    <div class="layer-header">
+      <span class="layer-num">L4</span>
+      ENGINEERING CULTURE — 工程文化层
+      <span class="count">3 articles · Phase 5</span>
+    </div>
+
+    <div class="article-card">
+      <div class="card-id" style="color:var(--rose)">4.1</div>
+      <div class="card-body">
+        <div class="card-title">The Lean Engineering Manifesto — Let Machines Repeat, Let Humans Evolve</div>
+        <div class="card-title-cn">精益工程宣言：让机器重复，让人类进化</div>
+        <div class="card-desc">Human × Machine capability matrix. Architect's evolving role in AI era. From "10x developer" to "10x amplified team". Objective-Validation Protocol. Measuring AI-augmented productivity.</div>
+        <div class="card-books">📖 <span>Accelerate</span> · <span>Toyota Way</span> · <span>Phoenix Project / Unicorn Project</span> · <span>SW Eng at Google</span></div>
+      </div>
+      <div class="card-meta">
+        <div class="card-tags">
+          <span class="tag tag-team">LEAN ENGINEERING</span>
+          <span class="tag tag-ai">GARTNER 2030</span>
+        </div>
+        <div class="card-phase">Month 9</div>
+      </div>
+    </div>
+
+    <div class="article-card">
+      <div class="card-id" style="color:var(--rose)">4.2</div>
+      <div class="card-body">
+        <div class="card-title">Team Topologies for AI-Augmented Organizations</div>
+        <div class="card-title-cn">AI增强组织的团队拓扑</div>
+        <div class="card-desc">The "AI Platform Team" as new team type. Cognitive load reduction via AI. Smaller teams + bigger impact. Conway's Law in AI era. AI governance as cross-cutting concern.</div>
+        <div class="card-books">📖 <span>Team Topologies (Skelton & Pais)</span> · <span>Manager's Path (Fournier)</span> · <span>An Elegant Puzzle (Larson)</span></div>
+      </div>
+      <div class="card-meta">
+        <div class="card-tags">
+          <span class="tag tag-team">ORG DESIGN</span>
+          <span class="tag tag-ai">AI PLATFORM TEAM</span>
+        </div>
+        <div class="card-phase">Month 10</div>
+      </div>
+    </div>
+
+    <div class="article-card">
+      <div class="card-id" style="color:var(--rose)">4.3</div>
+      <div class="card-body">
+        <div class="card-title">Building Your Personal Knowledge System as a Software Architect</div>
+        <div class="card-title-cn">构建你作为软件架构师的个人知识体系</div>
+        <div class="card-desc">Knowledge Tech Tree (book dependency graph). AI as learning partner. This series as a RAG-ready KB. "Dialog with Books" via AI. Continuous architecture learning with AI-curated reading lists. Meta-article: how this series was built.</div>
+        <div class="card-books">📖 <span>Pragmatic Programmer</span> · <span>Staff Engineer (Larson)</span> · <span>201 Principles (Davis)</span></div>
+      </div>
+      <div class="card-meta">
+        <div class="card-tags">
+          <span class="tag tag-team">META-LEARNING</span>
+          <span class="tag tag-ai">RAG-READY KB</span>
+        </div>
+        <div class="card-phase">Month 10</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SECTION 4: PRODUCTION TIMELINE -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title"><span class="num">§4</span> Production Timeline — 10 Months</div>
+  <div class="section-subtitle">制作时间线 · 每月2篇 · 5个阶段</div>
+
+  <div class="timeline">
+    <div class="tl-month" style="background:var(--cyan-glow); border:1px solid rgba(34,211,238,0.2); color:var(--cyan)">
+      <span class="month-label">M1</span>
+      <span class="month-articles">0.1 ✓<br>0.2</span>
+    </div>
+    <div class="tl-month" style="background:var(--cyan-glow); border:1px solid rgba(34,211,238,0.2); color:var(--cyan)">
+      <span class="month-label">M2</span>
+      <span class="month-articles">0.3<br>0.4</span>
+    </div>
+    <div class="tl-month" style="background:var(--purple-glow); border:1px solid rgba(167,139,250,0.2); color:var(--purple)">
+      <span class="month-label">M3</span>
+      <span class="month-articles">1.1<br>1.2</span>
+    </div>
+    <div class="tl-month" style="background:var(--purple-glow); border:1px solid rgba(167,139,250,0.2); color:var(--purple)">
+      <span class="month-label">M4</span>
+      <span class="month-articles">1.3<br>1.4</span>
+    </div>
+    <div class="tl-month" style="background:var(--orange-glow); border:1px solid rgba(249,115,22,0.2); color:var(--orange)">
+      <span class="month-label">M5</span>
+      <span class="month-articles">2.1<br>2.2</span>
+    </div>
+    <div class="tl-month" style="background:var(--orange-glow); border:1px solid rgba(249,115,22,0.2); color:var(--orange)">
+      <span class="month-label">M6</span>
+      <span class="month-articles">2.3<br>2.4</span>
+    </div>
+    <div class="tl-month" style="background:rgba(249,115,22,0.06); border:1px solid rgba(249,115,22,0.12); color:var(--orange)">
+      <span class="month-label">M7</span>
+      <span class="month-articles">2.5<br>3.1</span>
+    </div>
+    <div class="tl-month" style="background:var(--green-glow); border:1px solid rgba(16,185,129,0.2); color:var(--green)">
+      <span class="month-label">M8</span>
+      <span class="month-articles">3.2<br>3.3</span>
+    </div>
+    <div class="tl-month" style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.12); color:var(--green)">
+      <span class="month-label">M9</span>
+      <span class="month-articles">3.4<br>4.1</span>
+    </div>
+    <div class="tl-month" style="background:var(--rose-glow); border:1px solid rgba(244,63,94,0.2); color:var(--rose)">
+      <span class="month-label">M10</span>
+      <span class="month-articles">4.2<br>4.3</span>
+    </div>
+  </div>
+
+  <div class="vision-box" style="margin-top:24px">
+    <p style="font-size:14px; margin-bottom:12px"><strong>Phase Strategy 阶段策略</strong></p>
+    <p style="font-size:13px; color:var(--text-secondary); margin-bottom:6px"><strong style="color:var(--cyan)">Phase 1 (M1-M2)</strong>: Code Craft — start with the most concrete, individually actionable content. Low dependency on other articles. Establishes the visual style and bilingual format.</p>
+    <p style="font-size:13px; color:var(--text-secondary); margin-bottom:6px"><strong style="color:var(--purple)">Phase 2 (M3-M4)</strong>: Design Thinking — builds on L0 patterns, introduces DDD and API design. NRS-specific examples become prominent. Requires L0 concepts as foundation.</p>
+    <p style="font-size:13px; color:var(--text-secondary); margin-bottom:6px"><strong style="color:var(--orange)">Phase 3 (M5-M7)</strong>: Architecture — the densest phase (5 articles). Depends heavily on L0 (code quality) and L1 (patterns, DDD). This is the "main event" of the series.</p>
+    <p style="font-size:13px; color:var(--text-secondary); margin-bottom:6px"><strong style="color:var(--green)">Phase 4 (M7-M9)</strong>: Infrastructure — cross-references L2 architecture decisions. The CI/CD article (3.1) is the bridge between architecture and infrastructure.</p>
+    <p style="font-size:13px; color:var(--text-secondary); margin-bottom:0"><strong style="color:var(--rose)">Phase 5 (M9-M10)</strong>: Engineering Culture — the capstone. Synthesizes all prior layers into organizational and personal practice. Article 4.3 is the meta-conclusion.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SECTION 5: DESIGN SYSTEM -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title"><span class="num">§5</span> Visual Design System</div>
+  <div class="section-subtitle">视觉设计系统 · 20篇文章的统一视觉语言</div>
+
+  <p style="margin-bottom:20px; color:var(--text-secondary)">Every color, font, and component is reused across all 20 articles. The semantic color system means readers develop intuition for information types before consciously processing them.</p>
+
+  <h3 style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; color:var(--text-secondary); margin:24px 0 12px">Semantic Color Map 语义色彩</h3>
+  <div class="color-grid">
+    <div class="color-chip">
+      <div class="chip-swatch" style="background:#22d3ee"></div>
+      <div class="chip-info"><span class="chip-name" style="color:#22d3ee">#22d3ee cyan</span><span class="chip-use">AI-era concepts · 新 · 前瞻</span></div>
+    </div>
+    <div class="color-chip">
+      <div class="chip-swatch" style="background:#a78bfa"></div>
+      <div class="chip-info"><span class="chip-name" style="color:#a78bfa">#a78bfa purple</span><span class="chip-use">Design thinking · 模式 · 抽象</span></div>
+    </div>
+    <div class="color-chip">
+      <div class="chip-swatch" style="background:#f97316"></div>
+      <div class="chip-info"><span class="chip-name" style="color:#f97316">#f97316 orange</span><span class="chip-use">Arch decisions · 权衡 · 警告</span></div>
+    </div>
+    <div class="color-chip">
+      <div class="chip-swatch" style="background:#10b981"></div>
+      <div class="chip-info"><span class="chip-name" style="color:#10b981">#10b981 green</span><span class="chip-use">Production-ready · 可执行 · 已验证</span></div>
+    </div>
+    <div class="color-chip">
+      <div class="chip-swatch" style="background:#eab308"></div>
+      <div class="chip-info"><span class="chip-name" style="color:#eab308">#eab308 yellow</span><span class="chip-use">Classical · 过渡 · 桥梁地带</span></div>
+    </div>
+    <div class="color-chip">
+      <div class="chip-swatch" style="background:#f43f5e"></div>
+      <div class="chip-info"><span class="chip-name" style="color:#f43f5e">#f43f5e rose</span><span class="chip-use">Anti-patterns · 问题 · "Before"</span></div>
+    </div>
+    <div class="color-chip">
+      <div class="chip-swatch" style="background:#94a3b8"></div>
+      <div class="chip-info"><span class="chip-name" style="color:#94a3b8">#94a3b8 slate</span><span class="chip-use">Secondary text · 基线 · 上下文</span></div>
+    </div>
+    <div class="color-chip">
+      <div class="chip-swatch" style="background:#0a0e17; border:1px solid #1e2a45"></div>
+      <div class="chip-info"><span class="chip-name" style="color:#e2e8f0">#0a0e17 deep bg</span><span class="chip-use">Industrial terminal base 终端底色</span></div>
+    </div>
+  </div>
+
+  <h3 style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; color:var(--text-secondary); margin:28px 0 12px">Typography Stack 字体栈</h3>
+  <div class="vision-box">
+    <p style="font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--cyan); margin-bottom:8px"><strong>JetBrains Mono</strong> — titles, code, labels, metadata. The "engineer's handwriting." Signals precision and technical authority.</p>
+    <p style="font-family:'IBM Plex Sans',sans-serif; font-size:14px; color:var(--text-primary); margin-bottom:8px"><strong>IBM Plex Sans</strong> — body text. Clean, readable, professional. Pairs well with monospace without fighting for attention.</p>
+    <p style="font-family:'Noto Serif SC',serif; font-size:14px; color:var(--text-dim); font-style:italic; margin-bottom:0"><strong>Noto Serif SC</strong> — Chinese supplementary text. Serif style creates visual distinction from English body text, reinforcing the "two languages, two roles" design.</p>
+  </div>
+
+  <h3 style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; color:var(--text-secondary); margin:28px 0 12px">Reusable Components 可复用组件</h3>
+  <p style="color:var(--text-secondary); font-size:13.5px">Each article assembles from these pre-built components — ensuring visual consistency while allowing content variation:</p>
+  <table class="book-table" style="margin-top:12px">
+    <thead>
+      <tr><th>Component</th><th>Purpose</th><th>Usage Per Article</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bt">diagram-container</td><td>Hosts SVG/chart diagrams with gradient top-border</td><td>3-5 per article</td></tr>
+      <tr><td class="bt">book-card (tier1/2/3)</td><td>Source book with left-border color tier indicator</td><td>3-4 per article</td></tr>
+      <tr><td class="bt">decision-table</td><td>Scenario | Classical | AI-Augmented comparison</td><td>1 per article</td></tr>
+      <tr><td class="bt">evolution-steps</td><td>Timeline with gradient connector line</td><td>0-1 per article</td></tr>
+      <tr><td class="bt">insight-box</td><td>Key takeaway with ⚡ icon, highlighted border</td><td>1-2 per article</td></tr>
+      <tr><td class="bt">code-block</td><td>Syntax-highlighted code with language label</td><td>1-3 per article</td></tr>
+      <tr><td class="bt">cn-note</td><td>Chinese comprehension anchor, left-bordered</td><td>After every EN paragraph</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SECTION 6: SOURCE BOOK REGISTRY -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title"><span class="num">§6</span> Source Book Registry — 30+ Books</div>
+  <div class="section-subtitle">源书注册表 · 按优先级分三档</div>
+
+  <h3 style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; color:var(--cyan); margin:16px 0 10px">Tier 1 — Core Series (Read Cover to Cover) 核心系列</h3>
+  <table class="book-table">
+    <thead><tr><th>Series 系列</th><th>Books 书目</th><th>Layers</th></tr></thead>
+    <tbody>
+      <tr><td class="bt">Uncle Bob Clean Series</td><td>Clean Code · Clean Coder · Clean Architecture · Clean Agile</td><td>L0, L2</td></tr>
+      <tr><td class="bt">Martin Fowler Lineage</td><td>Refactoring · PoEAA · UML Distilled</td><td>L0, L1</td></tr>
+      <tr><td class="bt">Richards & Ford Architecture</td><td>Fundamentals of SA · Hard Parts · Evolutionary Architectures</td><td>L2</td></tr>
+      <tr><td class="bt">DDIA + System Design</td><td>Designing Data-Intensive Applications · System Design Interview V1 & V2</td><td>L2, L3</td></tr>
+      <tr><td class="bt">DDD Arc</td><td>Domain-Driven Design · Implementing DDD · DDD Distilled</td><td>L1</td></tr>
+      <tr><td class="bt">Google Engineering</td><td>Software Engineering at Google · SRE · SRE Workbook</td><td>L3, L4</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; color:var(--purple); margin:24px 0 10px">Tier 2 — Deep Dives (Read Per Need) 按需精读</h3>
+  <table class="book-table">
+    <thead><tr><th>Book</th><th>Author</th><th>Layer</th></tr></thead>
+    <tbody>
+      <tr><td class="bt">Microservices Patterns</td><td>Chris Richardson</td><td>L1, L2</td></tr>
+      <tr><td class="bt">Building Microservices 2nd Ed</td><td>Sam Newman</td><td>L1, L2</td></tr>
+      <tr><td class="bt">Release It! 2nd Ed</td><td>Michael Nygard</td><td>L2, L3</td></tr>
+      <tr><td class="bt">Enterprise Integration Patterns</td><td>Hohpe & Woolf</td><td>L1, L2</td></tr>
+      <tr><td class="bt">Continuous Delivery</td><td>Jez Humble & David Farley</td><td>L3</td></tr>
+      <tr><td class="bt">Accelerate</td><td>Forsgren, Humble, Kim</td><td>L4</td></tr>
+      <tr><td class="bt">Team Topologies</td><td>Skelton & Pais</td><td>L4</td></tr>
+      <tr><td class="bt">A Philosophy of Software Design</td><td>John Ousterhout</td><td>L0</td></tr>
+      <tr><td class="bt">Observability Engineering</td><td>Charity Majors et al.</td><td>L3</td></tr>
+      <tr><td class="bt">Design Patterns (GoF)</td><td>Gamma, Helm, Johnson, Vlissides</td><td>L1</td></tr>
+      <tr><td class="bt">The Pragmatic Programmer</td><td>Hunt & Thomas</td><td>L0, L4</td></tr>
+      <tr><td class="bt">Code Complete 2nd Ed</td><td>Steve McConnell</td><td>L0</td></tr>
+      <tr><td class="bt">Database Internals</td><td>Alex Petrov</td><td>L2</td></tr>
+      <tr><td class="bt">OAuth 2 in Action</td><td>Justin Richer</td><td>L2</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; color:var(--orange); margin:24px 0 10px">Tier 3 — AI-Specific Sources (2025-2026) AI专项来源</h3>
+  <table class="book-table">
+    <thead><tr><th>Resource</th><th>Type</th><th>Layer</th></tr></thead>
+    <tbody>
+      <tr><td class="bt">DORA State of AI-Assisted Development 2025</td><td>Industry Report</td><td>L0, L4</td></tr>
+      <tr><td class="bt">Gartner Top Strategic Tech Trends 2026</td><td>Analyst Report</td><td>L2, L4</td></tr>
+      <tr><td class="bt">InfoQ Architecture Trends Report 2025</td><td>Community Report</td><td>L1, L2</td></tr>
+      <tr><td class="bt">GenAI for Software Architecture (ScienceDirect)</td><td>Academic Survey</td><td>L2</td></tr>
+      <tr><td class="bt">IBM AI & Tech Trends 2026</td><td>Industry Outlook</td><td>L3, L4</td></tr>
+      <tr><td class="bt">GitHub State of the Octoverse 2025</td><td>Platform Data</td><td>L0</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SECTION 7: OUTPUT FORMATS -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title"><span class="num">§7</span> Output Formats & Distribution</div>
+  <div class="section-subtitle">输出格式与分发</div>
+
+  <div class="vision-box">
+    <p style="font-size:14px; margin-bottom:12px"><strong>Three Output Channels 三个输出渠道</strong></p>
+    <p style="font-size:13px; color:var(--text-secondary); margin-bottom:8px"><strong style="color:var(--cyan)">Channel A — HTML Articles</strong>: The primary format. Interactive SVG diagrams, responsive layout, dark terminal aesthetic. Self-contained single-file HTML (no external dependencies beyond Google Fonts). Can be hosted as a static site or shared as files.</p>
+    <p style="font-size:13px; color:var(--text-secondary); margin-bottom:8px"><strong style="color:var(--purple)">Channel B — PowerPoint Decks</strong>: One deck per article for team presentations and IT meetings. Uses established gen_slide3.js style: LAYOUT_WIDE, white bg (#F8FAFC), blue header (#1B6CA8), 4-column card layout, Calibri + Courier New, English-first with Chinese in parentheses.</p>
+    <p style="font-size:13px; color:var(--text-secondary); margin-bottom:0"><strong style="color:var(--green)">Channel C — Markdown in Git</strong>: Each article as .md in a Git repository following the .ai/ directory structure. This format is RAG-ready — Claude or other AI agents can retrieve and reference articles during architectural decision-making.</p>
+  </div>
+
+  <div class="vision-box">
+    <p style="font-size:14px; margin-bottom:12px"><strong>Per-Article Deliverables 每篇交付物</strong></p>
+    <p style="font-size:13px; color:var(--text-secondary); margin-bottom:0">
+      Each article produces: (1) one HTML file (~15-20KB, self-contained), (2) one .pptx deck (8-12 slides), (3) one .md file (RAG-ready), (4) 3-5 SVG diagrams (extractable as standalone assets). Total series output: 20 HTML files + 20 decks + 20 markdown files + 80+ diagrams.
+    </p>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- FOOTER -->
+<!-- ══════════════════════════════════════════════ -->
+<footer class="page-footer">
+  <div class="container">
+    Software Knowledge Base · Series Production Plan v1.0<br>
+    Classical Foundations × AI Co-Evolution · 经典基础 × AI协同进化<br>
+    20 Articles · 5 Layers · 30+ Books · 10 Months
+  </div>
+</footer>
+
+</body>
+</html>

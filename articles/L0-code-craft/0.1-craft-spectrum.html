@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>0.1 The Craft Spectrum — From Clean Code to AI-Readable Code</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<!--
+  CSS Architecture Note:
+  The canonical design system lives in templates/article-base.css.
+  For single-file distribution, it is inlined here.
+  When editing styles, update article-base.css first, then re-inline.
+-->
+<style>
+/* ═══ INLINED FROM templates/article-base.css ═══ */
+:root {
+  --bg-deep: #0a0e17;
+  --bg-surface: #0f1420;
+  --bg-card: #141b2d;
+  --bg-card-hover: #1a2340;
+  --border: #1e2a45;
+  --border-accent: #2d4a7a;
+  --cyan: #22d3ee;
+  --cyan-dim: #0e7490;
+  --cyan-glow: rgba(34, 211, 238, 0.15);
+  --purple: #a78bfa;
+  --purple-dim: #6d5dbb;
+  --purple-glow: rgba(167, 139, 250, 0.12);
+  --orange: #f97316;
+  --orange-glow: rgba(249, 115, 22, 0.12);
+  --green: #10b981;
+  --green-glow: rgba(16, 185, 129, 0.12);
+  --rose: #f43f5e;
+  --rose-glow: rgba(244, 63, 94, 0.12);
+  --yellow: #eab308;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg-deep); color:var(--text-primary); font-family:'IBM Plex Sans',sans-serif; line-height:1.75; font-size:16px; -webkit-font-smoothing:antialiased; }
+.article-header { position:relative; padding:80px 0 60px; overflow:hidden; border-bottom:1px solid var(--border); }
+.article-header::before { content:''; position:absolute; top:0;left:0;right:0;bottom:0; background:radial-gradient(ellipse 800px 400px at 20% 50%,rgba(34,211,238,0.06),transparent),radial-gradient(ellipse 600px 300px at 80% 30%,rgba(167,139,250,0.04),transparent); }
+.header-content { position:relative; max-width:860px; margin:0 auto; padding:0 32px; }
+.series-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--cyan); border:1px solid var(--cyan-dim); padding:4px 12px; border-radius:3px; margin-bottom:20px; background:var(--cyan-glow); }
+.article-title { font-family:'JetBrains Mono',monospace; font-size:36px; font-weight:700; line-height:1.25; color:var(--text-primary); margin-bottom:8px; }
+.article-title-cn { font-family:'Noto Serif SC',serif; font-size:20px; font-weight:400; color:var(--text-dim); font-style:italic; margin-bottom:24px; }
+.article-meta { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-dim); display:flex; gap:24px; flex-wrap:wrap; }
+.meta-item { display:flex; align-items:center; gap:6px; }
+.meta-dot { width:6px; height:6px; border-radius:50%; }
+.article-body { max-width:860px; margin:0 auto; padding:48px 32px; }
+h2 { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:var(--cyan); margin:56px 0 8px; padding-bottom:12px; border-bottom:1px solid var(--border); letter-spacing:-0.5px; }
+.article-body > h2:first-child { margin-top:0; }
+h2 .num { color:var(--text-dim); font-weight:400; margin-right:8px; }
+h3 { font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; color:var(--purple); margin:36px 0 12px; }
+p { margin-bottom:18px; color:var(--text-primary); font-size:15.5px; }
+.cn-note { font-family:'Noto Serif SC',serif; font-style:italic; color:var(--text-dim); font-size:14px; line-height:1.8; margin:-8px 0 24px; padding-left:16px; border-left:2px solid var(--border); }
+code { font-family:'JetBrains Mono',monospace; font-size:0.88em; background:rgba(34,211,238,0.08); padding:2px 6px; border-radius:3px; color:var(--cyan); }
+.diagram-container { margin:40px -16px; padding:32px 24px; background:var(--bg-surface); border:1px solid var(--border); border-radius:8px; position:relative; overflow-x:auto; }
+.diagram-container::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--cyan),var(--purple),var(--orange)); }
+.diagram-label { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:20px; }
+.diagram-sublabel { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-dim); margin-top:-16px; margin-bottom:16px; font-style:italic; }
+.bookshelf { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin:24px 0; align-items:stretch; }
+.book-card { background:var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:16px; transition:all 0.25s ease; position:relative; overflow:hidden; min-height:190px; display:flex; flex-direction:column; }
+.book-card::before { content:''; position:absolute; left:0;top:0;bottom:0; width:3px; }
+.book-card.tier1::before { background:var(--cyan); }
+.book-card.tier2::before { background:var(--purple); }
+.book-card:hover { border-color:var(--border-accent); background:var(--bg-card-hover); transform:translateY(-2px); }
+.book-title { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:4px; line-height:1.4; }
+.book-author { font-size:11px; color:var(--text-dim); }
+.book-desc { font-size:12px; color:var(--text-secondary); margin-top:8px; line-height:1.5; flex:1; }
+.book-tag { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:2px 6px; border-radius:3px; margin-top:8px; letter-spacing:0.5px; }
+.tag-foundation { background:rgba(34,211,238,0.1); color:var(--cyan); border:1px solid rgba(34,211,238,0.2); }
+.tag-practice { background:rgba(167,139,250,0.1); color:var(--purple); border:1px solid rgba(167,139,250,0.2); }
+.decision-table { width:100%; border-collapse:collapse; margin:24px 0; font-size:13px; }
+.decision-table th { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; text-align:left; padding:12px 16px; border-bottom:2px solid var(--border-accent); color:var(--text-secondary); background:var(--bg-surface); }
+.decision-table td { padding:12px 16px; border-bottom:1px solid var(--border); color:var(--text-primary); vertical-align:top; line-height:1.5; }
+.decision-table tr:hover td { background:rgba(34,211,238,0.03); }
+.decision-table .col-scenario { width:22%; font-weight:500; color:var(--text-secondary); }
+.decision-table .col-classic { width:39%; }
+.decision-table .col-ai { width:39%; }
+.classic-badge,.ai-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:1px 5px; border-radius:2px; margin-right:4px; vertical-align:middle; }
+.classic-badge { background:rgba(148,163,184,0.15); color:var(--text-secondary); }
+.ai-badge { background:rgba(34,211,238,0.12); color:var(--cyan); }
+.checklist { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:24px 0; }
+.check-item { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:5px; font-size:13px; color:var(--text-primary); line-height:1.4; transition:border-color 0.2s; }
+.check-item:hover { border-color:var(--border-accent); }
+.check-stage { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:600; padding:2px 7px; border-radius:3px; white-space:nowrap; flex-shrink:0; }
+.insight-box { margin:32px 0; padding:24px; background:linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04)); border:1px solid var(--border-accent); border-radius:8px; position:relative; }
+.insight-box::before { content:'⚡'; position:absolute; top:-12px; left:20px; background:var(--bg-deep); padding:0 8px; font-size:18px; }
+.insight-box .label { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--cyan); margin-bottom:8px; }
+.code-block { background:#0d1117; border:1px solid var(--border); border-radius:6px; padding:20px; margin:20px 0; overflow-x:auto; position:relative; }
+.code-block::before { content:attr(data-lang); position:absolute; top:8px; right:12px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-dim); letter-spacing:0.5px; }
+.code-block pre { font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.6; color:var(--text-secondary); }
+.code-block .kw { color:var(--purple); }
+.code-block .fn { color:var(--cyan); }
+.code-block .str { color:var(--green); }
+.code-block .cm { color:var(--text-dim); font-style:italic; }
+.code-block .ann { color:var(--orange); }
+.code-block .tp { color:var(--yellow); }
+.evolution-steps { position:relative; padding-left:32px; margin:28px 0; }
+.evolution-steps::before { content:''; position:absolute; left:11px; top:8px; bottom:8px; width:2px; background:linear-gradient(to bottom,var(--cyan),var(--purple),var(--orange)); }
+.evo-step { position:relative; margin-bottom:24px; padding-left:20px; }
+.evo-step::before { content:''; position:absolute; left:-25px; top:8px; width:10px; height:10px; border-radius:50%; border:2px solid; }
+.evo-step:nth-child(1)::before { border-color:var(--text-dim); background:var(--bg-deep); }
+.evo-step:nth-child(2)::before { border-color:var(--text-secondary); background:var(--bg-deep); }
+.evo-step:nth-child(3)::before { border-color:var(--cyan-dim); background:var(--bg-deep); }
+.evo-step:nth-child(4)::before { border-color:var(--purple); background:var(--bg-deep); }
+.evo-step:nth-child(5)::before { border-color:var(--cyan); background:var(--cyan); }
+.evo-step:nth-child(6)::before { border-color:var(--green); background:var(--green); }
+.evo-step-title { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; margin-bottom:4px; }
+.evo-step-desc { font-size:13.5px; color:var(--text-secondary); line-height:1.6; }
+.article-footer { max-width:860px; margin:0 auto; padding:40px 32px; border-top:1px solid var(--border); font-size:12px; color:var(--text-dim); }
+.nav-links { display:flex; justify-content:space-between; align-items:center; margin-top:20px; }
+.nav-link { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--cyan); text-decoration:none; padding:8px 16px; border:1px solid var(--border); border-radius:4px; transition:all 0.2s; }
+.nav-link:hover { border-color:var(--cyan); background:var(--cyan-glow); }
+@media (max-width:640px) {
+  .article-title { font-size:24px; }
+  .bookshelf { grid-template-columns:1fr; }
+  .checklist { grid-template-columns:1fr; }
+  .article-meta { flex-direction:column; gap:8px; }
+}
+@media print {
+  :root { --bg-deep:#fff; --bg-surface:#f8f9fa; --bg-card:#f1f3f5; --bg-card-hover:#f1f3f5; --border:#dee2e6; --border-accent:#adb5bd; --text-primary:#212529; --text-secondary:#495057; --text-dim:#868e96; --cyan:#0c8599; --purple:#7048e8; --orange:#e8590c; --green:#099268; --rose:#e03131; --yellow:#e67700; }
+  body { font-size:11pt; line-height:1.5; }
+  .article-header::before { display:none; }
+  .article-header { padding:24px 0; }
+  .diagram-container::before { display:none; }
+  .book-card:hover { transform:none; }
+  .nav-links { display:none; }
+  .code-block { border:1px solid #dee2e6; background:#f8f9fa; }
+  .code-block pre { color:#212529; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header class="article-header">
+  <div class="header-content">
+    <div class="series-badge">Layer 0 · Code Craft · 代码工艺层</div>
+    <h1 class="article-title">The Craft Spectrum</h1>
+    <div class="article-title-cn">从整洁代码到 AI 可读代码：工艺的进化光谱</div>
+    <div class="article-meta">
+      <span class="meta-item"><span class="meta-dot" style="background:var(--cyan)"></span> Article 0.1 of 20</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--purple)"></span> ~15 min read</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--orange)"></span> 4 Source Books × 4 AI Angles</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════ BODY ═══════════════ -->
+<main class="article-body">
+
+<!-- ─── §01 CORE INSIGHT ─── -->
+<h2><span class="num">01</span> Core Insight — The Thesis</h2>
+
+<p>
+Clean Code was always about writing for human brains — reducing cognitive load so the next developer can understand, modify, and extend the code. Robert C. Martin's naming rules, the Single Responsibility Principle, small functions, and meaningful abstractions were all optimized for one consumer: the human reader.
+</p>
+<p class="cn-note">
+整洁代码始终是为人类大脑而写——降低认知负荷，让下一位开发者能理解、修改和扩展代码。Martin的命名规则、单一职责原则、小函数、有意义的抽象，全部为一个消费者优化：人类读者。
+</p>
+
+<p>
+Here is the surprising twist of the AI era: <strong>these same principles become even more critical, not less</strong>. AI coding assistants — Claude Code, Copilot, Cursor — produce dramatically better output when the surrounding codebase follows consistent, well-structured patterns. A messy codebase doesn't just slow down human developers; it degrades AI-assisted productivity in measurable ways. Industry benchmarks from GitHub and DORA consistently show that well-structured repositories see significantly higher AI-assisted review throughput and lower defect introduction rates compared to poorly organized codebases.
+</p>
+<p class="cn-note">
+AI时代的惊人转折：这些原则变得更加重要，而非更不重要。AI编码助手在整洁代码库中的表现显著优于混乱代码库。GitHub和DORA的行业基准一致显示，结构良好的仓库在AI辅助审查吞吐量和缺陷引入率方面明显优于组织混乱的代码库。
+</p>
+
+<div class="insight-box">
+  <div class="label">The Reframing 核心重构</div>
+  <p style="margin:0; font-size:15px; line-height:1.7">
+    <strong>Your code is a prompt.</strong> When an AI agent reads your codebase to generate new code, fix a bug, or answer a question, it treats your existing code as context. Functions with clear contracts, typed parameters, and doc-comments are well-written prompts. Code that follows SOLID is inherently more AI-navigable because it has clear boundaries and single responsibilities. The craft is evolving from "write code humans can read" to "write code that both humans AND AI agents can reason about."
+  </p>
+</div>
+<p class="cn-note">
+你的代码就是提示词。当AI代理阅读你的代码库时，它把现有代码当作上下文。遵循SOLID原则的代码天然更易被AI导航。工艺正从"写人类能读的代码"进化为"写人类和AI都能推理的代码"。
+</p>
+
+<!-- HERO DIAGRAM: THE CRAFT SPECTRUM -->
+<div class="diagram-container">
+  <div class="diagram-label">◆ Hero Diagram — The Craft Spectrum</div>
+  <svg viewBox="0 0 800 290" xmlns="http://www.w3.org/2000/svg" style="width:100%; font-family:'JetBrains Mono',monospace;">
+    <defs>
+      <linearGradient id="spectrumGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="var(--rose,#f43f5e)"/>
+        <stop offset="20%" stop-color="var(--orange,#f97316)"/>
+        <stop offset="40%" stop-color="var(--yellow,#eab308)"/>
+        <stop offset="60%" stop-color="var(--cyan,#22d3ee)"/>
+        <stop offset="80%" stop-color="var(--purple,#a78bfa)"/>
+        <stop offset="100%" stop-color="var(--green,#10b981)"/>
+      </linearGradient>
+    </defs>
+    <!-- Spectrum bar -->
+    <rect x="40" y="48" width="720" height="8" rx="4" fill="url(#spectrumGrad)" opacity="0.7"/>
+    <!-- Era labels -->
+    <text x="200" y="30" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)" font-weight="500" letter-spacing="1">PRE-AI ERA 前AI时代</text>
+    <line x1="360" y1="20" x2="360" y2="56" stroke="var(--text-dim,#64748b)" stroke-width="1" stroke-dasharray="3,3"/>
+    <text x="580" y="30" text-anchor="middle" font-size="9" fill="var(--cyan,#22d3ee)" font-weight="500" letter-spacing="1">AI-AUGMENTED ERA AI增强时代</text>
+
+    <!-- 6 Stage Cards — using CSS variables -->
+    <rect x="20" y="72" width="110" height="110" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--rose,#f43f5e)" stroke-width="1.2"/>
+    <circle cx="75" cy="90" r="11" fill="none" stroke="var(--rose,#f43f5e)" stroke-width="1.5"/>
+    <text x="75" y="94" text-anchor="middle" font-size="11" fill="var(--rose,#f43f5e)" font-weight="700">1</text>
+    <text x="75" y="112" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Spaghetti</text>
+    <text x="75" y="126" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">意大利面条</text>
+    <text x="75" y="144" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">No structure</text>
+    <text x="75" y="155" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">God classes</text>
+    <text x="75" y="173" text-anchor="middle" font-size="7" fill="var(--rose,#f43f5e)">AI fails here ✗</text>
+
+    <rect x="150" y="72" width="110" height="110" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--orange,#f97316)" stroke-width="1.2"/>
+    <circle cx="205" cy="90" r="11" fill="none" stroke="var(--orange,#f97316)" stroke-width="1.5"/>
+    <text x="205" y="94" text-anchor="middle" font-size="11" fill="var(--orange,#f97316)" font-weight="700">2</text>
+    <text x="205" y="112" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Readable</text>
+    <text x="205" y="126" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">可读的</text>
+    <text x="205" y="144" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Good naming</text>
+    <text x="205" y="155" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Consistent style</text>
+    <text x="205" y="173" text-anchor="middle" font-size="7" fill="var(--orange,#f97316)">AI struggles △</text>
+
+    <rect x="280" y="72" width="110" height="110" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--yellow,#eab308)" stroke-width="1.2"/>
+    <circle cx="335" cy="90" r="11" fill="none" stroke="var(--yellow,#eab308)" stroke-width="1.5"/>
+    <text x="335" y="94" text-anchor="middle" font-size="11" fill="var(--yellow,#eab308)" font-weight="700">3</text>
+    <text x="335" y="112" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Clean</text>
+    <text x="335" y="126" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">整洁的</text>
+    <text x="335" y="144" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">SOLID, SRP</text>
+    <text x="335" y="155" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Small functions</text>
+    <text x="335" y="173" text-anchor="middle" font-size="7" fill="var(--yellow,#eab308)">AI works well ○</text>
+
+    <rect x="410" y="72" width="110" height="110" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1.2"/>
+    <circle cx="465" cy="90" r="11" fill="none" stroke="var(--cyan,#22d3ee)" stroke-width="1.5"/>
+    <text x="465" y="94" text-anchor="middle" font-size="11" fill="var(--cyan,#22d3ee)" font-weight="700">4</text>
+    <text x="465" y="112" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Self-Doc</text>
+    <text x="465" y="126" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">自文档化</text>
+    <text x="465" y="144" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Intent-revealing</text>
+    <text x="465" y="155" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Typed contracts</text>
+    <text x="465" y="173" text-anchor="middle" font-size="7" fill="var(--cyan,#22d3ee)">AI excels here ◉</text>
+
+    <rect x="540" y="72" width="110" height="110" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--purple,#a78bfa)" stroke-width="1.2"/>
+    <circle cx="595" cy="90" r="11" fill="none" stroke="var(--purple,#a78bfa)" stroke-width="1.5"/>
+    <text x="595" y="94" text-anchor="middle" font-size="11" fill="var(--purple,#a78bfa)" font-weight="700">5</text>
+    <text x="595" y="112" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">AI-Parseable</text>
+    <text x="595" y="126" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">AI可解析</text>
+    <text x="595" y="144" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">.ai/ context dir</text>
+    <text x="595" y="155" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">OpenAPI specs</text>
+    <text x="595" y="173" text-anchor="middle" font-size="7" fill="var(--purple,#a78bfa)">AI-first design ◉◉</text>
+
+    <rect x="670" y="72" width="110" height="110" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="1.2"/>
+    <circle cx="725" cy="90" r="11" fill="none" stroke="var(--green,#10b981)" stroke-width="1.5"/>
+    <text x="725" y="94" text-anchor="middle" font-size="11" fill="var(--green,#10b981)" font-weight="700">6</text>
+    <text x="725" y="112" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">AI-Generable</text>
+    <text x="725" y="126" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">AI可生成</text>
+    <text x="725" y="144" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Intent → Code</text>
+    <text x="725" y="155" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Human validates</text>
+    <text x="725" y="173" text-anchor="middle" font-size="7" fill="var(--green,#10b981)">Full co-pilot ◉◉◉</text>
+
+    <!-- Key Insight Box -->
+    <rect x="80" y="200" width="640" height="48" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="400" y="221" text-anchor="middle" font-size="11" fill="var(--cyan,#22d3ee)" font-weight="600">KEY INSIGHT: Stages 1→3 require classical books. Stages 4→6 require the SAME principles</text>
+    <text x="400" y="237" text-anchor="middle" font-size="10" fill="var(--text-secondary,#94a3b8)">PLUS structured metadata (.ai/, ADR, OpenAPI) that AI agents can consume.</text>
+
+    <rect x="140" y="260" width="200" height="24" rx="4" fill="none" stroke="var(--text-secondary,#94a3b8)" stroke-width="1" stroke-dasharray="3,3"/>
+    <text x="240" y="276" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)">📖 Classical Books</text>
+    <text x="400" y="276" text-anchor="middle" font-size="14" fill="var(--text-dim,#64748b)">+</text>
+    <rect x="460" y="260" width="200" height="24" rx="4" fill="none" stroke="var(--cyan,#22d3ee)" stroke-width="1" stroke-dasharray="3,3"/>
+    <text x="560" y="276" text-anchor="middle" font-size="9" fill="var(--cyan,#22d3ee)">🤖 AI Context Engineering</text>
+  </svg>
+</div>
+
+
+<!-- ─── §02 CLASSICAL FOUNDATION ─── -->
+<h2><span class="num">02</span> Classical Foundation — Source Books</h2>
+
+<p>
+The Craft Spectrum's first three stages are mapped directly from four foundational books. Each attacks a different dimension of code quality, but they converge on the same core belief: <strong>complexity is the enemy, and the programmer's job is to manage it relentlessly.</strong>
+</p>
+<p class="cn-note">
+工艺光谱的前三阶段直接映射自四本基础书籍。每本攻克代码质量的不同维度，但汇聚于同一核心信念：复杂度是敌人，程序员的职责是不懈地管理它。
+</p>
+
+<div class="bookshelf">
+  <div class="book-card tier1">
+    <div class="book-title">Clean Code</div>
+    <div class="book-author">Robert C. Martin · 2008</div>
+    <div class="book-desc">The naming chapter alone is worth the read. Martin's argument: a function should do one thing, do it well, and do it only. Single-responsibility functions are natural "units of understanding" for both humans and LLMs.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · STAGES 2→3</span>
+  </div>
+  <div class="book-card tier1">
+    <div class="book-title">Code Complete, 2nd Ed</div>
+    <div class="book-author">Steve McConnell · 2004</div>
+    <div class="book-desc">The encyclopedic construction handbook. Covers variables, control structures, defensive programming, and self-documenting code. Essential for the Stage 3→4 transition where code becomes its own documentation.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · STAGES 2→4</span>
+  </div>
+  <div class="book-card tier2">
+    <div class="book-title">A Philosophy of Software Design</div>
+    <div class="book-author">John Ousterhout · 2018</div>
+    <div class="book-desc">Central thesis: the primary goal of software design is to reduce complexity. His "deep modules" concept — simple interfaces hiding complex implementations — is the exact architecture that AI agents navigate best.</div>
+    <span class="book-tag tag-practice">PRACTICE · STAGES 3→4</span>
+  </div>
+  <div class="book-card tier2">
+    <div class="book-title">The Art of Readable Code</div>
+    <div class="book-author">Boswell & Foucher · 2011</div>
+    <div class="book-desc">Surface-level readability: how to name variables, format comments, simplify control flow. These micro-decisions compound — readable code is the precondition for everything above Stage 2.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · STAGES 1→2</span>
+  </div>
+</div>
+
+<!-- Issue #5 fix: synthesis bridge paragraph -->
+<p>
+What unites these four books is a shared conviction that code is read far more often than it is written. Martin focuses on the function level, McConnell on the construction process, Ousterhout on the module level, and Boswell on the line level. Together they cover the full "zoom stack" from individual variable names to system-level interfaces. The Craft Spectrum extends this stack upward by asking: if code is read by AI agents thousands of times per day, do the same readability principles hold? The answer, as we'll see in the next section, is emphatically yes — and then some.
+</p>
+<p class="cn-note">
+这四本书的共同信念：代码被阅读的次数远超被编写的次数。Martin聚焦函数级，McConnell聚焦构造过程，Ousterhout聚焦模块级，Boswell聚焦行级——共同覆盖从变量名到系统接口的完整"缩放栈"。工艺光谱向上扩展这个栈：如果代码每天被AI代理读取数千次，同样的可读性原则是否成立？答案是毫不含糊的"是"——而且更多。
+</p>
+
+
+<!-- ─── §03 AI CO-EVOLUTION ─── -->
+<h2><span class="num">03</span> AI Co-Evolution — Four Angles</h2>
+
+<p>
+The leap from Stage 3 (Clean) to Stage 6 (AI-Generatable) isn't about discarding classical principles — it's about extending them. Each angle below follows a strict micro-format: one classical principle, one AI-era extension, one concrete example.
+</p>
+<p class="cn-note">
+从阶段3到阶段6的跨越不是丢弃经典原则，而是扩展它们。以下每个角度遵循严格的微格式：一个经典原则、一个AI时代延伸、一个具体示例。
+</p>
+
+<!-- ANGLE A -->
+<h3>Angle A · AI as Code Reviewer — AI作为代码审查者</h3>
+
+<p>
+<strong>Classical principle:</strong> Code review is the single most effective defect-detection practice (McConnell, <em>Code Complete</em> Ch. 21). The reviewer's ability to find bugs is proportional to their understanding of the codebase's structure and intent.
+</p>
+
+<p>
+<strong>AI extension:</strong> When the reviewer is an LLM, that "understanding" depends on how parseable the code is. AI review quality is a function of codebase quality — a non-linear relationship where the gap between AI and human effectiveness narrows dramatically as code cleanliness improves. In practice, teams report that AI-assisted reviews in well-structured repositories catch issues that even senior reviewers miss, while in messy codebases the same tools generate noisy, unhelpful feedback.
+</p>
+
+<p>
+<strong>Concrete example:</strong> A three-pass AI review gate — Pass 1: SonarQube static analysis for known code smells; Pass 2: LLM-driven requirements traceability (does this PR address what the ticket asked?); Pass 3: LLM best-practices audit against SOLID/DRY/KISS/YAGNI — producing an APPROVED or BLOCKED verdict. This gate works precisely because it assumes a reasonably clean codebase as input.
+</p>
+<p class="cn-note">
+经典原则：代码审查是最有效的缺陷检测实践。AI延伸：AI审查质量是代码库质量的函数，非线性关系。具体示例：三遍AI审查门控——SonarQube静态分析 + LLM需求可追溯性 + LLM最佳实践审计——产出APPROVED/BLOCKED判定。
+</p>
+
+<!-- ANGLE B -->
+<h3>Angle B · Prompt-Friendly Code Patterns — 对AI友好的代码模式</h3>
+
+<p>
+<strong>Classical principle:</strong> Functions should have clear contracts — defined inputs, defined outputs, no side effects (Martin, <em>Clean Code</em> Ch. 3). Typed parameters and return types serve as machine-checkable documentation (Ousterhout, "deep modules").
+</p>
+
+<p>
+<strong>AI extension:</strong> These same contracts are literally prompts. When an AI agent generates a new method, it uses the existing function signatures, type definitions, and doc-comments as context. The more explicit and typed your codebase is, the less the AI has to guess — and guessing is where hallucinations happen.
+</p>
+
+<div class="code-block" data-lang="Java — Before vs After">
+<pre><span class="cm">// ✗ STAGE 1-2: AI must guess intent from ambiguous parameters</span>
+<span class="kw">public</span> <span class="tp">Object</span> <span class="fn">process</span>(<span class="tp">Map</span> data, <span class="tp">int</span> flag) {
+    <span class="kw">if</span> (flag == <span class="str">1</span>) { <span class="cm">/* 200 lines of mixed logic */</span> }
+    <span class="kw">else if</span> (flag == <span class="str">2</span>) { <span class="cm">/* 150 lines of different logic */</span> }
+    <span class="kw">return</span> result;
+}
+
+<span class="cm">// ✓ STAGE 4-5: AI reads typed input, typed output, clear intent</span>
+<span class="ann">@Operation</span>(summary = <span class="str">"Issue a tax document to the national tax authority"</span>)
+<span class="kw">public</span> <span class="tp">TaxDocumentResponse</span> <span class="fn">issueTaxDocument</span>(
+    <span class="ann">@Valid</span> <span class="tp">TaxDocumentRequest</span> request,  <span class="cm">// typed DTO with validation</span>
+    <span class="ann">@PathVariable</span> <span class="tp">CountryCode</span> country   <span class="cm">// bounded enum, not raw String</span>
+) <span class="kw">throws</span> <span class="tp">TaxAuthorityException</span> {
+    <span class="kw">return</span> taxDocumentService.<span class="fn">issue</span>(request, country);
+}</pre>
+</div>
+<p class="cn-note">
+经典原则：函数应有清晰的契约。AI延伸：这些契约就是提示词——类型越显式，AI猜测越少，幻觉越少。上方代码对比展示了从模糊参数到类型化DTO的转变。
+</p>
+
+<!-- ANGLE C -->
+<h3>Angle C · The .ai/ Context Directory — .ai/ 上下文目录</h3>
+
+<p>
+<strong>Classical principle:</strong> Architecture decisions should be documented close to the code (the ADR pattern from Nygard; the "self-documenting" ideal from McConnell). Tacit knowledge in developers' heads is a project risk.
+</p>
+
+<p>
+<strong>AI extension:</strong> Stage 5 (AI-Parseable) introduces structured project metadata that AI agents consume before every code generation task. The <code>.ai/</code> directory at the project root transforms tacit architectural knowledge into machine-readable context — including <code>architecture.md</code> (system overview), <code>conventions.md</code> (naming and error patterns), <code>adr/</code> (decision records), <code>rfc/</code> (design proposals), <code>domain-glossary.md</code> (ubiquitous language per bounded context), and <code>prompts/</code> (reusable task templates like <code>generate-crud-endpoint.md</code>). When Claude Code or Cursor opens your project, <code>.ai/</code> is the "system prompt" for your codebase.
+</p>
+<p class="cn-note">
+经典原则：架构决策应就近代码文档化（ADR模式）。AI延伸：阶段5引入.ai/目录——项目根目录下的结构化元数据集，将隐性架构知识转化为AI代理每次代码生成前阅读的机器可读上下文。
+</p>
+
+<!-- ANGLE D -->
+<h3>Angle D · From Linter to AI Gate — 从代码检查器到AI门控</h3>
+
+<p>
+<strong>Classical principle:</strong> Quality enforcement should be automated and continuous (Humble & Farley, <em>Continuous Delivery</em>). Every manual step is a step that gets skipped under deadline pressure.
+</p>
+
+<p>
+<strong>AI extension:</strong> The quality toolchain has evolved through six generations. Each generation layers on top of the previous — Gen 5 still runs SonarQube (Gen 3). The classical foundation (clean code, SOLID principles, code smell catalogs) is the "training data" that makes AI review effective. Without Martin's code smell vocabulary, the AI has no language for what "bad code" looks like.
+</p>
+
+<div class="evolution-steps">
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--text-dim)">Gen 1 — Manual Code Review (1970s-1990s)</div>
+    <div class="evo-step-desc">Fagan inspections, walkthroughs. Effective but unscalable.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--text-secondary)">Gen 2 — Linters & Style Checkers (2000s)</div>
+    <div class="evo-step-desc">Checkstyle, PMD, ESLint. Fast but shallow — catches formatting, not design flaws.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--cyan-dim)">Gen 3 — Static Analysis Platforms (2010s)</div>
+    <div class="evo-step-desc">SonarQube, SpotBugs. Deeper: complexity metrics, security vulnerabilities. Still rule-based.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--purple)">Gen 4 — AI-Assisted Review (2023-2025)</div>
+    <div class="evo-step-desc">Copilot Code Review, CodeRabbit. LLMs that understand intent. Often noisy without project context.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--cyan)">Gen 5 — Context-Aware AI Quality Gates (2025→)</div>
+    <div class="evo-step-desc">Multi-pass review with project context: static analysis + LLM requirements traceability + best-practices audit. Reads <code>.ai/</code> for architecture context. One production implementation: the <code>code-review-gate</code> pattern.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--green)">Gen 6 — Autonomous Quality Monitoring (2026→)</div>
+    <div class="evo-step-desc">Nightly headless AI audits, SARIF aggregation across multiple scanners, weighted scoring, push notifications. Continuous quality signal, not just per-PR checks.</div>
+  </div>
+</div>
+<p class="cn-note">
+经典原则：质量执行应自动化且持续。AI延伸：质量工具链已进化六代，每代叠加其上。经典基础是使AI审查有效的"训练数据"——这些书没有过时，它们是AI代理的训练课程。
+</p>
+
+
+<!-- ─── §04 DECISION TABLE ─── -->
+<h2><span class="num">04</span> Decision Table — When to Apply What</h2>
+
+<p>
+For the practicing architect, the question is always: "What do I do Monday morning?" This table maps common code craft scenarios to both approaches, showing how they complement rather than replace each other.
+</p>
+<p class="cn-note">
+决策表将常见场景映射到经典方法和AI增强方法，展示两者如何互补而非替代。
+</p>
+
+<table class="decision-table">
+  <thead>
+    <tr>
+      <th class="col-scenario">Scenario 场景</th>
+      <th class="col-classic"><span class="classic-badge">CLASSIC</span> Classical Approach</th>
+      <th class="col-ai"><span class="ai-badge">AI+</span> AI-Augmented Approach</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="col-scenario">Naming<br><small style="color:var(--text-dim)">命名规范</small></td>
+      <td>Team style guide + PR review + Checkstyle rules.</td>
+      <td>Style guide in <code>.ai/conventions.md</code>. AI auto-suggests names; AI gate flags violations with rationale.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Code Smells<br><small style="color:var(--text-dim)">代码异味</small></td>
+      <td>SonarQube rule sets. Periodic "tech debt" sprints.</td>
+      <td>SonarQube + LLM semantic analysis. AI classifies by severity AND business impact. Auto-prioritized backlog.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Refactoring<br><small style="color:var(--text-dim)">重构</small></td>
+      <td>Manual, IDE-assisted. Guided by Fowler's catalog.</td>
+      <td>AI proposes refactoring citing Fowler pattern. Human approves; AI executes + generates characterization tests.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Documentation<br><small style="color:var(--text-dim)">文档</small></td>
+      <td>Javadoc/JSDoc manually written. Often stale.</td>
+      <td>AI-generated from code + human refinement. ADRs in <code>.ai/adr/</code>. AI detects doc-code drift.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">New Feature<br><small style="color:var(--text-dim)">新功能开发</small></td>
+      <td>Developer writes from scratch. Senior reviews.</td>
+      <td>Developer describes intent. AI scaffolds from <code>.ai/</code> conventions. Human refines. AI generates tests.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Onboarding<br><small style="color:var(--text-dim)">新人上手</small></td>
+      <td>Read wiki. Shadow a senior. Ask in Slack.</td>
+      <td>New dev queries AI (reads <code>.ai/</code> context). AI explains functions, traces call chains, generates Mermaid diagrams.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- ─── §05 PRACTICAL CHECKLIST (issue #6: HTML not SVG) ─── -->
+<h2><span class="num">05</span> Practical Checklist — Elevating Your Codebase</h2>
+
+<p>
+To move your codebase along the Craft Spectrum, here is a concrete action checklist. Each item is tagged by stage. Start from your current stage; don't skip.
+</p>
+<p class="cn-note">
+按阶段标注的具体行动清单。从你当前阶段开始，不要跳过。
+</p>
+
+<div class="checklist">
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Enforce consistent formatting (Prettier / Spotless)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Establish naming conventions document
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    SonarQube quality gate in CI (block on new smells)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Refactor God classes (target max 200 LOC)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Apply SOLID — start with SRP and DIP
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    Add typed request/response DTOs to all APIs
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    Write ADRs for every major architecture decision
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    OpenAPI annotations on all API methods
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Create <code>.ai/</code> directory with architecture.md
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Domain glossary per bounded context
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    AI code-review-gate in CI pipeline
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    Nightly headless AI quality audit
+  </div>
+</div>
+
+
+<!-- ─── §06 TAKEAWAY ─── -->
+<h2><span class="num">06</span> The Architect's Takeaway</h2>
+
+<p>
+The books on your shelf — Clean Code, Code Complete, A Philosophy of Software Design — are not relics of the pre-AI era. They are the foundation that makes AI augmentation possible. An architect who has internalized Martin's code smell catalog can evaluate AI-generated code with judgment that no automated tool can replicate. An architect who understands Ousterhout's "deep modules" can design systems where AI agents operate within well-defined boundaries, producing reliable output.
+</p>
+<p class="cn-note">
+书架上的书不是前AI时代的遗物——它们是使AI增强成为可能的基础。内化了Martin代码异味目录的架构师能以自动化工具无法复制的判断力评估AI生成的代码。
+</p>
+
+<p>
+The Craft Spectrum is not about choosing between classical and AI-augmented — it's about recognizing that they form a single continuum. Stage 6 is unreachable without first achieving Stage 3. The path forward is both: read the books AND build the <code>.ai/</code> directory. Write clean code AND engineer your project context for AI consumption. The craft evolves, but the craftsman's instinct — the relentless pursuit of clarity over cleverness — remains the same.
+</p>
+<p class="cn-note">
+工艺光谱不是在两者之间选择——而是认识到它们是一个连续体。阶段6没有先达到阶段3是不可及的。前进的道路是两者兼得。工艺在进化，但工匠的本能——对清晰胜于聪明的不懈追求——始终不变。
+</p>
+
+<div class="insight-box" style="margin-top:40px;">
+  <div class="label">Next in Series → Article 0.2</div>
+  <p style="margin:0; font-size:14px; line-height:1.6">
+    <strong>AI-Era Refactoring: Machines Propose, Humans Dispose</strong> — How Fowler's refactoring catalog, Feathers' characterization tests, and Tornhill's behavioral code analysis combine with AI-powered hotspot detection and automated test generation to transform legacy codebases.
+    <br><span style="color:var(--text-dim); font-style:italic; font-family:'Noto Serif SC',serif;">下一篇：AI时代的重构——机器提议，人类决策。</span>
+  </p>
+</div>
+
+</main>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="article-footer">
+  <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim)">
+    Software Knowledge Base · Layer 0: Code Craft · Article 0.1 of 20<br>
+    Classical Foundations × AI Co-Evolution · 经典基础 × AI协同进化
+  </div>
+  <div class="nav-links">
+    <!-- TODO: Replace with actual paths when series index exists -->
+    <span style="color:var(--text-dim); font-size:12px">← Series Home</span>
+    <a class="nav-link" href="./0.2-ai-era-refactoring.html">Next: 0.2 AI-Era Refactoring →</a>
+  </div>
+</footer>
+
+</body>
+</html>
