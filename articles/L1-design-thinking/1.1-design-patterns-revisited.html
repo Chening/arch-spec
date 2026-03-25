@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1.1 Design Patterns Revisited — Which Survive the AI Transition?</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<!--
+  CSS Architecture Note:
+  The canonical design system lives in templates/article-base.css.
+  For single-file distribution, it is inlined here.
+  When editing styles, update article-base.css first, then re-inline.
+-->
+<style>
+/* ═══ INLINED FROM templates/article-base.css ═══ */
+:root {
+  --bg-deep: #0a0e17;
+  --bg-surface: #0f1420;
+  --bg-card: #141b2d;
+  --bg-card-hover: #1a2340;
+  --border: #1e2a45;
+  --border-accent: #2d4a7a;
+  --cyan: #22d3ee;
+  --cyan-dim: #0e7490;
+  --cyan-glow: rgba(34, 211, 238, 0.15);
+  --purple: #a78bfa;
+  --purple-dim: #6d5dbb;
+  --purple-glow: rgba(167, 139, 250, 0.12);
+  --orange: #f97316;
+  --orange-glow: rgba(249, 115, 22, 0.12);
+  --green: #10b981;
+  --green-glow: rgba(16, 185, 129, 0.12);
+  --rose: #f43f5e;
+  --rose-glow: rgba(244, 63, 94, 0.12);
+  --yellow: #eab308;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg-deep); color:var(--text-primary); font-family:'IBM Plex Sans',sans-serif; line-height:1.75; font-size:16px; -webkit-font-smoothing:antialiased; }
+.article-header { position:relative; padding:80px 0 60px; overflow:hidden; border-bottom:1px solid var(--border); }
+.article-header::before { content:''; position:absolute; top:0;left:0;right:0;bottom:0; background:radial-gradient(ellipse 800px 400px at 20% 50%,rgba(34,211,238,0.06),transparent),radial-gradient(ellipse 600px 300px at 80% 30%,rgba(167,139,250,0.04),transparent); }
+.header-content { position:relative; max-width:860px; margin:0 auto; padding:0 32px; }
+.series-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--cyan); border:1px solid var(--cyan-dim); padding:4px 12px; border-radius:3px; margin-bottom:20px; background:var(--cyan-glow); }
+.article-title { font-family:'JetBrains Mono',monospace; font-size:36px; font-weight:700; line-height:1.25; color:var(--text-primary); margin-bottom:8px; }
+.article-title-cn { font-family:'Noto Serif SC',serif; font-size:20px; font-weight:400; color:var(--text-dim); font-style:italic; margin-bottom:24px; }
+.article-meta { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-dim); display:flex; gap:24px; flex-wrap:wrap; }
+.meta-item { display:flex; align-items:center; gap:6px; }
+.meta-dot { width:6px; height:6px; border-radius:50%; }
+.article-body { max-width:860px; margin:0 auto; padding:48px 32px; }
+h2 { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:var(--cyan); margin:56px 0 8px; padding-bottom:12px; border-bottom:1px solid var(--border); letter-spacing:-0.5px; }
+.article-body > h2:first-child { margin-top:0; }
+h2 .num { color:var(--text-dim); font-weight:400; margin-right:8px; }
+h3 { font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; color:var(--purple); margin:36px 0 12px; }
+p { margin-bottom:18px; color:var(--text-primary); font-size:15.5px; }
+.cn-note { font-family:'Noto Serif SC',serif; font-style:italic; color:var(--text-dim); font-size:14px; line-height:1.8; margin:-8px 0 24px; padding-left:16px; border-left:2px solid var(--border); }
+code { font-family:'JetBrains Mono',monospace; font-size:0.88em; background:rgba(34,211,238,0.08); padding:2px 6px; border-radius:3px; color:var(--cyan); }
+.diagram-container { margin:40px -16px; padding:32px 24px; background:var(--bg-surface); border:1px solid var(--border); border-radius:8px; position:relative; overflow-x:auto; }
+.diagram-container::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--cyan),var(--purple),var(--orange)); }
+.diagram-label { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:20px; }
+.diagram-sublabel { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-dim); margin-top:-16px; margin-bottom:16px; font-style:italic; }
+.bookshelf { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin:24px 0; align-items:stretch; }
+.book-card { background:var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:16px; transition:all 0.25s ease; position:relative; overflow:hidden; min-height:190px; display:flex; flex-direction:column; }
+.book-card::before { content:''; position:absolute; left:0;top:0;bottom:0; width:3px; }
+.book-card.tier1::before { background:var(--cyan); }
+.book-card.tier2::before { background:var(--purple); }
+.book-card:hover { border-color:var(--border-accent); background:var(--bg-card-hover); transform:translateY(-2px); }
+.book-title { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:4px; line-height:1.4; }
+.book-author { font-size:11px; color:var(--text-dim); }
+.book-desc { font-size:12px; color:var(--text-secondary); margin-top:8px; line-height:1.5; flex:1; }
+.book-tag { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:2px 6px; border-radius:3px; margin-top:8px; letter-spacing:0.5px; }
+.tag-foundation { background:rgba(34,211,238,0.1); color:var(--cyan); border:1px solid rgba(34,211,238,0.2); }
+.tag-practice { background:rgba(167,139,250,0.1); color:var(--purple); border:1px solid rgba(167,139,250,0.2); }
+.decision-table { width:100%; border-collapse:collapse; margin:24px 0; font-size:13px; }
+.decision-table th { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; text-align:left; padding:12px 16px; border-bottom:2px solid var(--border-accent); color:var(--text-secondary); background:var(--bg-surface); }
+.decision-table td { padding:12px 16px; border-bottom:1px solid var(--border); color:var(--text-primary); vertical-align:top; line-height:1.5; }
+.decision-table tr:hover td { background:rgba(34,211,238,0.03); }
+.decision-table .col-scenario { width:22%; font-weight:500; color:var(--text-secondary); }
+.decision-table .col-classic { width:39%; }
+.decision-table .col-ai { width:39%; }
+.classic-badge,.ai-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:1px 5px; border-radius:2px; margin-right:4px; vertical-align:middle; }
+.classic-badge { background:rgba(148,163,184,0.15); color:var(--text-secondary); }
+.ai-badge { background:rgba(34,211,238,0.12); color:var(--cyan); }
+.checklist { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:24px 0; }
+.check-item { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:5px; font-size:13px; color:var(--text-primary); line-height:1.4; transition:border-color 0.2s; }
+.check-item:hover { border-color:var(--border-accent); }
+.check-stage { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:600; padding:2px 7px; border-radius:3px; white-space:nowrap; flex-shrink:0; }
+.insight-box { margin:32px 0; padding:24px; background:linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04)); border:1px solid var(--border-accent); border-radius:8px; position:relative; }
+.insight-box::before { content:'⚡'; position:absolute; top:-12px; left:20px; background:var(--bg-deep); padding:0 8px; font-size:18px; }
+.insight-box .label { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--cyan); margin-bottom:8px; }
+.code-block { background:#0d1117; border:1px solid var(--border); border-radius:6px; padding:20px; margin:20px 0; overflow-x:auto; position:relative; }
+.code-block::before { content:attr(data-lang); position:absolute; top:8px; right:12px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-dim); letter-spacing:0.5px; }
+.code-block pre { font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.6; color:var(--text-secondary); }
+.code-block .kw { color:var(--purple); }
+.code-block .fn { color:var(--cyan); }
+.code-block .str { color:var(--green); }
+.code-block .cm { color:var(--text-dim); font-style:italic; }
+.code-block .ann { color:var(--orange); }
+.code-block .tp { color:var(--yellow); }
+.evolution-steps { position:relative; padding-left:32px; margin:28px 0; }
+.evolution-steps::before { content:''; position:absolute; left:11px; top:8px; bottom:8px; width:2px; background:linear-gradient(to bottom,var(--cyan),var(--purple),var(--orange)); }
+.evo-step { position:relative; margin-bottom:24px; padding-left:20px; }
+.evo-step::before { content:''; position:absolute; left:-25px; top:8px; width:10px; height:10px; border-radius:50%; border:2px solid; }
+.evo-step:nth-child(1)::before { border-color:var(--text-dim); background:var(--bg-deep); }
+.evo-step:nth-child(2)::before { border-color:var(--text-secondary); background:var(--bg-deep); }
+.evo-step:nth-child(3)::before { border-color:var(--cyan-dim); background:var(--bg-deep); }
+.evo-step:nth-child(4)::before { border-color:var(--purple); background:var(--bg-deep); }
+.evo-step:nth-child(5)::before { border-color:var(--cyan); background:var(--cyan); }
+.evo-step:nth-child(6)::before { border-color:var(--green); background:var(--green); }
+.evo-step-title { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; margin-bottom:4px; }
+.evo-step-desc { font-size:13.5px; color:var(--text-secondary); line-height:1.6; }
+.article-footer { max-width:860px; margin:0 auto; padding:40px 32px; border-top:1px solid var(--border); font-size:12px; color:var(--text-dim); }
+.nav-links { display:flex; justify-content:space-between; align-items:center; margin-top:20px; }
+.nav-link { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--cyan); text-decoration:none; padding:8px 16px; border:1px solid var(--border); border-radius:4px; transition:all 0.2s; }
+.nav-link:hover { border-color:var(--cyan); background:var(--cyan-glow); }
+@media (max-width:640px) {
+  .article-title { font-size:24px; }
+  .bookshelf { grid-template-columns:1fr; }
+  .checklist { grid-template-columns:1fr; }
+  .article-meta { flex-direction:column; gap:8px; }
+}
+@media print {
+  :root { --bg-deep:#fff; --bg-surface:#f8f9fa; --bg-card:#f1f3f5; --bg-card-hover:#f1f3f5; --border:#dee2e6; --border-accent:#adb5bd; --text-primary:#212529; --text-secondary:#495057; --text-dim:#868e96; --cyan:#0c8599; --purple:#7048e8; --orange:#e8590c; --green:#099268; --rose:#e03131; --yellow:#e67700; }
+  body { font-size:11pt; line-height:1.5; }
+  .article-header::before { display:none; }
+  .article-header { padding:24px 0; }
+  .diagram-container::before { display:none; }
+  .book-card:hover { transform:none; }
+  .nav-links { display:none; }
+  .code-block { border:1px solid #dee2e6; background:#f8f9fa; }
+  .code-block pre { color:#212529; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header class="article-header">
+  <div class="header-content">
+    <div class="series-badge" style="color:var(--purple); border-color:var(--purple-dim); background:var(--purple-glow);">Layer 1 · Design Thinking · 设计思维层</div>
+    <h1 class="article-title">Design Patterns Revisited</h1>
+    <div class="article-title-cn">设计模式再审视：哪些在AI时代存活？</div>
+    <div class="article-meta">
+      <span class="meta-item"><span class="meta-dot" style="background:var(--cyan)"></span> Article 1.1 of 20</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--purple)"></span> ~20 min read</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--orange)"></span> 3 Source Books × 4 AI Angles</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════ BODY ═══════════════ -->
+<main class="article-body">
+
+<!-- ─── §01 CORE INSIGHT ─── -->
+<h2><span class="num">01</span> Core Insight — The Thesis</h2>
+
+<p>
+In 1994, the Gang of Four published a catalog of 23 design patterns that became the shared vocabulary of object-oriented software engineering. For three decades, architects have debated which patterns to use, when to apply them, and when they introduce unnecessary indirection. Now the AI era forces a fresh reckoning: of those 23 patterns, which ones become <em>more</em> relevant when your system includes AI agents, and which ones quietly fade into irrelevance?
+</p>
+<p class="cn-note">
+1994年，四人帮发布了23种设计模式的目录，成为面向对象软件工程的共享词汇。三十年来，架构师们一直在辩论何时使用哪种模式。AI时代迫使我们重新审视：这23种模式中，哪些在系统包含AI代理时变得更相关，哪些悄然失去意义？
+</p>
+
+<p>
+The answer is not "patterns are obsolete" — that is the shallow take. The deeper truth is that <strong>design patterns are the structural vocabulary that AI systems are built with.</strong> Strategy pattern is how you swap AI models. Observer pattern is how domain events trigger AI agents. Chain of Responsibility is how multi-agent pipelines process requests. Factory pattern is how you generate structured AI outputs. The GoF patterns are not relics — they are load-bearing walls in AI architecture.
+</p>
+<p class="cn-note">
+答案不是"模式已过时"——这是浅层理解。更深层的真相是：设计模式是构建AI系统的结构性词汇。Strategy模式用于切换AI模型，Observer模式让领域事件触发AI代理，Chain of Responsibility是多代理管道的骨架。GoF模式不是遗物——它们是AI架构的承重墙。
+</p>
+
+<div class="insight-box">
+  <div class="label">The Reframing 核心重构</div>
+  <p style="margin:0; font-size:15px; line-height:1.7">
+    <strong>Patterns don't die — they migrate.</strong> The GoF patterns were solutions to recurring problems in object-oriented systems. AI systems have their own recurring problems — model selection, retrieval augmentation, tool delegation, human-in-the-loop approval, multi-agent orchestration — and these problems are solved by extending classical patterns or composing new ones from the same structural primitives. The architect who knows both the classical 23 and the emerging AI-native patterns has the complete vocabulary for building systems that are half traditional code and half intelligent agents.
+  </p>
+</div>
+<p class="cn-note">
+模式不会消亡——它们会迁移。GoF模式是OO系统中重复问题的解决方案。AI系统有自己的重复问题——模型选择、检索增强、工具委托、人机协同审批、多代理编排——这些问题通过扩展经典模式或从相同结构原语组合新模式来解决。同时掌握经典23模式和新兴AI原生模式的架构师，拥有构建"半传统代码、半智能代理"系统的完整词汇表。
+</p>
+
+<!-- HERO DIAGRAM: THE PATTERN SURVIVAL LANDSCAPE -->
+<div class="diagram-container">
+  <div class="diagram-label">◆ Hero Diagram — The GoF Pattern Survival Landscape in the AI Era</div>
+  <svg viewBox="0 0 800 420" xmlns="http://www.w3.org/2000/svg" style="width:100%; font-family:'JetBrains Mono',monospace;">
+    <defs>
+      <linearGradient id="survivalGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="var(--rose,#f43f5e)"/>
+        <stop offset="33%" stop-color="var(--yellow,#eab308)"/>
+        <stop offset="66%" stop-color="var(--cyan,#22d3ee)"/>
+        <stop offset="100%" stop-color="var(--green,#10b981)"/>
+      </linearGradient>
+    </defs>
+
+    <!-- Column headers -->
+    <text x="112" y="24" text-anchor="middle" font-size="10" fill="var(--rose,#f43f5e)" font-weight="600" letter-spacing="0.5">DECLINING</text>
+    <text x="112" y="36" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Less relevant</text>
+    <text x="312" y="24" text-anchor="middle" font-size="10" fill="var(--yellow,#eab308)" font-weight="600" letter-spacing="0.5">STABLE</text>
+    <text x="312" y="36" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Same relevance</text>
+    <text x="530" y="24" text-anchor="middle" font-size="10" fill="var(--cyan,#22d3ee)" font-weight="600" letter-spacing="0.5">THRIVING</text>
+    <text x="530" y="36" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">More relevant</text>
+    <text x="720" y="24" text-anchor="middle" font-size="10" fill="var(--green,#10b981)" font-weight="600" letter-spacing="0.5">TRANSFORMED</text>
+    <text x="720" y="36" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Reborn as AI pattern</text>
+
+    <!-- Gradient bar -->
+    <rect x="20" y="48" width="760" height="6" rx="3" fill="url(#survivalGrad)" opacity="0.6"/>
+
+    <!-- Divider lines -->
+    <line x1="210" y1="48" x2="210" y2="390" stroke="var(--border,#1e2a45)" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="420" y1="48" x2="420" y2="390" stroke="var(--border,#1e2a45)" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="630" y1="48" x2="630" y2="390" stroke="var(--border,#1e2a45)" stroke-width="1" stroke-dasharray="3,3"/>
+
+    <!-- DECLINING column -->
+    <rect x="30" y="68" width="170" height="52" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--rose,#f43f5e)" stroke-width="1"/>
+    <text x="115" y="88" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Singleton</text>
+    <text x="115" y="102" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Conflicts with stateless</text>
+    <text x="115" y="112" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">AI service scaling</text>
+
+    <rect x="30" y="128" width="170" height="52" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--rose,#f43f5e)" stroke-width="1"/>
+    <text x="115" y="148" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Memento</text>
+    <text x="115" y="162" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">AI has native context</text>
+    <text x="115" y="172" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">management</text>
+
+    <rect x="30" y="188" width="170" height="52" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--rose,#f43f5e)" stroke-width="1"/>
+    <text x="115" y="208" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Visitor</text>
+    <text x="115" y="222" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">AI traversal is semantic,</text>
+    <text x="115" y="232" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">not structural</text>
+
+    <!-- STABLE column -->
+    <rect x="220" y="68" width="190" height="38" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--yellow,#eab308)" stroke-width="1"/>
+    <text x="315" y="91" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Adapter / Facade / Proxy</text>
+
+    <rect x="220" y="114" width="190" height="38" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--yellow,#eab308)" stroke-width="1"/>
+    <text x="315" y="137" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Composite / Iterator</text>
+
+    <rect x="220" y="160" width="190" height="38" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--yellow,#eab308)" stroke-width="1"/>
+    <text x="315" y="183" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Command / Builder</text>
+
+    <rect x="220" y="206" width="190" height="38" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--yellow,#eab308)" stroke-width="1"/>
+    <text x="315" y="229" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Flyweight / Bridge / Prototype</text>
+
+    <!-- THRIVING column -->
+    <rect x="430" y="68" width="190" height="52" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1.2"/>
+    <text x="525" y="88" text-anchor="middle" font-size="10" fill="var(--cyan,#22d3ee)" font-weight="600">Strategy</text>
+    <text x="525" y="102" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Pluggable AI models,</text>
+    <text x="525" y="112" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">meta-strategy selection</text>
+
+    <rect x="430" y="128" width="190" height="52" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1.2"/>
+    <text x="525" y="148" text-anchor="middle" font-size="10" fill="var(--cyan,#22d3ee)" font-weight="600">Observer</text>
+    <text x="525" y="162" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Domain event triggers</text>
+    <text x="525" y="172" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">AI agent reactions</text>
+
+    <rect x="430" y="188" width="190" height="52" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1.2"/>
+    <text x="525" y="208" text-anchor="middle" font-size="10" fill="var(--cyan,#22d3ee)" font-weight="600">Chain of Responsibility</text>
+    <text x="525" y="222" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Multi-agent pipeline,</text>
+    <text x="525" y="232" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">sequential processing</text>
+
+    <rect x="430" y="248" width="190" height="52" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1.2"/>
+    <text x="525" y="268" text-anchor="middle" font-size="10" fill="var(--cyan,#22d3ee)" font-weight="600">Factory / Template Method</text>
+    <text x="525" y="282" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Structured output generation,</text>
+    <text x="525" y="292" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">AI workflow skeletons</text>
+
+    <!-- TRANSFORMED column -->
+    <rect x="640" y="68" width="150" height="62" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="1.2"/>
+    <text x="715" y="88" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Mediator</text>
+    <text x="715" y="100" text-anchor="middle" font-size="8" fill="var(--green,#10b981)">&#8594; Orchestrator Agent</text>
+    <text x="715" y="122" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Central coordination of</text>
+
+    <rect x="640" y="142" width="150" height="62" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="1.2"/>
+    <text x="715" y="162" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">State</text>
+    <text x="715" y="174" text-anchor="middle" font-size="8" fill="var(--green,#10b981)">&#8594; Agent State Machine</text>
+    <text x="715" y="196" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">AI agent lifecycle mgmt</text>
+
+    <!-- Key Insight Box -->
+    <rect x="80" y="330" width="640" height="48" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--purple,#a78bfa)" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="400" y="351" text-anchor="middle" font-size="11" fill="var(--purple,#a78bfa)" font-weight="600">KEY INSIGHT: 23 patterns &#8594; 5 thriving, 11 stable, 3 declining, 4 transformed</text>
+    <text x="400" y="367" text-anchor="middle" font-size="10" fill="var(--text-secondary,#94a3b8)">Classical vocabulary is the foundation. AI era adds 5+ new native patterns.</text>
+
+    <!-- Legend -->
+    <rect x="140" y="393" width="12" height="12" rx="2" fill="none" stroke="var(--rose,#f43f5e)" stroke-width="1.5"/>
+    <text x="158" y="403" font-size="8" fill="var(--text-dim,#64748b)">Declining</text>
+    <rect x="240" y="393" width="12" height="12" rx="2" fill="none" stroke="var(--yellow,#eab308)" stroke-width="1.5"/>
+    <text x="258" y="403" font-size="8" fill="var(--text-dim,#64748b)">Stable</text>
+    <rect x="330" y="393" width="12" height="12" rx="2" fill="none" stroke="var(--cyan,#22d3ee)" stroke-width="1.5"/>
+    <text x="348" y="403" font-size="8" fill="var(--text-dim,#64748b)">Thriving</text>
+    <rect x="430" y="393" width="12" height="12" rx="2" fill="none" stroke="var(--green,#10b981)" stroke-width="1.5"/>
+    <text x="448" y="403" font-size="8" fill="var(--text-dim,#64748b)">Transformed</text>
+  </svg>
+</div>
+
+
+<!-- ─── §02 CLASSICAL FOUNDATION ─── -->
+<h2><span class="num">02</span> Classical Foundation — Source Books</h2>
+
+<p>
+Three books define the design patterns landscape. The GoF catalog gave us the canonical 23. Freeman and Robson made them accessible and intuitive through visual learning. Fowler extended patterns into enterprise scale, where services, repositories, and data mappers govern system boundaries. Together, they provide the complete structural vocabulary that AI-era architecture inherits and extends.
+</p>
+<p class="cn-note">
+三本书定义了设计模式的版图。GoF目录给出经典23种。Freeman和Robson通过可视化学习使其直观易懂。Fowler将模式扩展到企业规模——服务、仓储、数据映射器管理系统边界。它们共同提供了AI时代架构继承和扩展的完整结构词汇。
+</p>
+
+<div class="bookshelf">
+  <div class="book-card tier1">
+    <div class="book-title">Design Patterns: Elements of Reusable Object-Oriented Software</div>
+    <div class="book-author">Gamma, Helm, Johnson, Vlissides · 1994</div>
+    <div class="book-desc">The original 23 patterns catalog — Creational, Structural, Behavioral. Not all survive equally in the AI era: Factory and Builder thrive for structured output generation, Singleton becomes an anti-pattern for stateless AI services, and Strategy/Observer/Chain of Responsibility emerge as core agent patterns.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · THE ORIGINAL 23</span>
+  </div>
+  <div class="book-card tier1">
+    <div class="book-title">Head First Design Patterns, 2nd Edition</div>
+    <div class="book-author">Freeman & Robson · 2020</div>
+    <div class="book-desc">Makes patterns intuitive through visual, brain-friendly pedagogy. Strategy = pluggable algorithms = pluggable AI models. Observer = event-driven = AI trigger architecture. Decorator = middleware chain = AI processing pipeline. The best entry point for teams adopting pattern-based AI design.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · ACCESSIBLE PATTERNS</span>
+  </div>
+  <div class="book-card tier2">
+    <div class="book-title">Patterns of Enterprise Application Architecture</div>
+    <div class="book-author">Martin Fowler · 2002</div>
+    <div class="book-desc">Enterprise patterns — Repository, Unit of Work, Data Mapper, Service Layer — define the boundaries that AI agents interact with. Repository becomes the AI's data access interface. Service Layer becomes the AI's action boundary. These patterns are where "traditional code meets intelligent agents."</div>
+    <span class="book-tag tag-practice">PRACTICE · ENTERPRISE BOUNDARIES</span>
+  </div>
+</div>
+
+<p>
+What unites these three books is a shared insight that patterns are not about code — they are about <em>communication</em>. When a team says "we used Strategy here," every architect instantly understands the structure: an interface, multiple implementations, runtime selection. That shared vocabulary is precisely why patterns matter more in the AI era, not less. When you describe an AI system's architecture using patterns, you compress complex agent behaviors into structures that both humans and AI assistants can reason about. The GoF patterns are thirty years old and more relevant than ever — because AI systems need the same structural clarity that human teams need, only more so.
+</p>
+<p class="cn-note">
+三本书的共同洞察：模式不是关于代码——而是关于沟通。当团队说"这里用了Strategy"，每位架构师立即理解其结构。这种共享词汇正是模式在AI时代更重要的原因。用模式描述AI系统架构，能将复杂的代理行为压缩为人类和AI助手都能推理的结构。
+</p>
+
+
+<!-- ─── §03 AI CO-EVOLUTION ─── -->
+<h2><span class="num">03</span> AI Co-Evolution — Four Angles</h2>
+
+<p>
+Each angle below follows a strict micro-format: one classical principle, one AI-era extension, one concrete example. The first angle surveys the full GoF landscape; the remaining three dive deep into specific patterns that become load-bearing in AI architecture.
+</p>
+<p class="cn-note">
+以下每个角度遵循严格微格式：一个经典原则、一个AI时代延伸、一个具体示例。第一个角度总览整个GoF版图；其余三个深入探讨在AI架构中成为承重结构的特定模式。
+</p>
+
+<!-- ANGLE A -->
+<h3>Angle A · The GoF Survival Matrix — 23 Patterns in the AI Era</h3>
+
+<p>
+<strong>Classical principle:</strong> The Gang of Four organized 23 patterns into three categories — Creational (Abstract Factory, Builder, Factory Method, Prototype, Singleton), Structural (Adapter, Bridge, Composite, Decorator, Facade, Flyweight, Proxy), and Behavioral (Chain of Responsibility, Command, Interpreter, Iterator, Mediator, Memento, Observer, State, Strategy, Template Method, Visitor). Each pattern addresses a specific axis of design flexibility.
+</p>
+
+<p>
+<strong>AI extension:</strong> When AI agents become first-class participants in your system, a new classification axis emerges: how does each pattern interact with AI capabilities? Some patterns become <em>thriving</em> because they directly model AI integration concerns — Strategy for model selection, Observer for event-driven AI triggers, Chain of Responsibility for multi-agent pipelines, Factory for structured output generation, Template Method for AI workflow skeletons. Others remain <em>stable</em> — Adapter, Facade, Proxy, Composite, Iterator, Command still do exactly what they always did. A few <em>decline</em> — Singleton conflicts with the statelessness that AI services require for horizontal scaling; Memento is less relevant when AI models manage their own context windows; Visitor's structural traversal is replaced by AI's semantic understanding. And some are <em>transformed</em> — Mediator becomes the Orchestrator Agent pattern, State becomes the Agent State Machine.
+</p>
+
+<!-- Survival classification table -->
+<div class="diagram-container">
+  <div class="diagram-label">◆ GoF Survival Classification — Complete 23-Pattern Matrix</div>
+  <table style="width:100%; border-collapse:collapse; font-size:12px;">
+    <thead>
+      <tr>
+        <th style="text-align:left; padding:8px 12px; border-bottom:2px solid var(--border-accent); color:var(--text-secondary); font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.5px;">CATEGORY</th>
+        <th style="text-align:left; padding:8px 12px; border-bottom:2px solid var(--border-accent); color:var(--green); font-family:'JetBrains Mono',monospace; font-size:10px;">THRIVING</th>
+        <th style="text-align:left; padding:8px 12px; border-bottom:2px solid var(--border-accent); color:var(--yellow); font-family:'JetBrains Mono',monospace; font-size:10px;">STABLE</th>
+        <th style="text-align:left; padding:8px 12px; border-bottom:2px solid var(--border-accent); color:var(--rose); font-family:'JetBrains Mono',monospace; font-size:10px;">DECLINING</th>
+        <th style="text-align:left; padding:8px 12px; border-bottom:2px solid var(--border-accent); color:var(--cyan); font-family:'JetBrains Mono',monospace; font-size:10px;">TRANSFORMED</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding:10px 12px; border-bottom:1px solid var(--border); color:var(--text-dim); font-weight:600;">Creational</td>
+        <td style="padding:10px 12px; border-bottom:1px solid var(--border); color:var(--text-primary);">Factory Method, Abstract Factory</td>
+        <td style="padding:10px 12px; border-bottom:1px solid var(--border); color:var(--text-primary);">Builder, Prototype</td>
+        <td style="padding:10px 12px; border-bottom:1px solid var(--border); color:var(--text-primary);">Singleton</td>
+        <td style="padding:10px 12px; border-bottom:1px solid var(--border); color:var(--text-dim);">--</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 12px; border-bottom:1px solid var(--border); color:var(--text-dim); font-weight:600;">Structural</td>
+        <td style="padding:10px 12px; border-bottom:1px solid var(--border); color:var(--text-primary);">Decorator</td>
+        <td style="padding:10px 12px; border-bottom:1px solid var(--border); color:var(--text-primary);">Adapter, Bridge, Composite, Facade, Flyweight, Proxy</td>
+        <td style="padding:10px 12px; border-bottom:1px solid var(--border); color:var(--text-dim);">--</td>
+        <td style="padding:10px 12px; border-bottom:1px solid var(--border); color:var(--text-dim);">--</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 12px; border-bottom:1px solid var(--border); color:var(--text-dim); font-weight:600;">Behavioral</td>
+        <td style="padding:10px 12px; border-bottom:1px solid var(--border); color:var(--text-primary);">Strategy, Observer, Chain of Resp., Template Method</td>
+        <td style="padding:10px 12px; border-bottom:1px solid var(--border); color:var(--text-primary);">Command, Interpreter, Iterator</td>
+        <td style="padding:10px 12px; border-bottom:1px solid var(--border); color:var(--text-primary);">Memento, Visitor</td>
+        <td style="padding:10px 12px; border-bottom:1px solid var(--border); color:var(--text-primary);">Mediator, State</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+<strong>Concrete example:</strong> Consider Singleton, the most debated GoF pattern. In classical OO, Singleton guarantees one instance globally — database connection pools, configuration managers, logging services. In AI architecture, this becomes an anti-pattern. AI services need to scale horizontally, each instance stateless, behind a load balancer. A Singleton AI model wrapper means you cannot scale inference across nodes, cannot deploy canary versions, cannot A/B test models. The fix is straightforward: replace Singleton with dependency injection. The model client becomes an injectable, stateless service — same convenient access, zero scaling constraints.
+</p>
+<p class="cn-note">
+经典原则：GoF将23种模式分为创建型、结构型、行为型。AI延伸：新的分类维度出现——每种模式如何与AI能力交互？部分模式蓬勃发展（Strategy/Observer/Chain of Responsibility），部分保持稳定（Adapter/Facade/Proxy），少数衰退（Singleton/Memento/Visitor），还有些蜕变为新AI模式（Mediator成为编排代理）。具体示例：Singleton在AI时代成为反模式——用依赖注入替代，实现无状态可水平扩展。
+</p>
+
+<!-- ANGLE B -->
+<h3>Angle B · AI-Native Patterns — Five New Patterns for the AI Era</h3>
+
+<p>
+<strong>Classical principle:</strong> The Gang of Four derived their 23 patterns from recurring solutions to recurring problems. They observed what expert developers did repeatedly, gave those solutions names, and cataloged them. The methodology was empirical: patterns emerge from practice, not from theory.
+</p>
+
+<p>
+<strong>AI extension:</strong> AI systems produce their own recurring problems, and new patterns are crystallizing from the solutions that production teams converge on independently. Five AI-native patterns have reached the maturity level where they deserve names: (1) <strong>RAG Pattern</strong> — separate retrieval from generation, letting the AI reason over fetched context rather than relying solely on trained knowledge; (2) <strong>Prompt Template Pattern</strong> — parameterized prompts as reusable, versioned, testable artifacts with typed input slots; (3) <strong>Tool-Use Pattern</strong> — AI agent delegates to external tools via a structured interface, extending its capabilities beyond text generation; (4) <strong>Human-in-the-Loop Pattern</strong> — AI proposes actions, human approves or rejects, feedback loops improve proposals over time; (5) <strong>Multi-Agent Orchestration</strong> — multiple specialized agents coordinated by an orchestrator that routes tasks, aggregates results, and manages shared context.
+</p>
+
+<div class="code-block" data-lang="TypeScript — Tool-Use Pattern">
+<pre><span class="cm">// The Tool-Use Pattern: AI agent delegates to external tools</span>
+<span class="cm">// via a structured interface — extending GoF's Command pattern</span>
+
+<span class="kw">interface</span> <span class="tp">Tool</span> {
+  <span class="fn">name</span>: <span class="tp">string</span>;
+  <span class="fn">description</span>: <span class="tp">string</span>;
+  <span class="fn">parameters</span>: <span class="tp">JSONSchema</span>;
+  <span class="fn">execute</span>(args: <span class="tp">Record</span>&lt;<span class="tp">string</span>, <span class="tp">unknown</span>&gt;): <span class="tp">Promise</span>&lt;<span class="tp">ToolResult</span>&gt;;
+}
+
+<span class="cm">// Concrete tools — each is a Strategy implementation</span>
+<span class="kw">class</span> <span class="tp">DatabaseQueryTool</span> <span class="kw">implements</span> <span class="tp">Tool</span> {
+  <span class="fn">name</span> = <span class="str">"query_database"</span>;
+  <span class="fn">description</span> = <span class="str">"Execute a read-only SQL query against the analytics DB"</span>;
+  <span class="fn">parameters</span> = { query: { type: <span class="str">"string"</span> }, limit: { type: <span class="str">"number"</span> } };
+
+  <span class="kw">async</span> <span class="fn">execute</span>(args) {
+    <span class="kw">const</span> result = <span class="kw">await</span> <span class="kw">this</span>.db.<span class="fn">query</span>(args.query, { limit: args.limit });
+    <span class="kw">return</span> { success: <span class="str">true</span>, data: result.rows };
+  }
+}
+
+<span class="cm">// The Agent orchestrates tool selection and execution</span>
+<span class="kw">class</span> <span class="tp">ToolUseAgent</span> {
+  <span class="kw">constructor</span>(
+    <span class="kw">private</span> <span class="fn">model</span>: <span class="tp">AIModelStrategy</span>,    <span class="cm">// Strategy pattern!</span>
+    <span class="kw">private</span> <span class="fn">tools</span>: <span class="tp">Tool</span>[]               <span class="cm">// Tool registry</span>
+  ) {}
+
+  <span class="kw">async</span> <span class="fn">process</span>(userRequest: <span class="tp">string</span>): <span class="tp">Promise</span>&lt;<span class="tp">AgentResponse</span>&gt; {
+    <span class="kw">const</span> plan = <span class="kw">await</span> <span class="kw">this</span>.model.<span class="fn">planToolUse</span>(userRequest, <span class="kw">this</span>.tools);
+    <span class="kw">for</span> (<span class="kw">const</span> step <span class="kw">of</span> plan.steps) {
+      <span class="kw">const</span> tool = <span class="kw">this</span>.tools.<span class="fn">find</span>(t =&gt; t.name === step.toolName);
+      step.result = <span class="kw">await</span> tool.<span class="fn">execute</span>(step.args);   <span class="cm">// Command execution</span>
+    }
+    <span class="kw">return</span> <span class="kw">this</span>.model.<span class="fn">synthesize</span>(plan);  <span class="cm">// Template Method: synthesize results</span>
+  }
+}</pre>
+</div>
+
+<p>
+<strong>Concrete example:</strong> The code above shows how AI-native patterns compose classical ones. The <code>Tool</code> interface is a Command. The <code>AIModelStrategy</code> is a Strategy. The <code>process</code> method follows Template Method (plan, execute steps, synthesize). The tool registry is a Factory. None of these AI-native patterns were invented from scratch — they are compositions of GoF primitives applied to AI-specific recurring problems. This is why the classical vocabulary matters: it gives you the building blocks that AI-native patterns are assembled from.
+</p>
+<p class="cn-note">
+经典原则：GoF从重复问题的重复解决方案中提炼模式。AI延伸：AI系统产生自己的重复问题，五种AI原生模式正在结晶——RAG模式、Prompt模板模式、工具使用模式、人机协同模式、多代理编排。具体示例：上方代码展示Tool-Use模式如何组合经典GoF原语——Tool接口是Command，AIModelStrategy是Strategy，process方法遵循Template Method。AI原生模式是GoF积木的组合。
+</p>
+
+<!-- ANGLE C -->
+<h3>Angle C · Strategy Pattern as AI Model Selector — Strategy模式作为AI模型选择器</h3>
+
+<p>
+<strong>Classical principle:</strong> Strategy pattern — define a family of algorithms, encapsulate each one behind a common interface, and make them interchangeable at runtime. The client code depends on the abstraction, not the concrete algorithm. Freeman and Robson's duck simulation example makes this visceral: different fly behaviors, same Duck interface.
+</p>
+
+<p>
+<strong>AI extension:</strong> In AI systems, the "algorithm" is the model. Strategy pattern lets you swap Claude for GPT for Gemini for a local model — same interface, different implementation. But the AI era takes this further. The strategy <em>selector</em> itself can be AI-powered: a meta-strategy that analyzes the incoming request's characteristics (complexity, required latency, cost sensitivity, domain specificity) and routes to the optimal model. This creates a recursive application of the pattern — Strategy selecting Strategy — that the GoF never envisioned but their abstraction cleanly supports.
+</p>
+
+<div class="code-block" data-lang="TypeScript — Strategy Pattern for AI Model Selection">
+<pre><span class="cm">// Classical Strategy: family of interchangeable algorithms</span>
+<span class="kw">interface</span> <span class="tp">AIModelStrategy</span> {
+  <span class="fn">generate</span>(prompt: <span class="tp">string</span>, options?: <span class="tp">ModelOptions</span>): <span class="tp">Promise</span>&lt;<span class="tp">ModelResponse</span>&gt;;
+  <span class="fn">estimateCost</span>(tokens: <span class="tp">number</span>): <span class="tp">number</span>;
+  <span class="fn">maxContextWindow</span>: <span class="tp">number</span>;
+}
+
+<span class="cm">// Concrete strategies — one per model provider</span>
+<span class="kw">class</span> <span class="tp">ClaudeStrategy</span> <span class="kw">implements</span> <span class="tp">AIModelStrategy</span> {
+  <span class="fn">maxContextWindow</span> = <span class="str">200_000</span>;
+  <span class="kw">async</span> <span class="fn">generate</span>(prompt, options) { <span class="cm">/* Anthropic API call */</span> }
+  <span class="fn">estimateCost</span>(tokens) { <span class="kw">return</span> tokens * <span class="str">0.000003</span>; }
+}
+
+<span class="kw">class</span> <span class="tp">LocalLlamaStrategy</span> <span class="kw">implements</span> <span class="tp">AIModelStrategy</span> {
+  <span class="fn">maxContextWindow</span> = <span class="str">8_000</span>;
+  <span class="kw">async</span> <span class="fn">generate</span>(prompt, options) { <span class="cm">/* Local Ollama call */</span> }
+  <span class="fn">estimateCost</span>(tokens) { <span class="kw">return</span> <span class="str">0</span>; } <span class="cm">// self-hosted</span>
+}
+
+<span class="cm">// AI-powered meta-strategy: Strategy selecting Strategy</span>
+<span class="kw">class</span> <span class="tp">MetaModelSelector</span> {
+  <span class="kw">constructor</span>(<span class="kw">private</span> <span class="fn">strategies</span>: <span class="tp">Map</span>&lt;<span class="tp">string</span>, <span class="tp">AIModelStrategy</span>&gt;) {}
+
+  <span class="kw">async</span> <span class="fn">selectStrategy</span>(request: <span class="tp">TaskRequest</span>): <span class="tp">Promise</span>&lt;<span class="tp">AIModelStrategy</span>&gt; {
+    <span class="kw">if</span> (request.requiresLargeContext)  <span class="kw">return</span> <span class="kw">this</span>.strategies.<span class="fn">get</span>(<span class="str">"claude"</span>);
+    <span class="kw">if</span> (request.isCostSensitive)       <span class="kw">return</span> <span class="kw">this</span>.strategies.<span class="fn">get</span>(<span class="str">"local-llama"</span>);
+    <span class="kw">if</span> (request.needsReasoning)        <span class="kw">return</span> <span class="kw">this</span>.strategies.<span class="fn">get</span>(<span class="str">"claude"</span>);
+    <span class="kw">return</span> <span class="kw">this</span>.strategies.<span class="fn">get</span>(<span class="str">"default"</span>);
+  }
+}</pre>
+</div>
+<p class="cn-note">
+经典原则：Strategy模式——定义算法族，封装每个算法，运行时可互换。AI延伸：在AI系统中，"算法"就是模型。Strategy模式让你无缝切换Claude/GPT/Gemini/本地模型。更进一步：策略选择器本身可以是AI驱动的——元策略分析请求特征（复杂度、延迟、成本、领域）并路由到最优模型。这创造了GoF未曾设想但其抽象完美支持的递归应用。
+</p>
+
+<!-- ANGLE D -->
+<h3>Angle D · Observer Pattern Powers AI Event Architecture — Observer模式驱动AI事件架构</h3>
+
+<p>
+<strong>Classical principle:</strong> Observer pattern — when one object changes state, all registered dependents are notified automatically. The subject doesn't know who its observers are; it only knows they implement a notification interface. This decoupling is what makes Observer the backbone of event-driven systems, from GUI frameworks to message queues.
+</p>
+
+<p>
+<strong>AI extension:</strong> Combine domain events (a DDD concept) with the Observer pattern and you get AI trigger architecture. When a business event occurs — invoice created, payment failed, inventory threshold breached, customer churn risk detected — observers can include AI agents that analyze, classify, decide, and act. The key architectural insight is that AI agents should be <em>observers</em>, not <em>controllers</em>. They react to domain events rather than polling or intercepting the primary flow. This keeps the core business logic pure and testable while AI behavior is layered on as observers that can be added, removed, or replaced without touching the domain model.
+</p>
+
+<!-- Observer → AI Agent chain diagram -->
+<div class="diagram-container">
+  <div class="diagram-label">◆ Domain Event → AI Observer Chain</div>
+  <svg viewBox="0 0 800 260" xmlns="http://www.w3.org/2000/svg" style="width:100%; font-family:'JetBrains Mono',monospace;">
+    <defs>
+      <marker id="arrowDark" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="var(--text-dim,#64748b)"/>
+      </marker>
+    </defs>
+
+    <!-- Domain Event source -->
+    <rect x="20" y="40" width="140" height="60" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--orange,#f97316)" stroke-width="1.5"/>
+    <text x="90" y="65" text-anchor="middle" font-size="10" fill="var(--orange,#f97316)" font-weight="600">Domain Event</text>
+    <text x="90" y="80" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">PaymentFailed</text>
+    <text x="90" y="92" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">orderId, amount, reason</text>
+
+    <!-- Arrow to event bus -->
+    <line x1="160" y1="70" x2="195" y2="70" stroke="var(--text-dim,#64748b)" stroke-width="1.5" marker-end="url(#arrowDark)"/>
+
+    <!-- Event Bus -->
+    <rect x="200" y="50" width="80" height="40" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--text-secondary,#94a3b8)" stroke-width="1"/>
+    <text x="240" y="74" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)" font-weight="500">Event Bus</text>
+
+    <!-- Fan-out arrows -->
+    <line x1="280" y1="60" x2="340" y2="40" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#arrowDark)"/>
+    <line x1="280" y1="70" x2="340" y2="90" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#arrowDark)"/>
+    <line x1="280" y1="80" x2="340" y2="140" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#arrowDark)"/>
+    <line x1="280" y1="85" x2="340" y2="190" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#arrowDark)"/>
+
+    <!-- Observer 1: AI Classify -->
+    <rect x="345" y="20" width="130" height="48" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1.2"/>
+    <text x="410" y="40" text-anchor="middle" font-size="9" fill="var(--cyan,#22d3ee)" font-weight="600">AI: Classify</text>
+    <text x="410" y="54" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">fraud? system? user-error?</text>
+
+    <!-- Observer 2: AI Decide -->
+    <rect x="345" y="76" width="130" height="48" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--purple,#a78bfa)" stroke-width="1.2"/>
+    <text x="410" y="96" text-anchor="middle" font-size="9" fill="var(--purple,#a78bfa)" font-weight="600">AI: Decide</text>
+    <text x="410" y="110" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">retry? escalate? refund?</text>
+
+    <!-- Observer 3: AI Act -->
+    <rect x="345" y="132" width="130" height="48" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="1.2"/>
+    <text x="410" y="152" text-anchor="middle" font-size="9" fill="var(--green,#10b981)" font-weight="600">AI: Act</text>
+    <text x="410" y="166" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">execute retry / create ticket</text>
+
+    <!-- Observer 4: AI Notify -->
+    <rect x="345" y="188" width="130" height="48" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--yellow,#eab308)" stroke-width="1.2"/>
+    <text x="410" y="208" text-anchor="middle" font-size="9" fill="var(--yellow,#eab308)" font-weight="600">AI: Notify</text>
+    <text x="410" y="222" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">summarize for stakeholders</text>
+
+    <!-- Sequential chain arrows between AI observers -->
+    <line x1="475" y1="44" x2="510" y2="44" stroke="var(--cyan,#22d3ee)" stroke-width="1" marker-end="url(#arrowDark)"/>
+    <line x1="475" y1="100" x2="510" y2="100" stroke="var(--purple,#a78bfa)" stroke-width="1" marker-end="url(#arrowDark)"/>
+    <line x1="475" y1="156" x2="510" y2="156" stroke="var(--green,#10b981)" stroke-width="1" marker-end="url(#arrowDark)"/>
+    <line x1="475" y1="212" x2="510" y2="212" stroke="var(--yellow,#eab308)" stroke-width="1" marker-end="url(#arrowDark)"/>
+
+    <!-- Results -->
+    <rect x="515" y="28" width="120" height="32" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="575" y="48" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">classification: "fraud"</text>
+
+    <rect x="515" y="84" width="120" height="32" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="575" y="104" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">decision: "escalate"</text>
+
+    <rect x="515" y="140" width="120" height="32" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="575" y="160" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">action: "ticket #4521"</text>
+
+    <rect x="515" y="196" width="120" height="32" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="575" y="216" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">slack: "fraud alert sent"</text>
+
+    <!-- Human-in-the-loop box -->
+    <rect x="660" y="70" width="120" height="80" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--rose,#f43f5e)" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <text x="720" y="95" text-anchor="middle" font-size="9" fill="var(--rose,#f43f5e)" font-weight="600">Human Review</text>
+    <text x="720" y="110" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Approve/override</text>
+    <text x="720" y="122" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">AI decisions when</text>
+    <text x="720" y="134" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">confidence &lt; threshold</text>
+
+    <line x1="635" y1="100" x2="658" y2="107" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#arrowDark)"/>
+  </svg>
+</div>
+
+<p>
+<strong>Concrete example:</strong> A payment processing system emits a <code>PaymentFailed</code> domain event. Four AI observers independently react: (1) a classification agent analyzes the failure reason and categorizes it as fraud, system error, or user error; (2) a decision agent determines the appropriate response — retry, escalate, or issue refund; (3) an action agent executes the decision by creating support tickets or initiating retry logic; (4) a notification agent generates a human-readable summary for stakeholders. When any AI observer's confidence falls below a threshold, the decision routes to human review. The domain model knows nothing about AI — it simply publishes events. The AI layer is entirely composed of observers.
+</p>
+<p class="cn-note">
+经典原则：Observer模式——当一个对象状态变化时，所有注册的依赖者自动收到通知。AI延伸：领域事件 + Observer = AI触发架构。业务事件发生时，观察者可以包括分析、分类、决策和行动的AI代理。关键架构洞察：AI代理应是观察者而非控制者——响应领域事件而非拦截主流程。具体示例：PaymentFailed事件触发四个AI观察者——分类、决策、执行、通知——低置信度时路由到人工审核。
+</p>
+
+
+<!-- ─── §04 DECISION TABLE ─── -->
+<h2><span class="num">04</span> Decision Table — When to Apply What</h2>
+
+<p>
+For the practicing architect, the question is always: "Given this design decision, what does the classical pattern say and how does AI change the equation?" This table maps seven common architecture scenarios to both approaches.
+</p>
+<p class="cn-note">
+决策表将七个常见架构场景映射到经典方法和AI增强方法，展示经典模式如何与AI时代实践互补。
+</p>
+
+<table class="decision-table">
+  <thead>
+    <tr>
+      <th class="col-scenario">Scenario 场景</th>
+      <th class="col-classic"><span class="classic-badge">CLASSIC</span> Classical Approach</th>
+      <th class="col-ai"><span class="ai-badge">AI+</span> AI-Augmented Approach</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="col-scenario">Choosing an Architecture Pattern for AI Service<br><small style="color:var(--text-dim)">为AI服务选择架构模式</small></td>
+      <td>Service Layer + Repository pattern. Clear boundaries, dependency inversion, tested in isolation.</td>
+      <td>Service Layer + Strategy (model selection) + Chain of Responsibility (processing pipeline). Add Tool-Use pattern for agent capabilities. Service Layer becomes AI's action boundary.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Replacing Direct API Calls with AI Intermediary<br><small style="color:var(--text-dim)">用AI中间层替代直接API调用</small></td>
+      <td>Facade pattern wraps complex subsystem behind a simple interface. Proxy pattern adds access control.</td>
+      <td>Facade + AI translation layer. AI interprets natural language requests, maps to API calls via Tool-Use pattern. Proxy validates AI-generated parameters before forwarding.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Implementing Retry/Fallback for AI Calls<br><small style="color:var(--text-dim)">实现AI调用的重试/回退</small></td>
+      <td>Template Method for retry logic. Strategy for different retry policies (exponential backoff, circuit breaker).</td>
+      <td>Strategy chain: primary model → fallback model → cached response → graceful degradation. Each Strategy is a different AI provider. Circuit breaker wraps each Strategy.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Managing AI Model Versioning<br><small style="color:var(--text-dim)">管理AI模型版本</small></td>
+      <td>Abstract Factory for creating version-specific components. Builder for assembling configuration.</td>
+      <td>Abstract Factory produces model-version-specific Strategy instances. Feature flags control which factory is active. A/B testing framework routes traffic to competing factories.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Structuring Multi-Agent Communication<br><small style="color:var(--text-dim)">构建多代理通信</small></td>
+      <td>Mediator centralizes coordination. Observer decouples publisher/subscriber. Command encapsulates requests.</td>
+      <td>Orchestrator Agent (transformed Mediator) routes tasks to specialist agents. Each agent is a Strategy. Shared context managed via Repository pattern. Human-in-the-Loop Observer for approval gates.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Implementing AI Output Validation<br><small style="color:var(--text-dim)">实现AI输出验证</small></td>
+      <td>Decorator chain for input validation. Chain of Responsibility for multi-step verification.</td>
+      <td>Decorator chain wraps AI output: schema validation → hallucination check → business rule compliance → format normalization. Each Decorator is independently testable and removable.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Migrating Existing Patterns to AI-Aware Versions<br><small style="color:var(--text-dim)">将现有模式迁移为AI感知版本</small></td>
+      <td>Strangler Fig: wrap old implementation, gradually route to new. Adapter bridges old/new interfaces.</td>
+      <td>Identify Singletons → refactor to DI. Identify hardcoded algorithms → extract to Strategy. Add Observer layer for domain events → AI agents subscribe. Incremental, pattern by pattern.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- ─── §05 PRACTICAL CHECKLIST ─── -->
+<h2><span class="num">05</span> Practical Checklist — Evolving Your Pattern Practice</h2>
+
+<p>
+To move your team from "we know patterns exist" to "we actively use patterns as the structural vocabulary for AI-integrated systems," follow this staged checklist. Each item is tagged by maturity stage.
+</p>
+<p class="cn-note">
+按成熟度阶段标注的具体行动清单，帮助团队从"知道模式存在"进化为"主动使用模式作为AI集成系统的结构词汇"。
+</p>
+
+<div class="checklist">
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Team studies GoF patterns — read Head First Design Patterns together
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Audit current codebase: identify which GoF patterns are already in use
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Refactor Singletons to injectable services (DI container)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Introduce Strategy pattern for algorithm selection (start with non-AI use cases)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    Implement Tool-Use pattern for first AI integration point
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    Add Observer-based domain event system for business events
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    RAG pattern for knowledge-intensive features (retrieval + generation separation)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Build Prompt Template library — versioned, tested, parameterized prompts
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Multi-Agent Orchestration pilot — orchestrator + 2-3 specialist agents
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    AI-powered meta-strategy for automatic model selection based on task characteristics
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    Full event-driven AI architecture — all domain events available to AI observer layer
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    Document all patterns (classical + AI-native) in <code>.ai/patterns-catalog.md</code>
+  </div>
+</div>
+
+
+<!-- ─── §06 TAKEAWAY ─── -->
+<h2><span class="num">06</span> The Architect's Takeaway</h2>
+
+<p>
+Design patterns are not obsolete — they are the vocabulary that AI systems are built with. The GoF catalog is thirty years old and more relevant than ever as the structural building blocks for systems that are half traditional code and half intelligent agents. Strategy pattern lets you swap models. Observer pattern lets domain events trigger AI agents. Chain of Responsibility powers multi-agent pipelines. Factory generates structured AI output. These are not metaphors — they are the literal implementation patterns of production AI systems.
+</p>
+<p class="cn-note">
+设计模式没有过时——它们是构建AI系统的词汇。GoF目录已有三十年历史，作为"半传统代码、半智能代理"系统的结构积木，比以往任何时候都更为相关。Strategy切换模型，Observer让领域事件触发AI代理，Chain of Responsibility驱动多代理管道——这些是生产AI系统的真实实现模式，不是比喻。
+</p>
+
+<p>
+The architect who dismisses patterns as "academic" loses the shared language that makes AI system design communicable across teams. The architect who clings to all 23 patterns equally misses the tectonic shift — some patterns are thriving, others declining, and new AI-native patterns are emerging from the same structural primitives. The path forward is selective mastery: know the full catalog, understand which patterns load-bear in AI architecture, adopt the five AI-native patterns, and always remember that patterns are about communication first and implementation second.
+</p>
+<p class="cn-note">
+将模式视为"学术化"的架构师失去了使AI系统设计可跨团队沟通的共享语言。固守所有23种模式同等重要的架构师错过了构造性转变。前进之路是选择性精通：了解完整目录、理解哪些在AI架构中承重、采纳五种AI原生模式、永远记住模式首先关乎沟通，其次才是实现。
+</p>
+
+<div class="insight-box" style="margin-top:40px;">
+  <div class="label">Next in Series → Article 1.2</div>
+  <p style="margin:0; font-size:14px; line-height:1.6">
+    <strong>DDD Meets AI — Strategic Design for Intelligent Systems</strong> — Now that we have patterns, we need boundaries. Domain-Driven Design provides the strategic framework: bounded contexts become AI agent jurisdictions, aggregates become consistency boundaries for AI operations, and the ubiquitous language becomes the shared vocabulary between human developers and AI agents.
+    <br><span style="color:var(--text-dim); font-style:italic; font-family:'Noto Serif SC',serif;">下一篇：DDD遇见AI——智能系统的战略设计。有了模式，我们需要边界。</span>
+  </p>
+</div>
+
+</main>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="article-footer">
+  <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim)">
+    Software Knowledge Base · Layer 1: Design Thinking · Article 1.1 of 20<br>
+    Classical Foundations × AI Co-Evolution · 经典基础 × AI协同进化
+  </div>
+  <div class="nav-links">
+    <a class="nav-link" href="../L0-code-craft/0.4-developers-toolkit.html">← Prev: 0.4 Developer's Toolkit</a>
+    <a class="nav-link" href="./1.2-ddd-meets-ai.html">Next: 1.2 DDD Meets AI →</a>
+  </div>
+</footer>
+
+</body>
+</html>

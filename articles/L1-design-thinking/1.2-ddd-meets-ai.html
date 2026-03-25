@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1.2 DDD Meets AI — Bounded Contexts as AI Service Boundaries</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<!--
+  CSS Architecture Note:
+  The canonical design system lives in templates/article-base.css.
+  For single-file distribution, it is inlined here.
+  When editing styles, update article-base.css first, then re-inline.
+-->
+<style>
+/* ═══ INLINED FROM templates/article-base.css ═══ */
+:root {
+  --bg-deep: #0a0e17;
+  --bg-surface: #0f1420;
+  --bg-card: #141b2d;
+  --bg-card-hover: #1a2340;
+  --border: #1e2a45;
+  --border-accent: #2d4a7a;
+  --cyan: #22d3ee;
+  --cyan-dim: #0e7490;
+  --cyan-glow: rgba(34, 211, 238, 0.15);
+  --purple: #a78bfa;
+  --purple-dim: #6d5dbb;
+  --purple-glow: rgba(167, 139, 250, 0.12);
+  --orange: #f97316;
+  --orange-glow: rgba(249, 115, 22, 0.12);
+  --green: #10b981;
+  --green-glow: rgba(16, 185, 129, 0.12);
+  --rose: #f43f5e;
+  --rose-glow: rgba(244, 63, 94, 0.12);
+  --yellow: #eab308;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg-deep); color:var(--text-primary); font-family:'IBM Plex Sans',sans-serif; line-height:1.75; font-size:16px; -webkit-font-smoothing:antialiased; }
+.article-header { position:relative; padding:80px 0 60px; overflow:hidden; border-bottom:1px solid var(--border); }
+.article-header::before { content:''; position:absolute; top:0;left:0;right:0;bottom:0; background:radial-gradient(ellipse 800px 400px at 20% 50%,rgba(34,211,238,0.06),transparent),radial-gradient(ellipse 600px 300px at 80% 30%,rgba(167,139,250,0.04),transparent); }
+.header-content { position:relative; max-width:860px; margin:0 auto; padding:0 32px; }
+.series-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--cyan); border:1px solid var(--cyan-dim); padding:4px 12px; border-radius:3px; margin-bottom:20px; background:var(--cyan-glow); }
+.article-title { font-family:'JetBrains Mono',monospace; font-size:36px; font-weight:700; line-height:1.25; color:var(--text-primary); margin-bottom:8px; }
+.article-title-cn { font-family:'Noto Serif SC',serif; font-size:20px; font-weight:400; color:var(--text-dim); font-style:italic; margin-bottom:24px; }
+.article-meta { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-dim); display:flex; gap:24px; flex-wrap:wrap; }
+.meta-item { display:flex; align-items:center; gap:6px; }
+.meta-dot { width:6px; height:6px; border-radius:50%; }
+.article-body { max-width:860px; margin:0 auto; padding:48px 32px; }
+h2 { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:var(--cyan); margin:56px 0 8px; padding-bottom:12px; border-bottom:1px solid var(--border); letter-spacing:-0.5px; }
+.article-body > h2:first-child { margin-top:0; }
+h2 .num { color:var(--text-dim); font-weight:400; margin-right:8px; }
+h3 { font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; color:var(--purple); margin:36px 0 12px; }
+p { margin-bottom:18px; color:var(--text-primary); font-size:15.5px; }
+.cn-note { font-family:'Noto Serif SC',serif; font-style:italic; color:var(--text-dim); font-size:14px; line-height:1.8; margin:-8px 0 24px; padding-left:16px; border-left:2px solid var(--border); }
+code { font-family:'JetBrains Mono',monospace; font-size:0.88em; background:rgba(34,211,238,0.08); padding:2px 6px; border-radius:3px; color:var(--cyan); }
+.diagram-container { margin:40px -16px; padding:32px 24px; background:var(--bg-surface); border:1px solid var(--border); border-radius:8px; position:relative; overflow-x:auto; }
+.diagram-container::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--cyan),var(--purple),var(--orange)); }
+.diagram-label { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:20px; }
+.diagram-sublabel { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-dim); margin-top:-16px; margin-bottom:16px; font-style:italic; }
+.bookshelf { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin:24px 0; align-items:stretch; }
+.book-card { background:var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:16px; transition:all 0.25s ease; position:relative; overflow:hidden; min-height:190px; display:flex; flex-direction:column; }
+.book-card::before { content:''; position:absolute; left:0;top:0;bottom:0; width:3px; }
+.book-card.tier1::before { background:var(--cyan); }
+.book-card.tier2::before { background:var(--purple); }
+.book-card:hover { border-color:var(--border-accent); background:var(--bg-card-hover); transform:translateY(-2px); }
+.book-title { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:4px; line-height:1.4; }
+.book-author { font-size:11px; color:var(--text-dim); }
+.book-desc { font-size:12px; color:var(--text-secondary); margin-top:8px; line-height:1.5; flex:1; }
+.book-tag { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:2px 6px; border-radius:3px; margin-top:8px; letter-spacing:0.5px; }
+.tag-foundation { background:rgba(34,211,238,0.1); color:var(--cyan); border:1px solid rgba(34,211,238,0.2); }
+.tag-practice { background:rgba(167,139,250,0.1); color:var(--purple); border:1px solid rgba(167,139,250,0.2); }
+.decision-table { width:100%; border-collapse:collapse; margin:24px 0; font-size:13px; }
+.decision-table th { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; text-align:left; padding:12px 16px; border-bottom:2px solid var(--border-accent); color:var(--text-secondary); background:var(--bg-surface); }
+.decision-table td { padding:12px 16px; border-bottom:1px solid var(--border); color:var(--text-primary); vertical-align:top; line-height:1.5; }
+.decision-table tr:hover td { background:rgba(34,211,238,0.03); }
+.decision-table .col-scenario { width:22%; font-weight:500; color:var(--text-secondary); }
+.decision-table .col-classic { width:39%; }
+.decision-table .col-ai { width:39%; }
+.classic-badge,.ai-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:1px 5px; border-radius:2px; margin-right:4px; vertical-align:middle; }
+.classic-badge { background:rgba(148,163,184,0.15); color:var(--text-secondary); }
+.ai-badge { background:rgba(34,211,238,0.12); color:var(--cyan); }
+.checklist { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:24px 0; }
+.check-item { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:5px; font-size:13px; color:var(--text-primary); line-height:1.4; transition:border-color 0.2s; }
+.check-item:hover { border-color:var(--border-accent); }
+.check-stage { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:600; padding:2px 7px; border-radius:3px; white-space:nowrap; flex-shrink:0; }
+.insight-box { margin:32px 0; padding:24px; background:linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04)); border:1px solid var(--border-accent); border-radius:8px; position:relative; }
+.insight-box::before { content:'⚡'; position:absolute; top:-12px; left:20px; background:var(--bg-deep); padding:0 8px; font-size:18px; }
+.code-block { background:#0d1117; border:1px solid var(--border); border-radius:6px; padding:20px; margin:20px 0; overflow-x:auto; position:relative; }
+.code-block::before { content:attr(data-lang); position:absolute; top:8px; right:12px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-dim); letter-spacing:0.5px; }
+.code-block pre { font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.6; color:var(--text-secondary); }
+.code-block .kw { color:var(--purple); }
+.code-block .fn { color:var(--cyan); }
+.code-block .str { color:var(--green); }
+.code-block .cm { color:var(--text-dim); font-style:italic; }
+.code-block .ann { color:var(--orange); }
+.code-block .tp { color:var(--yellow); }
+.evolution-steps { position:relative; padding-left:32px; margin:28px 0; }
+.evolution-steps::before { content:''; position:absolute; left:11px; top:8px; bottom:8px; width:2px; background:linear-gradient(to bottom,var(--cyan),var(--purple),var(--orange)); }
+.evo-step { position:relative; margin-bottom:24px; padding-left:20px; }
+.evo-step::before { content:''; position:absolute; left:-25px; top:8px; width:10px; height:10px; border-radius:50%; border:2px solid; }
+.evo-step:nth-child(1)::before { border-color:var(--text-dim); background:var(--bg-deep); }
+.evo-step:nth-child(2)::before { border-color:var(--text-secondary); background:var(--bg-deep); }
+.evo-step:nth-child(3)::before { border-color:var(--cyan-dim); background:var(--bg-deep); }
+.evo-step:nth-child(4)::before { border-color:var(--purple); background:var(--bg-deep); }
+.evo-step:nth-child(5)::before { border-color:var(--cyan); background:var(--cyan); }
+.evo-step:nth-child(6)::before { border-color:var(--green); background:var(--green); }
+.evo-step-title { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; margin-bottom:4px; }
+.evo-step-desc { font-size:13.5px; color:var(--text-secondary); line-height:1.6; }
+.article-footer { max-width:860px; margin:0 auto; padding:40px 32px; border-top:1px solid var(--border); font-size:12px; color:var(--text-dim); }
+.nav-links { display:flex; justify-content:space-between; align-items:center; margin-top:20px; }
+.nav-link { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--cyan); text-decoration:none; padding:8px 16px; border:1px solid var(--border); border-radius:4px; transition:all 0.2s; }
+.nav-link:hover { border-color:var(--cyan); background:var(--cyan-glow); }
+@media (max-width:640px) {
+  .article-title { font-size:24px; }
+  .bookshelf { grid-template-columns:1fr; }
+  .checklist { grid-template-columns:1fr; }
+  .article-meta { flex-direction:column; gap:8px; }
+}
+@media print {
+  :root { --bg-deep:#fff; --bg-surface:#f8f9fa; --bg-card:#f1f3f5; --bg-card-hover:#f1f3f5; --border:#dee2e6; --border-accent:#adb5bd; --text-primary:#212529; --text-secondary:#495057; --text-dim:#868e96; --cyan:#0c8599; --purple:#7048e8; --orange:#e8590c; --green:#099268; --rose:#e03131; --yellow:#e67700; }
+  body { font-size:11pt; line-height:1.5; }
+  .article-header::before { display:none; }
+  .article-header { padding:24px 0; }
+  .diagram-container::before { display:none; }
+  .book-card:hover { transform:none; }
+  .nav-links { display:none; }
+  .code-block { border:1px solid #dee2e6; background:#f8f9fa; }
+  .code-block pre { color:#212529; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header class="article-header">
+  <div class="header-content">
+    <div class="series-badge" style="color:var(--purple); border-color:var(--purple-dim); background:var(--purple-glow)">Layer 1 · Design Thinking · 设计思维层</div>
+    <h1 class="article-title">DDD Meets AI</h1>
+    <div class="article-title-cn">DDD遇见AI：限界上下文作为AI服务边界</div>
+    <div class="article-meta">
+      <span class="meta-item"><span class="meta-dot" style="background:var(--cyan)"></span> Article 1.2 of 20</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--purple)"></span> ~18 min read</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--orange)"></span> 3 Source Books × 4 AI Angles</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════ BODY ═══════════════ -->
+<main class="article-body">
+
+<!-- ─── §01 CORE INSIGHT ─── -->
+<h2><span class="num">01</span> Core Insight — The Thesis</h2>
+
+<p>
+Eric Evans published <em>Domain-Driven Design</em> in 2003 with a central thesis: software is only as good as the model it embodies, and models only work when everyone in a bounded context speaks the same language. Two decades later, "everyone" now includes AI agents. An LLM generating code inside your Chilean tax invoicing module needs to know that "DTE" means <em>Documento Tributario Electr&oacute;nico</em>, not "data transfer entity." Without DDD boundaries, AI agents hallucinate across domain models — mixing Chilean tax semantics with Greek AADE rules, producing plausible-looking code that silently corrupts your domain.
+</p>
+<p class="cn-note">
+Evans在2003年提出的核心论点：软件的质量取决于它所体现的模型，而模型只有在限界上下文中所有人使用同一语言时才有效。二十年后，"所有人"现在包括AI代理。没有DDD边界，AI代理会跨领域模型产生幻觉——将智利税务语义与希腊AADE规则混淆，产出看似合理但悄然破坏领域的代码。
+</p>
+
+<p>
+Here is the surprising inversion of the AI era: <strong>DDD's strategic patterns become more important, not less.</strong> Bounded Contexts are no longer just organizational constructs for human teams — they are execution sandboxes for AI agents. The Ubiquitous Language is no longer just a communication tool between developers and domain experts — it is the training context that determines whether an AI agent generates correct or catastrophically wrong output. Anti-Corruption Layers are no longer just translation adapters between systems — they are guardrails that validate AI-generated data before it enters your domain model.
+</p>
+<p class="cn-note">
+AI时代的惊人逆转：DDD的战略模式变得更加重要，而非更不重要。限界上下文不再仅是人类团队的组织构造——它们是AI代理的执行沙箱。通用语言不再仅是沟通工具——它是决定AI代理输出正确与否的训练上下文。防腐层不再仅是翻译适配器——它们是验证AI生成数据的护栏。
+</p>
+
+<div class="insight-box">
+  <div class="label">The Reframing 核心重构</div>
+  <p style="margin:0; font-size:15px; line-height:1.7">
+    <strong>A Bounded Context is an AI agent's cognitive boundary.</strong> When an AI agent operates within a well-defined Bounded Context — with its own Ubiquitous Language glossary, its own domain events, its own validation rules — it generates accurate, domain-consistent output. When it operates across contexts without boundaries, it hallucinates. The same principle Evans articulated for human teams applies to AI with even greater force: <em>ambiguity at the boundary is the root cause of corruption.</em>
+  </p>
+</div>
+<p class="cn-note">
+限界上下文是AI代理的认知边界。当AI代理在定义良好的限界上下文内运行——拥有自己的通用语言词汇表、领域事件、验证规则——它产出准确的、领域一致的输出。跨越上下文时则产生幻觉。Evans为人类团队阐述的原则以更大的力度适用于AI：边界处的歧义是腐败的根源。
+</p>
+
+<!-- HERO DIAGRAM: NRS BOUNDED CONTEXT MAP WITH AI AGENTS -->
+<div class="diagram-container">
+  <div class="diagram-label">◆ Hero Diagram — NRS Multi-Country Bounded Context Map with AI Agents</div>
+  <svg viewBox="0 0 800 420" xmlns="http://www.w3.org/2000/svg" style="width:100%; font-family:'JetBrains Mono',monospace;">
+    <defs>
+      <linearGradient id="ctxGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="var(--purple,#a78bfa)"/>
+        <stop offset="50%" stop-color="var(--cyan,#22d3ee)"/>
+        <stop offset="100%" stop-color="var(--orange,#f97316)"/>
+      </linearGradient>
+      <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="var(--text-dim,#64748b)"/>
+      </marker>
+    </defs>
+
+    <!-- Title -->
+    <text x="400" y="24" text-anchor="middle" font-size="10" fill="var(--text-secondary,#94a3b8)" font-weight="500" letter-spacing="1">NRS MULTI-COUNTRY E-INVOICING — BOUNDED CONTEXT MAP</text>
+
+    <!-- Chilean SII Context -->
+    <rect x="20" y="50" width="230" height="200" rx="8" fill="var(--bg-card,#141b2d)" stroke="var(--purple,#a78bfa)" stroke-width="1.5"/>
+    <text x="135" y="74" text-anchor="middle" font-size="11" fill="var(--purple,#a78bfa)" font-weight="700">Chilean SII Context</text>
+    <text x="135" y="88" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Servicio de Impuestos Internos</text>
+    <line x1="40" y1="96" x2="230" y2="96" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="40" y="114" font-size="8.5" fill="var(--text-secondary,#94a3b8)">DTE = Tax Document</text>
+    <text x="40" y="128" font-size="8.5" fill="var(--text-secondary,#94a3b8)">CAF = Auth Folio Code</text>
+    <text x="40" y="142" font-size="8.5" fill="var(--text-secondary,#94a3b8)">RUT = Taxpayer ID</text>
+    <text x="40" y="156" font-size="8.5" fill="var(--text-secondary,#94a3b8)">IVA = 19% VAT</text>
+    <!-- AI Agent badge -->
+    <rect x="40" y="170" width="190" height="34" rx="4" fill="none" stroke="var(--cyan,#22d3ee)" stroke-width="1" stroke-dasharray="3,3"/>
+    <circle cx="56" cy="187" r="8" fill="none" stroke="var(--cyan,#22d3ee)" stroke-width="1.2"/>
+    <text x="56" y="191" text-anchor="middle" font-size="8" fill="var(--cyan,#22d3ee)" font-weight="700">AI</text>
+    <text x="145" y="184" text-anchor="middle" font-size="8" fill="var(--cyan,#22d3ee)">SII Agent</text>
+    <text x="145" y="196" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">reads glossary-cl.md</text>
+    <text x="135" y="238" text-anchor="middle" font-size="7.5" fill="var(--purple,#a78bfa)" font-weight="500">UBIQUITOUS LANGUAGE: SPANISH</text>
+
+    <!-- Greek AADE Context -->
+    <rect x="285" y="50" width="230" height="200" rx="8" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1.5"/>
+    <text x="400" y="74" text-anchor="middle" font-size="11" fill="var(--cyan,#22d3ee)" font-weight="700">Greek AADE Context</text>
+    <text x="400" y="88" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Independent Public Revenue Auth</text>
+    <line x1="305" y1="96" x2="495" y2="96" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="305" y="114" font-size="8.5" fill="var(--text-secondary,#94a3b8)">Parast. = Tax Document</text>
+    <text x="305" y="128" font-size="8.5" fill="var(--text-secondary,#94a3b8)">MARK = Unique Auth ID</text>
+    <text x="305" y="142" font-size="8.5" fill="var(--text-secondary,#94a3b8)">AFM = Taxpayer ID</text>
+    <text x="305" y="156" font-size="8.5" fill="var(--text-secondary,#94a3b8)">FPA = 24% VAT</text>
+    <!-- AI Agent badge -->
+    <rect x="305" y="170" width="190" height="34" rx="4" fill="none" stroke="var(--cyan,#22d3ee)" stroke-width="1" stroke-dasharray="3,3"/>
+    <circle cx="321" cy="187" r="8" fill="none" stroke="var(--cyan,#22d3ee)" stroke-width="1.2"/>
+    <text x="321" y="191" text-anchor="middle" font-size="8" fill="var(--cyan,#22d3ee)" font-weight="700">AI</text>
+    <text x="410" y="184" text-anchor="middle" font-size="8" fill="var(--cyan,#22d3ee)">AADE Agent</text>
+    <text x="410" y="196" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">reads glossary-gr.md</text>
+    <text x="400" y="238" text-anchor="middle" font-size="7.5" fill="var(--cyan,#22d3ee)" font-weight="500">UBIQUITOUS LANGUAGE: GREEK</text>
+
+    <!-- Brazilian NF-e Context -->
+    <rect x="550" y="50" width="230" height="200" rx="8" fill="var(--bg-card,#141b2d)" stroke="var(--orange,#f97316)" stroke-width="1.5"/>
+    <text x="665" y="74" text-anchor="middle" font-size="11" fill="var(--orange,#f97316)" font-weight="700">Brazilian NF-e Context</text>
+    <text x="665" y="88" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Nota Fiscal Eletronica</text>
+    <line x1="570" y1="96" x2="760" y2="96" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="570" y="114" font-size="8.5" fill="var(--text-secondary,#94a3b8)">NF-e = Tax Document</text>
+    <text x="570" y="128" font-size="8.5" fill="var(--text-secondary,#94a3b8)">Chave = 44-digit Auth Key</text>
+    <text x="570" y="142" font-size="8.5" fill="var(--text-secondary,#94a3b8)">CNPJ = Taxpayer ID</text>
+    <text x="570" y="156" font-size="8.5" fill="var(--text-secondary,#94a3b8)">ICMS = State-level VAT</text>
+    <!-- AI Agent badge -->
+    <rect x="570" y="170" width="190" height="34" rx="4" fill="none" stroke="var(--cyan,#22d3ee)" stroke-width="1" stroke-dasharray="3,3"/>
+    <circle cx="586" cy="187" r="8" fill="none" stroke="var(--cyan,#22d3ee)" stroke-width="1.2"/>
+    <text x="586" y="191" text-anchor="middle" font-size="8" fill="var(--cyan,#22d3ee)" font-weight="700">AI</text>
+    <text x="675" y="184" text-anchor="middle" font-size="8" fill="var(--cyan,#22d3ee)">NF-e Agent</text>
+    <text x="675" y="196" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">reads glossary-br.md</text>
+    <text x="665" y="238" text-anchor="middle" font-size="7.5" fill="var(--orange,#f97316)" font-weight="500">UBIQUITOUS LANGUAGE: PORTUGUESE</text>
+
+    <!-- ACL arrows between contexts -->
+    <line x1="250" y1="150" x2="285" y2="150" stroke="var(--rose,#f43f5e)" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text x="268" y="143" text-anchor="middle" font-size="7" fill="var(--rose,#f43f5e)">ACL</text>
+    <line x1="515" y1="150" x2="550" y2="150" stroke="var(--rose,#f43f5e)" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text x="533" y="143" text-anchor="middle" font-size="7" fill="var(--rose,#f43f5e)">ACL</text>
+
+    <!-- Shared Kernel / Published Language at bottom -->
+    <rect x="160" y="280" width="480" height="56" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="400" y="300" text-anchor="middle" font-size="9" fill="var(--green,#10b981)" font-weight="600">PUBLISHED LANGUAGE — Shared Invoice API Contract</text>
+    <text x="400" y="316" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">country-neutral schema | each context maps to/from via ACL | AI agents speak this at boundaries</text>
+    <text x="400" y="328" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">OpenAPI spec + JSON Schema + .ai/cross-context-protocol.md</text>
+
+    <!-- Lines from contexts to published language -->
+    <line x1="135" y1="250" x2="260" y2="280" stroke="var(--text-dim,#64748b)" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="400" y1="250" x2="400" y2="280" stroke="var(--text-dim,#64748b)" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="665" y1="250" x2="540" y2="280" stroke="var(--text-dim,#64748b)" stroke-width="1" stroke-dasharray="3,3"/>
+
+    <!-- Key insight -->
+    <rect x="120" y="356" width="560" height="48" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--purple,#a78bfa)" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="400" y="376" text-anchor="middle" font-size="10" fill="var(--purple,#a78bfa)" font-weight="600">KEY INSIGHT: Same word "Tax Document" = DTE (Chile) | Parast. (Greece) | NF-e (Brazil)</text>
+    <text x="400" y="392" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)">Without Bounded Contexts, an AI agent conflates all three. With them, it speaks the right language.</text>
+  </svg>
+</div>
+
+
+<!-- ─── §02 CLASSICAL FOUNDATION ─── -->
+<h2><span class="num">02</span> Classical Foundation — Source Books</h2>
+
+<p>
+Three books define the DDD canon. Evans gave us the strategic and tactical patterns. Vernon showed us how to implement them in real systems. His distilled version made strategic DDD accessible to teams that don't have months to spend on the full blue book. Together, they provide everything needed to understand why bounded contexts are the most critical architectural concept for AI integration — and how Anti-Corruption Layers become the bridge between human-designed domain models and AI-generated outputs.
+</p>
+<p class="cn-note">
+三本书定义了DDD经典。Evans提供了战略和战术模式，Vernon展示了如何在真实系统中实现它们，其精简版让战略DDD对团队触手可及。它们共同提供了理解为何限界上下文是AI集成最关键的架构概念——以及防腐层如何成为人类设计的领域模型与AI生成输出之间的桥梁。
+</p>
+
+<div class="bookshelf">
+  <div class="book-card tier1">
+    <div class="book-title">Domain-Driven Design</div>
+    <div class="book-author">Eric Evans · 2003</div>
+    <div class="book-desc">The original DDD book. Ubiquitous Language, Bounded Contexts, Aggregates, Context Maps. Evans' insight: the model IS the software design. Boundaries exist because different parts of the business use the same words to mean different things — precisely the ambiguity that causes AI agents to hallucinate.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · STRATEGIC DESIGN</span>
+  </div>
+  <div class="book-card tier1">
+    <div class="book-title">Implementing Domain-Driven Design</div>
+    <div class="book-author">Vaughn Vernon · 2013</div>
+    <div class="book-desc">The practical companion. Shows how to implement Aggregates, Domain Events, Repositories, Application Services in code. Vernon's treatment of Anti-Corruption Layers — translating between contexts without leaking models — is critical for validating AI-generated data at domain boundaries.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · TACTICAL PATTERNS</span>
+  </div>
+  <div class="book-card tier2">
+    <div class="book-title">DDD Distilled</div>
+    <div class="book-author">Vaughn Vernon · 2016</div>
+    <div class="book-desc">Strategic Design distilled to essentials: Bounded Contexts, Context Maps, Subdomains. The concise entry point for teams adopting DDD. Vernon's emphasis on strategic over tactical patterns aligns perfectly with AI integration — you need to get the boundaries right before anything else matters.</div>
+    <span class="book-tag tag-practice">PRACTICE · STRATEGIC ESSENTIALS</span>
+  </div>
+</div>
+
+<p>
+What connects these three books is the conviction that <strong>the hardest problem in software is not algorithms or data structures — it is understanding the domain and encoding that understanding into a model that remains consistent over time.</strong> Evans' Ubiquitous Language ensures consistency within a context. Bounded Contexts ensure that consistency doesn't need to span the entire organization — which would be impossible. Context Maps make the relationships between contexts explicit. Vernon shows how to translate these strategic patterns into running code. The AI era adds a new consumer to every context — the AI agent — and that consumer is far more sensitive to boundary violations than any human developer. A developer can intuit that "document" means different things in different modules. An LLM cannot. It needs the boundary to be explicit, machine-readable, and enforced.
+</p>
+<p class="cn-note">
+三本书的共同信念：软件中最难的问题不是算法或数据结构——而是理解领域并将理解编码为持续一致的模型。Evans的通用语言确保上下文内的一致性，限界上下文确保一致性不需跨越整个组织，上下文映射使关系显式化。AI时代为每个上下文添加了新的消费者——AI代理——它比任何人类开发者都更敏感于边界违反。
+</p>
+
+
+<!-- ─── §03 AI CO-EVOLUTION ─── -->
+<h2><span class="num">03</span> AI Co-Evolution — Four Angles</h2>
+
+<p>
+Each angle below takes a classical DDD pattern and extends it for the AI era. The running example is the NRS multi-country invoicing platform: Chile (SII), Greece (AADE), and Brazil (NF-e) — three bounded contexts where the same business concept ("tax document") has fundamentally different semantics, rules, and validation logic in each country.
+</p>
+<p class="cn-note">
+以下每个角度取一个经典DDD模式并将其扩展到AI时代。贯穿示例为NRS多国发票平台：智利（SII）、希腊（AADE）和巴西（NF-e）——三个限界上下文中同一业务概念（"税务文档"）在每个国家有根本不同的语义、规则和验证逻辑。
+</p>
+
+<!-- ANGLE A -->
+<h3>Angle A · Ubiquitous Language as AI Training Data — 通用语言作为AI训练数据</h3>
+
+<p>
+<strong>Classical principle:</strong> Evans' Ubiquitous Language demands that every bounded context has its own consistent vocabulary shared by developers and domain experts. In the Chilean SII context, a "DTE" is a <em>Documento Tributario Electr&oacute;nico</em>, a "CAF" is a <em>C&oacute;digo de Autorizaci&oacute;n de Folios</em>, and "RUT" is the national taxpayer identifier. These terms are meaningless in the Greek AADE context, where the equivalent concepts are "Parastatikou," "MARK," and "AFM." Using the wrong term in the wrong context is not just confusing — it produces incorrect business logic.
+</p>
+
+<p>
+<strong>AI extension:</strong> The Ubiquitous Language becomes the AI agent's training context. Store the glossary in <code>.ai/domain-glossary-{context}.md</code> — one file per bounded context. Before every task, the AI agent reads its context's glossary, ensuring it generates code and responses using correct domain terminology. An AI agent scoped to the Chilean SII context will never use "MARK" (Greek auth ID) when it means "CAF" (Chilean auth folio code), because its context window is populated with the right glossary. This is not prompt engineering — it is <em>domain engineering applied to AI.</em>
+</p>
+
+<p>
+<strong>Concrete example:</strong> Side-by-side glossaries loaded into each context's AI agent:
+</p>
+
+<div class="code-block" data-lang=".ai/domain-glossary-cl.md">
+<pre><span class="cm"># Chilean SII Bounded Context — Ubiquitous Language</span>
+
+<span class="ann">## Core Domain Terms</span>
+<span class="kw">DTE</span>:  Documento Tributario Electr&oacute;nico — the atomic tax document
+<span class="kw">CAF</span>:  C&oacute;digo de Autorizaci&oacute;n de Folios — pre-authorized folio range
+<span class="kw">RUT</span>:  Rol &Uacute;nico Tributario — 8-digit taxpayer ID + check digit
+<span class="kw">IVA</span>:  Impuesto al Valor Agregado — 19% VAT, always included
+<span class="kw">SII</span>:  Servicio de Impuestos Internos — the tax authority
+
+<span class="ann">## Business Rules</span>
+<span class="str">- DTE must reference a valid CAF range (pre-fetched from SII)</span>
+<span class="str">- RUT format: 12345678-K (8 digits + verification digit)</span>
+<span class="str">- IVA is 19% on all non-exempt items</span>
+<span class="str">- Rejection codes: see sii-rejection-codes.md</span></pre>
+</div>
+
+<div class="code-block" data-lang=".ai/domain-glossary-gr.md">
+<pre><span class="cm"># Greek AADE Bounded Context — Ubiquitous Language</span>
+
+<span class="ann">## Core Domain Terms</span>
+<span class="kw">Parastatikou</span>:  Tax document (invoice/receipt/credit note)
+<span class="kw">MARK</span>:           Unique authentication identifier from myDATA
+<span class="kw">AFM</span>:            Arithmos Forologikou Mitroou — 9-digit taxpayer ID
+<span class="kw">FPA</span>:            Foros Prostithemenis Axias — 24% standard VAT
+<span class="kw">AADE</span>:           Independent Authority for Public Revenue
+
+<span class="ann">## Business Rules</span>
+<span class="str">- Every document must be transmitted to myDATA within 24h</span>
+<span class="str">- AFM format: 9 digits, validated with MOD-11 algorithm</span>
+<span class="str">- FPA rates: 24% standard, 13% reduced, 6% super-reduced</span>
+<span class="str">- Classification types: see aade-invoice-types.md</span></pre>
+</div>
+<p class="cn-note">
+经典原则：Evans的通用语言要求每个限界上下文有自己一致的词汇表。AI延伸：通用语言成为AI代理的训练上下文——存储在<code>.ai/domain-glossary-{context}.md</code>中。AI代理在每次任务前读取其上下文的词汇表，确保使用正确的领域术语。这不是提示工程——这是应用于AI的领域工程。
+</p>
+
+<!-- ANGLE B -->
+<h3>Angle B · Anti-Corruption Layer as AI Guardrail — 防腐层作为AI护栏</h3>
+
+<p>
+<strong>Classical principle:</strong> Evans' Anti-Corruption Layer (ACL) translates between bounded contexts, preventing one context's model from corrupting another. When the Chilean SII context needs to send data to a shared reporting service, the ACL translates Chile-specific DTEs into a neutral invoice format. The ACL is a one-way valve: it lets data flow out in a clean, context-neutral form while protecting the internal model from external contamination.
+</p>
+
+<p>
+<strong>AI extension:</strong> The ACL becomes an AI guardrail. When an AI agent generates an invoice payload — say it drafts a Chilean DTE from a natural-language prompt — the ACL validates the output against domain rules before it enters the domain model. Does the RUT pass the check-digit algorithm? Is the CAF within the pre-authorized range? Is the IVA calculation exactly 19%? The AI might hallucinate a 20% rate (common in many European countries). The ACL catches this. Without this layer, AI-generated data flows directly into your Aggregates, and domain corruption is silent and cumulative.
+</p>
+
+<p>
+<strong>Concrete example:</strong> An ACL validating AI-generated invoice data before it enters the Chilean SII domain:
+</p>
+
+<div class="code-block" data-lang="Java — Anti-Corruption Layer as AI Guardrail">
+<pre><span class="kw">public class</span> <span class="tp">SiiAntiCorruptionLayer</span> {
+
+    <span class="kw">private final</span> <span class="tp">CafRangeRepository</span> cafRepo;
+    <span class="kw">private final</span> <span class="tp">RutValidator</span> rutValidator;
+
+    <span class="cm">// Validate AI-generated payload BEFORE it enters the domain</span>
+    <span class="kw">public</span> <span class="tp">DTE</span> <span class="fn">translateAndValidate</span>(<span class="tp">AiGeneratedInvoice</span> aiPayload) {
+
+        <span class="cm">// 1. Validate RUT format (AI might hallucinate wrong format)</span>
+        <span class="kw">if</span> (!rutValidator.<span class="fn">isValid</span>(aiPayload.<span class="fn">getTaxpayerId</span>())) {
+            <span class="kw">throw new</span> <span class="tp">DomainCorruptionException</span>(
+                <span class="str">"AI generated invalid RUT: "</span> + aiPayload.<span class="fn">getTaxpayerId</span>()
+            );
+        }
+
+        <span class="cm">// 2. Validate CAF is within pre-authorized range</span>
+        <span class="tp">CafRange</span> range = cafRepo.<span class="fn">findActive</span>(aiPayload.<span class="fn">getDocType</span>());
+        <span class="kw">if</span> (!range.<span class="fn">contains</span>(aiPayload.<span class="fn">getFolioNumber</span>())) {
+            <span class="kw">throw new</span> <span class="tp">DomainCorruptionException</span>(
+                <span class="str">"AI used folio outside valid CAF range"</span>
+            );
+        }
+
+        <span class="cm">// 3. Validate IVA rate (AI might use 20% from EU training data)</span>
+        <span class="kw">if</span> (aiPayload.<span class="fn">getVatRate</span>().<span class="fn">compareTo</span>(<span class="tp">SiiConstants</span>.IVA_RATE) != <span class="str">0</span>) {
+            <span class="kw">throw new</span> <span class="tp">DomainCorruptionException</span>(
+                <span class="str">"AI applied wrong IVA rate: "</span> + aiPayload.<span class="fn">getVatRate</span>()
+                + <span class="str">", expected: "</span> + <span class="tp">SiiConstants</span>.IVA_RATE
+            );
+        }
+
+        <span class="cm">// 4. All validations passed — translate to domain model</span>
+        <span class="kw">return</span> <span class="tp">DteMapper</span>.<span class="fn">fromAiPayload</span>(aiPayload, range);
+    }
+}</pre>
+</div>
+<p class="cn-note">
+经典原则：Evans的防腐层在限界上下文之间转换，防止一个上下文的模型腐蚀另一个。AI延伸：ACL成为AI护栏——验证AI生成的数据是否符合领域规则后才允许进入领域模型。RUT校验位是否正确？CAF是否在预授权范围内？IVA是否恰好19%？没有这一层，AI生成的数据直接流入聚合根，领域腐蚀无声且累积。
+</p>
+
+<!-- ANGLE C -->
+<h3>Angle C · Domain Events as AI Triggers — 领域事件作为AI触发器</h3>
+
+<p>
+<strong>Classical principle:</strong> Domain Events capture something meaningful that happened in the domain. <code>InvoiceIssued</code>, <code>PaymentReceived</code>, <code>TaxDocumentRejected</code> — each is a first-class concept in Evans' model. Vernon dedicates an entire chapter to implementing Domain Events as the backbone of eventual consistency between Aggregates and bounded contexts. Events are facts: immutable records that something happened.
+</p>
+
+<p>
+<strong>AI extension:</strong> Domain Events become triggers for AI agents. When the SII rejects a DTE, the <code>DteRejectedBySii</code> event fires. An AI handler subscribes to this event, reads the rejection code, correlates it with historical rejections in the same context, and suggests a fix — all within the bounded context's Ubiquitous Language. <code>PaymentOverdue</code> triggers an AI agent that classifies debtor risk and suggests a collection strategy based on Chilean regulatory constraints. The event-driven architecture from L1.1 (Observer pattern) meets DDD here: the Observer pattern is the mechanism, the Domain Event is the semantics.
+</p>
+
+<p>
+<strong>Concrete example:</strong> An event-driven AI handler for Chilean invoice rejection:
+</p>
+
+<div class="code-block" data-lang="Java — Domain Event AI Handler">
+<pre><span class="cm">// Domain Event — immutable fact within the SII Bounded Context</span>
+<span class="kw">public record</span> <span class="tp">DteRejectedBySii</span>(
+    <span class="tp">DteId</span> dteId,
+    <span class="tp">RejectionCode</span> code,       <span class="cm">// SII-specific: e.g. "RECHAZADO_CAF_VENCIDO"</span>
+    <span class="tp">Instant</span> occurredAt,
+    <span class="tp">String</span> siiMessage
+) <span class="kw">implements</span> <span class="tp">DomainEvent</span> {}
+
+<span class="cm">// AI Handler — subscribes to the event, stays within context</span>
+<span class="ann">@EventHandler</span>
+<span class="kw">public class</span> <span class="tp">AiRejectionAnalyzer</span> {
+
+    <span class="kw">private final</span> <span class="tp">AiAgent</span> siiAgent;        <span class="cm">// scoped to Chilean context</span>
+    <span class="kw">private final</span> <span class="tp">RejectionHistory</span> history;
+
+    <span class="kw">public</span> <span class="tp">SuggestedFix</span> <span class="fn">handle</span>(<span class="tp">DteRejectedBySii</span> event) {
+        <span class="cm">// AI agent reads context glossary + past rejections</span>
+        <span class="tp">List</span>&lt;<span class="tp">PastRejection</span>&gt; similar = history
+            .<span class="fn">findByCode</span>(event.code(), <span class="str">90</span>); <span class="cm">// last 90 days</span>
+
+        <span class="kw">return</span> siiAgent.<span class="fn">analyze</span>(
+            event,
+            similar,
+            <span class="str">"Suggest a fix using Chilean SII domain terms only"</span>
+        );
+        <span class="cm">// Output: "CAF range expired. Request new CAF from SII</span>
+        <span class="cm">//          portal for DTE type 33 (Factura Electr&oacute;nica)."</span>
+    }
+}</pre>
+</div>
+<p class="cn-note">
+经典原则：领域事件捕获领域中发生的有意义事情——不可变的事实记录。AI延伸：领域事件成为AI代理的触发器。SII拒绝DTE时，<code>DteRejectedBySii</code>事件触发AI处理器——读取拒绝码、关联历史拒绝、在限界上下文的通用语言内建议修复方案。L1.1的观察者模式是机制，领域事件是语义。
+</p>
+
+<!-- ANGLE D -->
+<h3>Angle D · Context Maps for Multi-Agent Systems — 上下文映射用于多代理系统</h3>
+
+<p>
+<strong>Classical principle:</strong> Evans' Context Maps visualize the relationships between bounded contexts. The map shows who is upstream and who is downstream, which relationships are partnerships (co-evolving), which are customer-supplier (one side has more power), which require an ACL (one context protects itself from another's model), and which expose an Open Host Service with a Published Language. The Context Map is the architect's strategic overview — it reveals where integration is easy, where it's risky, and where political negotiation is needed.
+</p>
+
+<p>
+<strong>AI extension:</strong> In multi-agent AI systems, each agent operates within a bounded context. The Context Map becomes an <em>agent boundary map</em>: which agent can call which, what protocol they use, and who is upstream versus downstream. The "Published Language" relationship maps directly to shared API contracts between AI agents. The "ACL" relationship means one agent must validate another agent's output before consuming it. In the NRS system, the Chilean SII agent cannot directly invoke the Greek AADE agent — they communicate through the Published Language (the shared invoice API contract), and each side's ACL validates inbound data. This prevents one agent's hallucinations from propagating across context boundaries.
+</p>
+
+<p>
+<strong>Concrete example:</strong> The NRS context map reinterpreted as a multi-agent architecture:
+</p>
+
+<!-- Secondary diagram: Context Map as Agent Boundary Map -->
+<div class="diagram-container">
+  <div class="diagram-label">◆ Diagram — Context Map as Multi-Agent Boundary Map</div>
+  <svg viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg" style="width:100%; font-family:'JetBrains Mono',monospace;">
+    <defs>
+      <marker id="arrow2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="var(--text-dim,#64748b)"/>
+      </marker>
+    </defs>
+
+    <!-- Classical Context Map Labels -->
+    <text x="200" y="20" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)" font-weight="500" letter-spacing="1">CLASSICAL DDD RELATIONSHIP</text>
+    <text x="600" y="20" text-anchor="middle" font-size="9" fill="var(--cyan,#22d3ee)" font-weight="500" letter-spacing="1">AI MULTI-AGENT INTERPRETATION</text>
+    <line x1="400" y1="10" x2="400" y2="280" stroke="var(--text-dim,#64748b)" stroke-width="1" stroke-dasharray="4,4"/>
+
+    <!-- Row 1: Published Language -->
+    <rect x="30" y="40" width="340" height="44" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="1"/>
+    <text x="200" y="58" text-anchor="middle" font-size="10" fill="var(--green,#10b981)" font-weight="600">Published Language</text>
+    <text x="200" y="73" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Shared schema between contexts</text>
+
+    <rect x="430" y="40" width="340" height="44" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1"/>
+    <text x="600" y="58" text-anchor="middle" font-size="10" fill="var(--cyan,#22d3ee)" font-weight="600">Agent API Contract</text>
+    <text x="600" y="73" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">OpenAPI + JSON Schema agents must conform to</text>
+
+    <!-- Row 2: ACL -->
+    <rect x="30" y="100" width="340" height="44" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--rose,#f43f5e)" stroke-width="1"/>
+    <text x="200" y="118" text-anchor="middle" font-size="10" fill="var(--rose,#f43f5e)" font-weight="600">Anti-Corruption Layer</text>
+    <text x="200" y="133" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Translate + protect internal model</text>
+
+    <rect x="430" y="100" width="340" height="44" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1"/>
+    <text x="600" y="118" text-anchor="middle" font-size="10" fill="var(--cyan,#22d3ee)" font-weight="600">AI Output Validator</text>
+    <text x="600" y="133" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Validate + sanitize AI output before domain entry</text>
+
+    <!-- Row 3: Customer-Supplier -->
+    <rect x="30" y="160" width="340" height="44" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--orange,#f97316)" stroke-width="1"/>
+    <text x="200" y="178" text-anchor="middle" font-size="10" fill="var(--orange,#f97316)" font-weight="600">Customer-Supplier</text>
+    <text x="200" y="193" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Upstream serves downstream's needs</text>
+
+    <rect x="430" y="160" width="340" height="44" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1"/>
+    <text x="600" y="178" text-anchor="middle" font-size="10" fill="var(--cyan,#22d3ee)" font-weight="600">Agent Dependency Graph</text>
+    <text x="600" y="193" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Which agent can call which, ownership of contract</text>
+
+    <!-- Row 4: Conformist -->
+    <rect x="30" y="220" width="340" height="44" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--yellow,#eab308)" stroke-width="1"/>
+    <text x="200" y="238" text-anchor="middle" font-size="10" fill="var(--yellow,#eab308)" font-weight="600">Conformist</text>
+    <text x="200" y="253" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Downstream adopts upstream's model as-is</text>
+
+    <rect x="430" y="220" width="340" height="44" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1"/>
+    <text x="600" y="238" text-anchor="middle" font-size="10" fill="var(--cyan,#22d3ee)" font-weight="600">Agent Model Binding</text>
+    <text x="600" y="253" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Agent must use upstream's schema without translation</text>
+
+    <!-- Arrows between columns -->
+    <text x="400" y="67" text-anchor="middle" font-size="14" fill="var(--text-dim,#64748b)">&#8594;</text>
+    <text x="400" y="127" text-anchor="middle" font-size="14" fill="var(--text-dim,#64748b)">&#8594;</text>
+    <text x="400" y="187" text-anchor="middle" font-size="14" fill="var(--text-dim,#64748b)">&#8594;</text>
+    <text x="400" y="247" text-anchor="middle" font-size="14" fill="var(--text-dim,#64748b)">&#8594;</text>
+  </svg>
+</div>
+<p class="cn-note">
+经典原则：Evans的上下文映射可视化限界上下文之间的关系——谁是上游、谁是下游，哪些需要ACL。AI延伸：在多代理AI系统中，上下文映射成为代理边界图——哪个代理可以调用哪个、使用什么协议、谁是上下游。"发布语言"直接映射为AI代理之间的共享API契约。"ACL"意味着一个代理必须验证另一个代理的输出才能消费。
+</p>
+
+
+<!-- ─── §04 DECISION TABLE ─── -->
+<h2><span class="num">04</span> Decision Table — When to Apply What</h2>
+
+<p>
+For the practicing architect integrating AI into a DDD-structured system, the question is always: "Given this DDD scenario, what's the classical approach and how does AI change the equation?" This table maps the seven most common DDD-meets-AI decisions.
+</p>
+<p class="cn-note">
+决策表将七个最常见的DDD与AI交汇决策映射到经典方法和AI增强方法，展示AI如何改变等式。
+</p>
+
+<table class="decision-table">
+  <thead>
+    <tr>
+      <th class="col-scenario">Scenario 场景</th>
+      <th class="col-classic"><span class="classic-badge">CLASSIC</span> Classical Approach</th>
+      <th class="col-ai"><span class="ai-badge">AI+</span> AI-Augmented Approach</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="col-scenario">BC Boundaries for AI<br><small style="color:var(--text-dim)">AI服务的限界上下文</small></td>
+      <td>Evans: align BCs with subdomains. One team per BC. Boundaries emerge from linguistic differences in the domain.</td>
+      <td>Same boundaries, but each BC now scopes an AI agent. Agent reads only its context's glossary, events, and rules. BC = AI cognitive sandbox.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">ACL Strategy for AI<br><small style="color:var(--text-dim)">AI集成的ACL策略</small></td>
+      <td>Vernon: ACL as adapter layer. Translates external models to internal domain types. Manual validation rules.</td>
+      <td>ACL adds AI-specific validation: format checks, rate checks, hallucination detection. Logs AI-generated vs. human-generated data separately for auditing.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Ubiquitous Language<br><small style="color:var(--text-dim)">通用语言管理</small></td>
+      <td>Evans: glossary maintained by team + domain experts. Living document updated in workshops. Enforced in code reviews.</td>
+      <td>Glossary stored as <code>.ai/domain-glossary-{ctx}.md</code>. AI agents consume it before every task. AI can flag term violations in PRs. Machine-readable glossary enables automated enforcement.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Domain Event Design<br><small style="color:var(--text-dim)">领域事件设计</small></td>
+      <td>Vernon: events are immutable facts. Carry minimal data. Published via event store or message bus. Consumers subscribe.</td>
+      <td>Events carry enough context for AI handlers. Add <code>correlationId</code> and <code>contextId</code> for AI traceability. AI handlers subscribe alongside human-authored handlers.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Aggregate Design<br><small style="color:var(--text-dim)">聚合设计兼容AI</small></td>
+      <td>Vernon: small Aggregates. Protect invariants. Reference other Aggregates by ID only. Eventual consistency between them.</td>
+      <td>Same rules, plus: Aggregates reject AI-generated commands that violate invariants with typed error responses (not exceptions). AI agents learn from rejection patterns.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Multi-Agent Coordination<br><small style="color:var(--text-dim)">多代理协调</small></td>
+      <td>Evans: Context Map defines relationships. Partnership, Customer-Supplier, Conformist, ACL, Open Host Service.</td>
+      <td>Context Map becomes agent topology. Agents communicate only through Published Language APIs. No direct agent-to-agent calls across BC boundaries. ACL at every crossing.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">AI Data Validation<br><small style="color:var(--text-dim)">AI生成数据验证</small></td>
+      <td>Vernon: domain model enforces invariants via Aggregate roots. Invalid state is impossible by construction.</td>
+      <td>Add pre-Aggregate validation layer for AI inputs. Schema validation + business rule checks + hallucination heuristics. Log and monitor AI rejection rates per context.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- ─── §05 PRACTICAL CHECKLIST ─── -->
+<h2><span class="num">05</span> Practical Checklist — Building DDD + AI Integration</h2>
+
+<p>
+To integrate AI agents into a DDD-structured system without corrupting your domain model, follow this staged checklist. Each stage builds on the previous — skip stages at the cost of domain integrity.
+</p>
+<p class="cn-note">
+将AI代理集成到DDD结构系统中而不腐蚀领域模型的分阶段检查清单。每个阶段建立在前一阶段之上——跳过阶段将以领域完整性为代价。
+</p>
+
+<div class="checklist">
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Identify bounded contexts in current system — map linguistic boundaries
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Document Ubiquitous Language glossary for each bounded context
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Implement Anti-Corruption Layers at all integration boundaries
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Establish domain event catalog — name, payload, business meaning per context
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    Create <code>.ai/domain-glossary-{ctx}.md</code> per bounded context
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    Configure AI agents to read their context's glossary before every task
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Domain events trigger AI handlers — rejection analysis, risk classification
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    ACL validates all AI-generated output before domain model entry
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Context Map explicitly includes AI agents — show agent boundaries
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    Multi-agent orchestration follows Context Map topology — no cross-BC calls
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    AI agents propose glossary updates — human domain experts approve
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    Monitor AI rejection rates per context — track domain integrity over time
+  </div>
+</div>
+
+
+<!-- ─── §06 TAKEAWAY ─── -->
+<h2><span class="num">06</span> The Architect's Takeaway</h2>
+
+<p>
+The three books on this article's shelf — Evans, Vernon's implementation guide, Vernon's distilled version — gave us the strategic vocabulary to manage complexity at scale: Bounded Contexts, Ubiquitous Language, Anti-Corruption Layers, Context Maps, Domain Events. These patterns were designed for human teams navigating complex domains. The AI era doesn't diminish these patterns — it <strong>amplifies their necessity</strong>.
+</p>
+<p class="cn-note">
+三本书给了我们管理规模化复杂性的战略词汇：限界上下文、通用语言、防腐层、上下文映射、领域事件。这些模式为人类团队驾驭复杂领域而设计。AI时代不会削弱这些模式——而是放大其必要性。
+</p>
+
+<p>
+Without Bounded Contexts, AI agents operate in an unbounded semantic space — the entire codebase becomes their context, and they conflate terms that look similar but mean different things in different parts of the business. Without Ubiquitous Language glossaries, AI agents generate code using generic terminology that corrupts the domain model. Without Anti-Corruption Layers, AI-generated data flows unchecked into your Aggregates. Without Context Maps, multi-agent systems become a tangle of uncontrolled cross-boundary calls. Every strategic DDD pattern maps directly to an AI governance mechanism. The architect who masters this mapping doesn't just build better software — they build AI-ready systems where agents operate reliably within clearly defined domains.
+</p>
+<p class="cn-note">
+没有限界上下文，AI代理在无界语义空间中运行。没有通用语言词汇表，AI代理用泛化术语腐蚀领域模型。没有防腐层，AI生成的数据不受检查地流入聚合根。没有上下文映射，多代理系统变成不受控的跨边界调用。每个战略DDD模式都直接映射为AI治理机制。
+</p>
+
+<div class="insight-box" style="margin-top:40px;">
+  <div class="label">Next in Series → Article 1.3</div>
+  <p style="margin:0; font-size:14px; line-height:1.6">
+    <strong>API Design as First-Class Decision</strong> — Bounded contexts need APIs. The API IS the published language. How RESTful maturity models, GraphQL boundaries, and gRPC contracts become the machine-readable interfaces that AI agents consume, validate, and evolve.
+    <br><span style="color:var(--text-dim); font-style:italic; font-family:'Noto Serif SC',serif;">下一篇：API设计作为一等决策——限界上下文需要API，API就是发布语言。</span>
+  </p>
+</div>
+
+</main>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="article-footer">
+  <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim)">
+    Software Knowledge Base · Layer 1: Design Thinking · Article 1.2 of 20<br>
+    Classical Foundations × AI Co-Evolution · 经典基础 × AI协同进化
+  </div>
+  <div class="nav-links">
+    <a class="nav-link" href="./1.1-design-patterns-revisited.html">← Prev: 1.1 Design Patterns Revisited</a>
+    <a class="nav-link" href="./1.3-api-design.html">Next: 1.3 API Design →</a>
+  </div>
+</footer>
+
+</body>
+</html>

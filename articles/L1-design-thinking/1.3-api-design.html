@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1.3 API Design as a First-Class Architectural Decision</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<!--
+  CSS Architecture Note:
+  The canonical design system lives in templates/article-base.css.
+  For single-file distribution, it is inlined here.
+  When editing styles, update article-base.css first, then re-inline.
+-->
+<style>
+/* ═══ INLINED FROM templates/article-base.css ═══ */
+:root {
+  --bg-deep: #0a0e17;
+  --bg-surface: #0f1420;
+  --bg-card: #141b2d;
+  --bg-card-hover: #1a2340;
+  --border: #1e2a45;
+  --border-accent: #2d4a7a;
+  --cyan: #22d3ee;
+  --cyan-dim: #0e7490;
+  --cyan-glow: rgba(34, 211, 238, 0.15);
+  --purple: #a78bfa;
+  --purple-dim: #6d5dbb;
+  --purple-glow: rgba(167, 139, 250, 0.12);
+  --orange: #f97316;
+  --orange-glow: rgba(249, 115, 22, 0.12);
+  --green: #10b981;
+  --green-glow: rgba(16, 185, 129, 0.12);
+  --rose: #f43f5e;
+  --rose-glow: rgba(244, 63, 94, 0.12);
+  --yellow: #eab308;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg-deep); color:var(--text-primary); font-family:'IBM Plex Sans',sans-serif; line-height:1.75; font-size:16px; -webkit-font-smoothing:antialiased; }
+.article-header { position:relative; padding:80px 0 60px; overflow:hidden; border-bottom:1px solid var(--border); }
+.article-header::before { content:''; position:absolute; top:0;left:0;right:0;bottom:0; background:radial-gradient(ellipse 800px 400px at 20% 50%,rgba(34,211,238,0.06),transparent),radial-gradient(ellipse 600px 300px at 80% 30%,rgba(167,139,250,0.04),transparent); }
+.header-content { position:relative; max-width:860px; margin:0 auto; padding:0 32px; }
+.series-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--cyan); border:1px solid var(--cyan-dim); padding:4px 12px; border-radius:3px; margin-bottom:20px; background:var(--cyan-glow); }
+.article-title { font-family:'JetBrains Mono',monospace; font-size:36px; font-weight:700; line-height:1.25; color:var(--text-primary); margin-bottom:8px; }
+.article-title-cn { font-family:'Noto Serif SC',serif; font-size:20px; font-weight:400; color:var(--text-dim); font-style:italic; margin-bottom:24px; }
+.article-meta { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-dim); display:flex; gap:24px; flex-wrap:wrap; }
+.meta-item { display:flex; align-items:center; gap:6px; }
+.meta-dot { width:6px; height:6px; border-radius:50%; }
+.article-body { max-width:860px; margin:0 auto; padding:48px 32px; }
+h2 { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:var(--cyan); margin:56px 0 8px; padding-bottom:12px; border-bottom:1px solid var(--border); letter-spacing:-0.5px; }
+.article-body > h2:first-child { margin-top:0; }
+h2 .num { color:var(--text-dim); font-weight:400; margin-right:8px; }
+h3 { font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; color:var(--purple); margin:36px 0 12px; }
+p { margin-bottom:18px; color:var(--text-primary); font-size:15.5px; }
+.cn-note { font-family:'Noto Serif SC',serif; font-style:italic; color:var(--text-dim); font-size:14px; line-height:1.8; margin:-8px 0 24px; padding-left:16px; border-left:2px solid var(--border); }
+code { font-family:'JetBrains Mono',monospace; font-size:0.88em; background:rgba(34,211,238,0.08); padding:2px 6px; border-radius:3px; color:var(--cyan); }
+.diagram-container { margin:40px -16px; padding:32px 24px; background:var(--bg-surface); border:1px solid var(--border); border-radius:8px; position:relative; overflow-x:auto; }
+.diagram-container::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--cyan),var(--purple),var(--orange)); }
+.diagram-label { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:20px; }
+.diagram-sublabel { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-dim); margin-top:-16px; margin-bottom:16px; font-style:italic; }
+.bookshelf { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin:24px 0; align-items:stretch; }
+.book-card { background:var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:16px; transition:all 0.25s ease; position:relative; overflow:hidden; min-height:190px; display:flex; flex-direction:column; }
+.book-card::before { content:''; position:absolute; left:0;top:0;bottom:0; width:3px; }
+.book-card.tier1::before { background:var(--cyan); }
+.book-card.tier2::before { background:var(--purple); }
+.book-card:hover { border-color:var(--border-accent); background:var(--bg-card-hover); transform:translateY(-2px); }
+.book-title { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:4px; line-height:1.4; }
+.book-author { font-size:11px; color:var(--text-dim); }
+.book-desc { font-size:12px; color:var(--text-secondary); margin-top:8px; line-height:1.5; flex:1; }
+.book-tag { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:2px 6px; border-radius:3px; margin-top:8px; letter-spacing:0.5px; }
+.tag-foundation { background:rgba(34,211,238,0.1); color:var(--cyan); border:1px solid rgba(34,211,238,0.2); }
+.tag-practice { background:rgba(167,139,250,0.1); color:var(--purple); border:1px solid rgba(167,139,250,0.2); }
+.decision-table { width:100%; border-collapse:collapse; margin:24px 0; font-size:13px; }
+.decision-table th { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; text-align:left; padding:12px 16px; border-bottom:2px solid var(--border-accent); color:var(--text-secondary); background:var(--bg-surface); }
+.decision-table td { padding:12px 16px; border-bottom:1px solid var(--border); color:var(--text-primary); vertical-align:top; line-height:1.5; }
+.decision-table tr:hover td { background:rgba(34,211,238,0.03); }
+.decision-table .col-scenario { width:22%; font-weight:500; color:var(--text-secondary); }
+.decision-table .col-classic { width:39%; }
+.decision-table .col-ai { width:39%; }
+.classic-badge,.ai-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:1px 5px; border-radius:2px; margin-right:4px; vertical-align:middle; }
+.classic-badge { background:rgba(148,163,184,0.15); color:var(--text-secondary); }
+.ai-badge { background:rgba(34,211,238,0.12); color:var(--cyan); }
+.checklist { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:24px 0; }
+.check-item { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:5px; font-size:13px; color:var(--text-primary); line-height:1.4; transition:border-color 0.2s; }
+.check-item:hover { border-color:var(--border-accent); }
+.check-stage { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:600; padding:2px 7px; border-radius:3px; white-space:nowrap; flex-shrink:0; }
+.insight-box { margin:32px 0; padding:24px; background:linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04)); border:1px solid var(--border-accent); border-radius:8px; position:relative; }
+.insight-box::before { content:'⚡'; position:absolute; top:-12px; left:20px; background:var(--bg-deep); padding:0 8px; font-size:18px; }
+.insight-box .label { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--cyan); margin-bottom:8px; }
+.code-block { background:#0d1117; border:1px solid var(--border); border-radius:6px; padding:20px; margin:20px 0; overflow-x:auto; position:relative; }
+.code-block::before { content:attr(data-lang); position:absolute; top:8px; right:12px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-dim); letter-spacing:0.5px; }
+.code-block pre { font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.6; color:var(--text-secondary); }
+.code-block .kw { color:var(--purple); }
+.code-block .fn { color:var(--cyan); }
+.code-block .str { color:var(--green); }
+.code-block .cm { color:var(--text-dim); font-style:italic; }
+.code-block .ann { color:var(--orange); }
+.code-block .tp { color:var(--yellow); }
+.evolution-steps { position:relative; padding-left:32px; margin:28px 0; }
+.evolution-steps::before { content:''; position:absolute; left:11px; top:8px; bottom:8px; width:2px; background:linear-gradient(to bottom,var(--cyan),var(--purple),var(--orange)); }
+.evo-step { position:relative; margin-bottom:24px; padding-left:20px; }
+.evo-step::before { content:''; position:absolute; left:-25px; top:8px; width:10px; height:10px; border-radius:50%; border:2px solid; }
+.evo-step:nth-child(1)::before { border-color:var(--text-dim); background:var(--bg-deep); }
+.evo-step:nth-child(2)::before { border-color:var(--text-secondary); background:var(--bg-deep); }
+.evo-step:nth-child(3)::before { border-color:var(--cyan-dim); background:var(--bg-deep); }
+.evo-step:nth-child(4)::before { border-color:var(--purple); background:var(--bg-deep); }
+.evo-step:nth-child(5)::before { border-color:var(--cyan); background:var(--cyan); }
+.evo-step:nth-child(6)::before { border-color:var(--green); background:var(--green); }
+.evo-step-title { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; margin-bottom:4px; }
+.evo-step-desc { font-size:13.5px; color:var(--text-secondary); line-height:1.6; }
+.article-footer { max-width:860px; margin:0 auto; padding:40px 32px; border-top:1px solid var(--border); font-size:12px; color:var(--text-dim); }
+.nav-links { display:flex; justify-content:space-between; align-items:center; margin-top:20px; }
+.nav-link { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--cyan); text-decoration:none; padding:8px 16px; border:1px solid var(--border); border-radius:4px; transition:all 0.2s; }
+.nav-link:hover { border-color:var(--cyan); background:var(--cyan-glow); }
+@media (max-width:640px) {
+  .article-title { font-size:24px; }
+  .bookshelf { grid-template-columns:1fr; }
+  .checklist { grid-template-columns:1fr; }
+  .article-meta { flex-direction:column; gap:8px; }
+}
+@media print {
+  :root { --bg-deep:#fff; --bg-surface:#f8f9fa; --bg-card:#f1f3f5; --bg-card-hover:#f1f3f5; --border:#dee2e6; --border-accent:#adb5bd; --text-primary:#212529; --text-secondary:#495057; --text-dim:#868e96; --cyan:#0c8599; --purple:#7048e8; --orange:#e8590c; --green:#099268; --rose:#e03131; --yellow:#e67700; }
+  body { font-size:11pt; line-height:1.5; }
+  .article-header::before { display:none; }
+  .article-header { padding:24px 0; }
+  .diagram-container::before { display:none; }
+  .book-card:hover { transform:none; }
+  .nav-links { display:none; }
+  .code-block { border:1px solid #dee2e6; background:#f8f9fa; }
+  .code-block pre { color:#212529; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header class="article-header">
+  <div class="header-content">
+    <div class="series-badge" style="color:var(--purple); border-color:var(--purple-dim); background:var(--purple-glow);">Layer 1 · Design Thinking · 设计思维层</div>
+    <h1 class="article-title">API Design as a First-Class Architectural Decision</h1>
+    <div class="article-title-cn">API设计作为一等架构决策</div>
+    <div class="article-meta">
+      <span class="meta-item"><span class="meta-dot" style="background:var(--cyan)"></span> Article 1.3 of 20</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--purple)"></span> ~17 min read</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--orange)"></span> 3 Source Books × 4 AI Angles</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════ BODY ═══════════════ -->
+<main class="article-body">
+
+<!-- ─── §01 CORE INSIGHT ─── -->
+<h2><span class="num">01</span> Core Insight — The Thesis</h2>
+
+<p>
+An API is not an implementation detail. It is the single most consequential boundary in your system — the contract that defines how services, teams, and organizations communicate. JJ Geewax frames it precisely: APIs are user interfaces for developers. The same UX principles that govern a well-designed consumer product — consistency, discoverability, minimal surprise — apply with equal force to a well-designed API. Richardson and Amundsen extend this further with HATEOAS: the ideal API is self-describing, navigable through hypermedia links rather than hardcoded knowledge. Newman completes the picture from the microservices perspective: the API contract IS the coupling point between services, and getting it right is the difference between independent evolution and distributed monolith hell.
+</p>
+<p class="cn-note">
+API不是实现细节。它是系统中最具后果性的边界——定义服务、团队和组织如何通信的契约。Geewax精确地指出：API是开发者的用户界面。Richardson和Amundsen用HATEOAS扩展了这一理念：理想的API是自描述的。Newman从微服务视角补完：API契约就是服务间的耦合点。
+</p>
+
+<p>
+Here is the paradigm shift of the AI era: <strong>your API now has two entirely different categories of consumers — humans and AI agents — and both must be served by the same contract.</strong> When a human developer reads your API documentation, they interpret intent, infer missing information, and forgive ambiguity. When an AI agent reads your OpenAPI spec, it generates client code, test suites, and integration logic with mechanical precision — but only if the spec is rich enough. A minimal spec with sparse descriptions produces mediocre AI output. A richly annotated spec with examples, semantic descriptions, and clear error schemas produces exceptional AI output. The quality of your API specification has become a direct multiplier on AI-assisted development velocity.
+</p>
+<p class="cn-note">
+AI时代的范式转变：你的API现在有两类完全不同的消费者——人类和AI代理——两者必须由同一契约服务。人类开发者能推断意图、容忍模糊。AI代理则以机械精度生成客户端代码——但前提是规范足够丰富。API规范的质量已成为AI辅助开发速度的直接乘数。
+</p>
+
+<div class="insight-box">
+  <div class="label">The Reframing 核心重构</div>
+  <p style="margin:0; font-size:15px; line-height:1.7">
+    <strong>Your API spec is a prompt.</strong> When an AI agent reads your OpenAPI specification to generate a client SDK, write integration tests, or build a workflow, it treats the spec as its primary context. Rich descriptions are few-shot examples. Response schemas are output format instructions. Error codes are edge-case documentation. Every annotation you add to your API spec improves the quality of every AI-generated artifact downstream. Investing in API design quality now pays compound returns as AI consumers multiply.
+  </p>
+</div>
+<p class="cn-note">
+你的API规范就是提示词。当AI代理读取OpenAPI规范来生成客户端SDK、编写集成测试或构建工作流时，它将规范视为主要上下文。丰富的描述是少样本示例，响应模式是输出格式指令，错误码是边缘情况文档。在API设计质量上的投入随AI消费者的增多获得复合回报。
+</p>
+
+<!-- HERO DIAGRAM: API AS BOUNDARY -->
+<div class="diagram-container">
+  <div class="diagram-label">◆ Hero Diagram — API as the Shared Boundary</div>
+  <svg viewBox="0 0 800 380" xmlns="http://www.w3.org/2000/svg" style="width:100%; font-family:'JetBrains Mono',monospace;">
+    <defs>
+      <linearGradient id="apiGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--purple,#a78bfa)"/>
+        <stop offset="100%" stop-color="var(--cyan,#22d3ee)"/>
+      </linearGradient>
+    </defs>
+
+    <!-- Title labels -->
+    <text x="150" y="24" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)" font-weight="500" letter-spacing="1">CONSUMERS 消费者</text>
+    <text x="400" y="24" text-anchor="middle" font-size="9" fill="var(--purple,#a78bfa)" font-weight="500" letter-spacing="1">API CONTRACT 契约层</text>
+    <text x="650" y="24" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)" font-weight="500" letter-spacing="1">PROVIDERS 提供者</text>
+
+    <!-- Human consumers (left side) -->
+    <rect x="20" y="50" width="140" height="60" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--text-secondary,#94a3b8)" stroke-width="1"/>
+    <text x="90" y="74" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Web Frontend</text>
+    <text x="90" y="90" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">React / Vue SPA</text>
+    <text x="90" y="102" text-anchor="middle" font-size="7" fill="var(--text-secondary,#94a3b8)">Human developers</text>
+
+    <rect x="20" y="125" width="140" height="60" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--text-secondary,#94a3b8)" stroke-width="1"/>
+    <text x="90" y="149" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Mobile App</text>
+    <text x="90" y="165" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">iOS / Android SDK</text>
+    <text x="90" y="177" text-anchor="middle" font-size="7" fill="var(--text-secondary,#94a3b8)">Human developers</text>
+
+    <!-- AI consumers (left side) -->
+    <rect x="20" y="205" width="140" height="60" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1.2"/>
+    <text x="90" y="229" text-anchor="middle" font-size="10" fill="var(--cyan,#22d3ee)" font-weight="600">AI Agent</text>
+    <text x="90" y="245" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Workflow automation</text>
+    <text x="90" y="257" text-anchor="middle" font-size="7" fill="var(--cyan,#22d3ee)">Reads OpenAPI spec</text>
+
+    <rect x="20" y="280" width="140" height="60" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1.2"/>
+    <text x="90" y="304" text-anchor="middle" font-size="10" fill="var(--cyan,#22d3ee)" font-weight="600">AI Code Gen</text>
+    <text x="90" y="320" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">SDK / test generation</text>
+    <text x="90" y="332" text-anchor="middle" font-size="7" fill="var(--cyan,#22d3ee)">Spec = prompt context</text>
+
+    <!-- Central API Contract column -->
+    <rect x="300" y="44" width="200" height="300" rx="8" fill="none" stroke="url(#apiGrad)" stroke-width="2" stroke-dasharray="6,3"/>
+    <text x="400" y="68" text-anchor="middle" font-size="11" fill="var(--purple,#a78bfa)" font-weight="700">OpenAPI 3.1 SPEC</text>
+
+    <rect x="315" y="82" width="170" height="36" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="400" y="100" text-anchor="middle" font-size="9" fill="var(--text-primary,#e2e8f0)" font-weight="500">Schemas + Validation</text>
+    <text x="400" y="112" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Request/response contracts</text>
+
+    <rect x="315" y="126" width="170" height="36" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="400" y="144" text-anchor="middle" font-size="9" fill="var(--text-primary,#e2e8f0)" font-weight="500">Auth + Rate Limits</text>
+    <text x="400" y="156" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Security schemes, quotas</text>
+
+    <rect x="315" y="170" width="170" height="36" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="400" y="188" text-anchor="middle" font-size="9" fill="var(--text-primary,#e2e8f0)" font-weight="500">Examples + Descriptions</text>
+    <text x="400" y="200" text-anchor="middle" font-size="7" fill="var(--cyan,#22d3ee)">AI prompt quality lever</text>
+
+    <rect x="315" y="214" width="170" height="36" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="400" y="232" text-anchor="middle" font-size="9" fill="var(--text-primary,#e2e8f0)" font-weight="500">Error Codes + Webhooks</text>
+    <text x="400" y="244" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Failure contracts, events</text>
+
+    <rect x="315" y="258" width="170" height="36" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="400" y="276" text-anchor="middle" font-size="9" fill="var(--text-primary,#e2e8f0)" font-weight="500">HATEOAS Links</text>
+    <text x="400" y="288" text-anchor="middle" font-size="7" fill="var(--cyan,#22d3ee)">AI-navigable discovery</text>
+
+    <rect x="315" y="302" width="170" height="36" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="400" y="320" text-anchor="middle" font-size="9" fill="var(--text-primary,#e2e8f0)" font-weight="500">Versioning Strategy</text>
+    <text x="400" y="332" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Expand-Contract lifecycle</text>
+
+    <!-- Provider services (right side) -->
+    <rect x="640" y="80" width="140" height="56" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--orange,#f97316)" stroke-width="1.2"/>
+    <text x="710" y="104" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">NRS Core</text>
+    <text x="710" y="120" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Invoice engine</text>
+    <text x="710" y="130" text-anchor="middle" font-size="7" fill="var(--orange,#f97316)">Dual-credential auth</text>
+
+    <rect x="640" y="152" width="140" height="56" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="1.2"/>
+    <text x="710" y="176" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">SII Gateway</text>
+    <text x="710" y="192" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Chile tax authority</text>
+    <text x="710" y="202" text-anchor="middle" font-size="7" fill="var(--green,#10b981)">Certificate + token</text>
+
+    <rect x="640" y="224" width="140" height="56" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--yellow,#eab308)" stroke-width="1.2"/>
+    <text x="710" y="248" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Bsale POS</text>
+    <text x="710" y="264" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Chilean POS system</text>
+    <text x="710" y="274" text-anchor="middle" font-size="7" fill="var(--yellow,#eab308)">API key + webhook</text>
+
+    <rect x="640" y="296" width="140" height="56" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--rose,#f43f5e)" stroke-width="1.2"/>
+    <text x="710" y="320" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">AADE / NF-e</text>
+    <text x="710" y="336" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Greece / Brazil tax</text>
+    <text x="710" y="346" text-anchor="middle" font-size="7" fill="var(--rose,#f43f5e)">Different auth each</text>
+
+    <!-- Arrows left → center -->
+    <line x1="162" y1="80" x2="298" y2="100" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#apiArrow)"/>
+    <line x1="162" y1="155" x2="298" y2="144" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#apiArrow)"/>
+    <line x1="162" y1="235" x2="298" y2="188" stroke="var(--cyan,#22d3ee)" stroke-width="1.2" marker-end="url(#apiArrowCyan)"/>
+    <line x1="162" y1="310" x2="298" y2="276" stroke="var(--cyan,#22d3ee)" stroke-width="1.2" marker-end="url(#apiArrowCyan)"/>
+
+    <!-- Arrows center → right -->
+    <line x1="502" y1="100" x2="638" y2="108" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#apiArrow)"/>
+    <line x1="502" y1="144" x2="638" y2="180" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#apiArrow)"/>
+    <line x1="502" y1="232" x2="638" y2="252" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#apiArrow)"/>
+    <line x1="502" y1="320" x2="638" y2="324" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#apiArrow)"/>
+
+    <!-- Key insight bottom -->
+    <rect x="120" y="356" width="560" height="20" rx="4" fill="none" stroke="var(--purple,#a78bfa)" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="400" y="370" text-anchor="middle" font-size="9" fill="var(--purple,#a78bfa)" font-weight="600">THE API CONTRACT IS THE SHARED INTERFACE FOR HUMANS, AI AGENTS, AND PARTNER SYSTEMS</text>
+
+    <defs>
+      <marker id="apiArrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="var(--text-dim,#64748b)"/>
+      </marker>
+      <marker id="apiArrowCyan" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="var(--cyan,#22d3ee)"/>
+      </marker>
+    </defs>
+  </svg>
+</div>
+
+
+<!-- ─── §02 CLASSICAL FOUNDATION ─── -->
+<h2><span class="num">02</span> Classical Foundation — Source Books</h2>
+
+<p>
+Three books form the intellectual backbone of modern API design. Geewax provides the <em>patterns catalog</em> — the naming, pagination, and error conventions that make APIs consistent and predictable. Richardson and Amundsen provide the <em>architectural vision</em> — the self-describing, hypermedia-driven API that machines can navigate without hardcoded knowledge. Newman provides the <em>organizational perspective</em> — the API as the microservice boundary, the coupling point where teams negotiate contracts and where wrong choices create distributed monolith pain. Together, they answer every dimension of API design from individual field naming to cross-team governance.
+</p>
+<p class="cn-note">
+三本书构成现代API设计的知识骨架。Geewax提供模式目录——命名、分页和错误约定。Richardson和Amundsen提供架构愿景——自描述的超媒体驱动API。Newman提供组织视角——API作为微服务边界和团队间谈判契约的耦合点。三者共同覆盖从字段命名到跨团队治理的每个维度。
+</p>
+
+<div class="bookshelf">
+  <div class="book-card tier1">
+    <div class="book-title">API Design Patterns</div>
+    <div class="book-author">JJ Geewax · 2021</div>
+    <div class="book-desc">Comprehensive patterns catalog for APIs: naming, pagination, filtering, long-running operations, custom methods. Key insight: APIs are user interfaces for developers — the same UX principles apply. Consistent, predictable APIs reduce cognitive load for both humans AND AI consumers.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · API PATTERNS</span>
+  </div>
+  <div class="book-card tier1">
+    <div class="book-title">RESTful Web APIs</div>
+    <div class="book-author">Richardson & Amundsen · 2013</div>
+    <div class="book-desc">Hypermedia as the engine of application state (HATEOAS). Richardson Maturity Model (Level 0-3). The self-describing API ideal maps directly to AI-navigable APIs — an AI agent can discover capabilities by following links rather than hardcoding endpoints.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · REST ARCHITECTURE</span>
+  </div>
+  <div class="book-card tier2">
+    <div class="book-title">Building Microservices, 2nd Ed</div>
+    <div class="book-author">Sam Newman · 2021</div>
+    <div class="book-desc">API as the microservice boundary. Synchronous (REST/gRPC) vs asynchronous (events/messaging). API versioning strategies. Newman's key insight: the API contract IS the coupling point — get it right and services can evolve independently.</div>
+    <span class="book-tag tag-practice">PRACTICE · SERVICE BOUNDARIES</span>
+  </div>
+</div>
+
+<p>
+What connects these three books is a shared recognition that an API is an architectural decision with long-lasting consequences. Geewax frames it as a UX problem: a poorly named endpoint creates confusion that compounds across every consumer and every version. Richardson frames it as a discoverability problem: an API that requires out-of-band documentation to use is an API that resists automation. Newman frames it as a coupling problem: a leaky API that exposes internal implementation details creates tight coupling between teams, turning independent microservices into a coordinated deployment nightmare. The AI era amplifies all three concerns — because AI consumers are less tolerant of inconsistency, less able to work around missing documentation, and more likely to propagate bad contract assumptions at scale.
+</p>
+<p class="cn-note">
+三本书的共同认知：API是具有长期后果的架构决策。Geewax视其为UX问题，Richardson视其为可发现性问题，Newman视其为耦合问题。AI时代放大了所有三个关切——因为AI消费者对不一致性的容忍度更低、更无法绕过缺失文档、更容易大规模传播错误的契约假设。
+</p>
+
+
+<!-- ─── §03 AI CO-EVOLUTION ─── -->
+<h2><span class="num">03</span> AI Co-Evolution — Four Angles</h2>
+
+<p>
+Each angle below takes one classical API design principle and extends it with an AI capability that fundamentally changes how APIs are designed, consumed, and maintained. The pattern is consistent: the classical principle provides the <em>what</em> and <em>why</em>; AI provides the <em>how much faster</em> and <em>how much smarter</em>.
+</p>
+<p class="cn-note">
+以下每个角度取一个经典API设计原则，并用从根本上改变API设计、消费和维护方式的AI能力加以扩展。经典原则提供"做什么"和"为什么"；AI提供"快多少"和"智能多少"。
+</p>
+
+<!-- ANGLE A -->
+<h3>Angle A · OpenAPI Spec as "AI Prompt" — OpenAPI规范即"AI提示词"</h3>
+
+<p>
+<strong>Classical principle:</strong> API-first design — write the spec before the implementation. Geewax advocates designing the API surface as a deliberate, reviewed artifact before any server code is written. The spec is the contract, the documentation, and the test oracle rolled into one. This discipline forces architects to think about naming, resource relationships, and error semantics upfront, when changes are cheap.
+</p>
+
+<p>
+<strong>AI extension:</strong> The OpenAPI spec IS the prompt for AI-generated integrations. When an AI agent reads your OpenAPI spec, it generates client code, test suites, and integration logic. The better your spec — richer descriptions, concrete examples, comprehensive schemas, clear error definitions — the better the AI's output. A minimal spec with bare endpoints and no descriptions produces generic, often incorrect client code. A richly annotated spec produces production-ready SDKs and test suites with edge-case coverage. Treat your API spec as "prompt engineering for developers."
+</p>
+
+<p>
+<strong>Concrete example:</strong> Consider two versions of the same NRS endpoint — one minimal, one richly annotated. The quality difference in AI-generated client code is dramatic:
+</p>
+
+<div class="code-block" data-lang="OpenAPI YAML — Minimal vs Rich">
+<pre><span class="cm"># ✗ MINIMAL SPEC — AI must guess everything</span>
+<span class="kw">paths</span>:
+  <span class="str">/invoices</span>:
+    <span class="kw">post</span>:
+      <span class="fn">operationId</span>: createInvoice
+      <span class="fn">requestBody</span>:
+        <span class="fn">content</span>:
+          <span class="str">application/json</span>:
+            <span class="fn">schema</span>:
+              <span class="tp">$ref</span>: <span class="str">'#/components/schemas/Invoice'</span>
+
+<span class="cm"># ✓ RICH SPEC — AI generates production-ready code</span>
+<span class="kw">paths</span>:
+  <span class="str">/invoices</span>:
+    <span class="kw">post</span>:
+      <span class="fn">operationId</span>: createInvoice
+      <span class="fn">summary</span>: <span class="str">Issue a tax-compliant electronic invoice</span>
+      <span class="fn">description</span>: |
+        <span class="str">Creates and submits an invoice to the country's tax</span>
+        <span class="str">authority (SII for Chile, AADE for Greece). Requires</span>
+        <span class="str">dual-credential auth: API key + tax certificate.</span>
+        <span class="str">Returns a signed document with fiscal folio number.</span>
+      <span class="fn">security</span>:
+        - <span class="tp">apiKey</span>: []
+          <span class="tp">taxCertificate</span>: []
+      <span class="fn">requestBody</span>:
+        <span class="fn">required</span>: <span class="kw">true</span>
+        <span class="fn">content</span>:
+          <span class="str">application/json</span>:
+            <span class="fn">schema</span>:
+              <span class="tp">$ref</span>: <span class="str">'#/components/schemas/InvoiceRequest'</span>
+            <span class="fn">example</span>:
+              <span class="fn">countryCode</span>: <span class="str">"CL"</span>
+              <span class="fn">documentType</span>: <span class="str">"FACTURA_ELECTRONICA"</span>
+              <span class="fn">issuer</span>:
+                <span class="fn">taxId</span>: <span class="str">"76.XXX.XXX-K"</span>
+                <span class="fn">name</span>: <span class="str">"Empresa Demo SpA"</span>
+              <span class="fn">lineItems</span>:
+                - <span class="fn">description</span>: <span class="str">"Cloud hosting Q1"</span>
+                  <span class="fn">quantity</span>: <span class="str">1</span>
+                  <span class="fn">unitPrice</span>: <span class="str">150000</span>
+                  <span class="fn">taxRate</span>: <span class="str">0.19</span>
+      <span class="fn">responses</span>:
+        <span class="str">'201'</span>:
+          <span class="fn">description</span>: <span class="str">Invoice accepted by tax authority</span>
+          <span class="fn">content</span>:
+            <span class="str">application/json</span>:
+              <span class="fn">schema</span>:
+                <span class="tp">$ref</span>: <span class="str">'#/components/schemas/InvoiceResponse'</span>
+        <span class="str">'422'</span>:
+          <span class="fn">description</span>: <span class="str">Tax authority rejected the document</span>
+        <span class="str">'503'</span>:
+          <span class="fn">description</span>: <span class="str">Tax authority temporarily unavailable</span></pre>
+</div>
+<p class="cn-note">
+经典原则：API优先设计——在实现之前编写规范。AI延伸：OpenAPI规范就是AI生成集成代码的提示词。规范越丰富——描述、示例、模式、错误定义——AI的输出越好。上方对比展示了最小规范与丰富规范在AI代码生成质量上的巨大差异。
+</p>
+
+<!-- ANGLE B -->
+<h3>Angle B · AI-Powered API Gateways — AI增强的API网关</h3>
+
+<p>
+<strong>Classical principle:</strong> The API gateway handles cross-cutting concerns — authentication, rate limiting, routing, request transformation, SSL termination — so that individual services don't need to implement them. Newman emphasizes the gateway as the single entry point for external consumers, while internal service-to-service communication may bypass it. The gateway is the enforcement point for API contracts.
+</p>
+
+<p>
+<strong>AI extension:</strong> Next-generation gateways add an AI layer that transforms the gateway from a rule-based router to a context-aware middleware. Intelligent rate limiting predicts traffic spikes based on historical patterns and adjusts quotas proactively rather than reactively. Semantic request routing classifies request intent using NLP and routes to the appropriate backend version or canary deployment. Automatic response enrichment adds contextual metadata based on the caller's profile. Anomaly detection on request patterns identifies potential security threats, abuse patterns, or API misuse in real-time. For NRS: the gateway must route to different tax authority APIs (SII, AADE, NF-e) with different auth mechanisms, rate limits, and payload formats — an AI-enhanced gateway learns each authority's availability patterns and optimizes routing accordingly.
+</p>
+
+<p>
+<strong>Concrete example:</strong> In the NRS multi-country architecture, the API gateway sits between the unified NRS API and the country-specific tax authority APIs. Each country has wildly different characteristics: SII (Chile) uses certificate-based auth with strict rate limits during month-end filing periods; AADE (Greece) uses OAuth tokens with unpredictable downtime windows; NF-e (Brazil) uses XML-SOAP with state-level routing. An AI-enhanced gateway learns these patterns, predicts SII congestion during month-end, pre-caches AADE tokens before expiry, and auto-retries NF-e requests with exponential backoff tuned to each Brazilian state's response profile.
+</p>
+<p class="cn-note">
+经典原则：API网关处理横切关注点——认证、限流、路由。AI延伸：下一代网关添加AI层——智能限流预测流量峰值、语义路由分类请求意图、异常检测识别滥用模式。NRS场景：网关在统一API和各国税务局API之间路由，AI学习每个税务局的可用性模式并优化路由策略。
+</p>
+
+<!-- ANGLE C -->
+<h3>Angle C · Webhook Evolution — From Fire-and-Forget to AI-Monitored — Webhook进化：从发后即忘到AI监控</h3>
+
+<p>
+<strong>Classical principle:</strong> Webhooks provide event-driven notification — when something happens in system A, it fires an HTTP callback to system B. The classical challenges are well-documented: delivery reliability (what if the receiver is down?), ordering guarantees (events may arrive out of sequence), payload evolution (schema changes break consumers), and security (how do you verify the sender?). The standard approach is fire-and-forget with exponential backoff retry.
+</p>
+
+<p>
+<strong>AI extension:</strong> AI transforms webhook infrastructure from a dumb retry pipeline into an intelligent delivery system. AI classifies webhook failures into categories — transient (network blip, 503), permanent (invalid URL, 410 gone), and degraded (slow responses suggesting partner under load) — and applies different strategies to each. AI predicts partner downtime patterns: if Bsale's webhook endpoint consistently degrades between 2-4 AM for maintenance, AI pre-buffers events and delivers them in batch after recovery. AI validates webhook payloads against schema before delivery, catching contract drift before it becomes a production incident. For NRS: when SII sends tax document status webhooks (accepted, rejected, pending review), AI classifies response patterns across thousands of documents and predicts processing delays — alerting the operations team when SII's processing queue is backed up, even before SII announces downtime.
+</p>
+
+<div class="evolution-steps">
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--text-dim)">Level 1 — Fire and Forget</div>
+    <div class="evo-step-desc">POST payload to callback URL. No retry, no monitoring. If it fails, the event is lost. Common in early webhook integrations.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--text-secondary)">Level 2 — Retry with Backoff</div>
+    <div class="evo-step-desc">Exponential backoff retry (3 attempts over 1 hour). Dead-letter queue for permanently failed deliveries. Manual investigation required.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--cyan-dim)">Level 3 — Delivery Dashboard</div>
+    <div class="evo-step-desc">Success/failure rates per consumer. HMAC signature verification. Schema validation on outbound payloads. Alert on sustained failure rates.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--purple)">Level 4 — AI Failure Classification</div>
+    <div class="evo-step-desc">AI classifies failures: transient vs permanent vs degraded. Different retry strategies per category. Auto-disables permanently broken endpoints.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--cyan)">Level 5 — Predictive Delivery (2025→)</div>
+    <div class="evo-step-desc">AI learns partner availability patterns. Pre-buffers during predicted downtime. Batch-delivers on recovery. Predicts SII processing delays from webhook response latency trends.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--green)">Level 6 — Autonomous Contract Monitoring (2026→)</div>
+    <div class="evo-step-desc">AI detects schema drift in webhook payloads before consumers break. Auto-generates adapter code for backward compatibility. Alerts on semantic changes (field meaning shift).</div>
+  </div>
+</div>
+<p class="cn-note">
+经典原则：Webhook提供事件驱动通知——发后即忘加指数退避重试。AI延伸：AI将Webhook基础设施从简单的重试管道转变为智能投递系统——分类失败类型、预测合作方停机模式、预验证负载模式。NRS场景：AI分析SII税务文档状态webhook的响应模式，在SII宣布停机之前就预测处理延迟。
+</p>
+
+<!-- ANGLE D -->
+<h3>Angle D · API Versioning with AI Migration Assistant — AI迁移助手加持的API版本管理</h3>
+
+<p>
+<strong>Classical principle:</strong> Newman documents three versioning strategies — URL versioning (<code>/v1/invoices</code>), header versioning (<code>Accept: application/vnd.nrs.v2+json</code>), and semantic versioning with the Expand-Contract pattern for backwards compatibility. The Expand-Contract pattern is particularly powerful: first expand the API to support both old and new formats simultaneously, migrate consumers, then contract by removing the old format. The key challenge is always knowing when it's safe to remove the old version.
+</p>
+
+<p>
+<strong>AI extension:</strong> AI transforms version management from a manual, error-prone process into an automated lifecycle. AI scans all consumers of a deprecated API version — internal services, external partners, AI agents — and generates per-consumer migration guides customized to their usage patterns. For internal consumers, AI can auto-generate migration PRs that update client code from v1 to v2 semantics. AI tracks version adoption rates in real-time and alerts the API team when it's safe to sunset an old version (all consumers migrated, or remaining consumers are below a threshold). AI also detects "shadow usage" — consumers hitting a deprecated endpoint through indirect routes (cached URLs, load balancer rules) that traditional tracking misses.
+</p>
+
+<p>
+<strong>Concrete example:</strong> NRS exposes invoice creation APIs consumed by Bsale (Chile POS), internal mobile apps, and multiple AI automation workflows. When upgrading from v2 to v3 (adding multi-currency support), AI analyzes each consumer: Bsale only uses CLP currency, so its migration PR adds a default <code>currency: "CLP"</code> field; the mobile app uses multi-currency, so its migration requires schema changes; AI workflows need their OpenAPI spec cache invalidated. AI tracks adoption: when 98% of traffic is on v3 and the remaining 2% is a single internal service, it opens an issue for that team with a ready-to-merge migration PR.
+</p>
+<p class="cn-note">
+经典原则：Newman的三种版本策略——URL版本、头部版本、语义版本加扩展-收缩模式。AI延伸：AI扫描所有废弃版本的消费者，生成逐消费者的迁移指南，为内部消费者自动生成迁移PR，实时追踪版本采用率，在安全下线旧版本时发出提醒。NRS示例：从v2升级到v3时，AI分析每个消费者的使用模式并生成定制化的迁移代码。
+</p>
+
+
+<!-- ─── §04 DECISION TABLE ─── -->
+<h2><span class="num">04</span> Decision Table — When to Apply What</h2>
+
+<p>
+For the practicing architect, API design decisions have both an immediate and a compounding impact. This table maps seven common API design scenarios to classical and AI-augmented approaches, showing how each decision affects both human and AI consumers.
+</p>
+<p class="cn-note">
+API设计决策既有即时影响也有复合影响。此表将七个常见场景映射到经典方法和AI增强方法，展示每个决策如何同时影响人类和AI消费者。
+</p>
+
+<table class="decision-table">
+  <thead>
+    <tr>
+      <th class="col-scenario">Scenario 场景</th>
+      <th class="col-classic"><span class="classic-badge">CLASSIC</span> Classical Approach</th>
+      <th class="col-ai"><span class="ai-badge">AI+</span> AI-Augmented Approach</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="col-scenario">API-First vs Code-First<br><small style="color:var(--text-dim)">API优先 vs 代码优先</small></td>
+      <td>Write OpenAPI spec, review with stakeholders, then implement. Disciplined but slow. Spec often drifts from implementation.</td>
+      <td>Write OpenAPI spec as the AI prompt. AI generates server stubs, client SDKs, and test suites from spec. Spec-implementation drift is caught automatically by contract tests.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">REST vs gRPC vs GraphQL<br><small style="color:var(--text-dim)">协议选择</small></td>
+      <td>REST for external APIs (universality), gRPC for internal service-to-service (performance), GraphQL for client-driven queries.</td>
+      <td>REST with rich OpenAPI for AI agent consumption (AI tools understand REST natively). gRPC for high-throughput internal AI pipelines. GraphQL when AI needs flexible data retrieval patterns.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Auth for AI-to-API<br><small style="color:var(--text-dim)">AI调用认证</small></td>
+      <td>OAuth2 client credentials for service-to-service. API keys for simple integrations. mTLS for high-security.</td>
+      <td>Scoped AI service accounts with granular permissions. Short-lived tokens with auto-rotation. AI-specific rate limit tiers. Audit trail per AI agent identity.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Versioning<br><small style="color:var(--text-dim)">版本策略</small></td>
+      <td>URL versioning for simplicity. Header versioning for cleaner URLs. Expand-Contract for backward compatibility.</td>
+      <td>AI scans all consumers per version. Auto-generates migration PRs. Tracks adoption rates. Alerts when safe to sunset. Detects shadow usage of deprecated versions.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Rate Limiting for AI<br><small style="color:var(--text-dim)">AI客户端限流</small></td>
+      <td>Fixed rate limits per API key. Token bucket or leaky bucket. 429 responses with <code>Retry-After</code> header.</td>
+      <td>AI-aware rate limiting: higher burst for AI batch operations, predictive capacity allocation based on AI workflow patterns. AI gateway auto-adjusts limits during predicted traffic spikes.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Webhook vs Polling<br><small style="color:var(--text-dim)">推送 vs 轮询</small></td>
+      <td>Webhooks for real-time events. Polling for systems that can't receive inbound connections. Long-polling as compromise.</td>
+      <td>AI monitors webhook health per consumer. Predicts downtime, pre-buffers events. Auto-switches to polling fallback when webhook delivery fails. AI validates payload schema pre-delivery.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">API Doc Maintenance<br><small style="color:var(--text-dim)">文档维护</small></td>
+      <td>Swagger UI / Redoc auto-generated from annotations. Manual review. Often stale. "The code is the documentation."</td>
+      <td>AI detects doc-code drift in CI. Auto-generates missing descriptions from code context. Enriches examples from production request logs (PII-scrubbed). Living documentation that improves itself.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- ─── §05 PRACTICAL CHECKLIST ─── -->
+<h2><span class="num">05</span> Practical Checklist — Elevating Your API Design Practice</h2>
+
+<p>
+To move your API design from ad-hoc endpoint creation to a first-class architectural discipline that serves both human and AI consumers, follow this staged checklist. Each stage builds on the previous — start where you are, don't skip.
+</p>
+<p class="cn-note">
+将API设计从临时端点创建提升为服务人类和AI消费者的一等架构纪律的分阶段检查清单。每个阶段构建在前一阶段之上，从你当前位置开始。
+</p>
+
+<div class="checklist">
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Standardize on OpenAPI 3.1 — document all existing APIs
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Establish naming conventions (plural nouns, consistent casing)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    API design review as mandatory step in PR process
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Versioning policy documented and enforced (Expand-Contract)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Rate limit strategy per consumer tier (human, partner, AI)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    Rich OpenAPI annotations — descriptions, examples on every endpoint
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    AI generates client SDKs from spec — validate quality as CI step
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    Contract tests in CI — spec and implementation never drift
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    AI-powered gateway: smart routing, anomaly detection, predictive limits
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    AI monitors webhook health — failure classification, partner patterns
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    AI migration assistant for version upgrades — per-consumer PRs
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    Full API lifecycle automation — spec → code → test → deploy → sunset
+  </div>
+</div>
+
+
+<!-- ─── §06 TAKEAWAY ─── -->
+<h2><span class="num">06</span> The Architect's Takeaway</h2>
+
+<p>
+The API is the most important boundary in your system — for humans AND AI. Every other architectural decision (database choice, deployment topology, team structure) is either expressed through or constrained by your API contracts. Geewax taught us that APIs are user interfaces deserving the same design rigor as consumer products. Richardson taught us that self-describing APIs enable automation. Newman taught us that API contracts are the coupling points where architectural decisions become organizational commitments. These insights are not weakened by the AI era — they are amplified.
+</p>
+<p class="cn-note">
+API是系统中最重要的边界——对人类和AI皆然。每个其他架构决策都通过API契约表达或受其约束。Geewax教导API是值得同等设计严谨度的用户界面，Richardson教导自描述API使自动化成为可能，Newman教导API契约是架构决策成为组织承诺的耦合点。这些洞察在AI时代不是被削弱，而是被放大。
+</p>
+
+<p>
+Investing in API quality now pays compound returns. Every rich description you add to your OpenAPI spec improves every AI-generated client SDK, every AI-automated test suite, and every AI agent workflow that consumes your API. Every consistent naming convention reduces cognitive load for human developers and hallucination risk for AI consumers. Every well-designed error response helps both human debuggers and AI monitoring systems diagnose failures faster. The API is where classical design discipline and AI capability multiply each other most powerfully.
+</p>
+<p class="cn-note">
+现在对API质量的投资获得复合回报。你添加到OpenAPI规范的每个丰富描述都改善了每个AI生成的客户端SDK、每个AI自动化测试套件和每个消费你API的AI代理工作流。一致的命名约定同时降低人类认知负荷和AI幻觉风险。API是经典设计纪律与AI能力相互放大最强的地方。
+</p>
+
+<div class="insight-box" style="margin-top:40px;">
+  <div class="label">Next in Series → Article 1.4</div>
+  <p style="margin:0; font-size:14px; line-height:1.6">
+    <strong>Error Handling & Observability — Signal Architecture for Resilient Systems</strong> — When APIs fail, how do you know? How error handling patterns from classical reliability engineering combine with AI-powered anomaly detection and distributed tracing to build systems that diagnose themselves.
+    <br><span style="color:var(--text-dim); font-style:italic; font-family:'Noto Serif SC',serif;">下一篇：错误处理与可观测性——当API失败时，你如何知晓？信号架构。</span>
+  </p>
+</div>
+
+</main>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="article-footer">
+  <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim)">
+    Software Knowledge Base · Layer 1: Design Thinking · Article 1.3 of 20<br>
+    Classical Foundations × AI Co-Evolution · 经典基础 × AI协同进化
+  </div>
+  <div class="nav-links">
+    <a class="nav-link" href="./1.2-ddd-meets-ai.html">← Prev: 1.2 DDD Meets AI</a>
+    <a class="nav-link" href="./1.4-error-handling-observability.html">Next: 1.4 Error Handling & Observability →</a>
+  </div>
+</footer>
+
+</body>
+</html>

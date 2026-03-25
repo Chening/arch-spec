@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1.4 Error Handling & Observability — The Signal Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<!--
+  CSS Architecture Note:
+  The canonical design system lives in templates/article-base.css.
+  For single-file distribution, it is inlined here.
+  When editing styles, update article-base.css first, then re-inline.
+-->
+<style>
+/* ═══ INLINED FROM templates/article-base.css ═══ */
+:root {
+  --bg-deep: #0a0e17;
+  --bg-surface: #0f1420;
+  --bg-card: #141b2d;
+  --bg-card-hover: #1a2340;
+  --border: #1e2a45;
+  --border-accent: #2d4a7a;
+  --cyan: #22d3ee;
+  --cyan-dim: #0e7490;
+  --cyan-glow: rgba(34, 211, 238, 0.15);
+  --purple: #a78bfa;
+  --purple-dim: #6d5dbb;
+  --purple-glow: rgba(167, 139, 250, 0.12);
+  --orange: #f97316;
+  --orange-glow: rgba(249, 115, 22, 0.12);
+  --green: #10b981;
+  --green-glow: rgba(16, 185, 129, 0.12);
+  --rose: #f43f5e;
+  --rose-glow: rgba(244, 63, 94, 0.12);
+  --yellow: #eab308;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg-deep); color:var(--text-primary); font-family:'IBM Plex Sans',sans-serif; line-height:1.75; font-size:16px; -webkit-font-smoothing:antialiased; }
+.article-header { position:relative; padding:80px 0 60px; overflow:hidden; border-bottom:1px solid var(--border); }
+.article-header::before { content:''; position:absolute; top:0;left:0;right:0;bottom:0; background:radial-gradient(ellipse 800px 400px at 20% 50%,rgba(34,211,238,0.06),transparent),radial-gradient(ellipse 600px 300px at 80% 30%,rgba(167,139,250,0.04),transparent); }
+.header-content { position:relative; max-width:860px; margin:0 auto; padding:0 32px; }
+.series-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--cyan); border:1px solid var(--cyan-dim); padding:4px 12px; border-radius:3px; margin-bottom:20px; background:var(--cyan-glow); }
+.article-title { font-family:'JetBrains Mono',monospace; font-size:36px; font-weight:700; line-height:1.25; color:var(--text-primary); margin-bottom:8px; }
+.article-title-cn { font-family:'Noto Serif SC',serif; font-size:20px; font-weight:400; color:var(--text-dim); font-style:italic; margin-bottom:24px; }
+.article-meta { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-dim); display:flex; gap:24px; flex-wrap:wrap; }
+.meta-item { display:flex; align-items:center; gap:6px; }
+.meta-dot { width:6px; height:6px; border-radius:50%; }
+.article-body { max-width:860px; margin:0 auto; padding:48px 32px; }
+h2 { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:var(--cyan); margin:56px 0 8px; padding-bottom:12px; border-bottom:1px solid var(--border); letter-spacing:-0.5px; }
+.article-body > h2:first-child { margin-top:0; }
+h2 .num { color:var(--text-dim); font-weight:400; margin-right:8px; }
+h3 { font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; color:var(--purple); margin:36px 0 12px; }
+p { margin-bottom:18px; color:var(--text-primary); font-size:15.5px; }
+.cn-note { font-family:'Noto Serif SC',serif; font-style:italic; color:var(--text-dim); font-size:14px; line-height:1.8; margin:-8px 0 24px; padding-left:16px; border-left:2px solid var(--border); }
+code { font-family:'JetBrains Mono',monospace; font-size:0.88em; background:rgba(34,211,238,0.08); padding:2px 6px; border-radius:3px; color:var(--cyan); }
+.diagram-container { margin:40px -16px; padding:32px 24px; background:var(--bg-surface); border:1px solid var(--border); border-radius:8px; position:relative; overflow-x:auto; }
+.diagram-container::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--cyan),var(--purple),var(--orange)); }
+.diagram-label { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:20px; }
+.diagram-sublabel { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-dim); margin-top:-16px; margin-bottom:16px; font-style:italic; }
+.bookshelf { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin:24px 0; align-items:stretch; }
+.book-card { background:var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:16px; transition:all 0.25s ease; position:relative; overflow:hidden; min-height:190px; display:flex; flex-direction:column; }
+.book-card::before { content:''; position:absolute; left:0;top:0;bottom:0; width:3px; }
+.book-card.tier1::before { background:var(--cyan); }
+.book-card.tier2::before { background:var(--purple); }
+.book-card:hover { border-color:var(--border-accent); background:var(--bg-card-hover); transform:translateY(-2px); }
+.book-title { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:4px; line-height:1.4; }
+.book-author { font-size:11px; color:var(--text-dim); }
+.book-desc { font-size:12px; color:var(--text-secondary); margin-top:8px; line-height:1.5; flex:1; }
+.book-tag { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:2px 6px; border-radius:3px; margin-top:8px; letter-spacing:0.5px; }
+.tag-foundation { background:rgba(34,211,238,0.1); color:var(--cyan); border:1px solid rgba(34,211,238,0.2); }
+.tag-practice { background:rgba(167,139,250,0.1); color:var(--purple); border:1px solid rgba(167,139,250,0.2); }
+.decision-table { width:100%; border-collapse:collapse; margin:24px 0; font-size:13px; }
+.decision-table th { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; text-align:left; padding:12px 16px; border-bottom:2px solid var(--border-accent); color:var(--text-secondary); background:var(--bg-surface); }
+.decision-table td { padding:12px 16px; border-bottom:1px solid var(--border); color:var(--text-primary); vertical-align:top; line-height:1.5; }
+.decision-table tr:hover td { background:rgba(34,211,238,0.03); }
+.decision-table .col-scenario { width:22%; font-weight:500; color:var(--text-secondary); }
+.decision-table .col-classic { width:39%; }
+.decision-table .col-ai { width:39%; }
+.classic-badge,.ai-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:1px 5px; border-radius:2px; margin-right:4px; vertical-align:middle; }
+.classic-badge { background:rgba(148,163,184,0.15); color:var(--text-secondary); }
+.ai-badge { background:rgba(34,211,238,0.12); color:var(--cyan); }
+.checklist { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:24px 0; }
+.check-item { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:5px; font-size:13px; color:var(--text-primary); line-height:1.4; transition:border-color 0.2s; }
+.check-item:hover { border-color:var(--border-accent); }
+.check-stage { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:600; padding:2px 7px; border-radius:3px; white-space:nowrap; flex-shrink:0; }
+.insight-box { margin:32px 0; padding:24px; background:linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04)); border:1px solid var(--border-accent); border-radius:8px; position:relative; }
+.insight-box::before { content:'⚡'; position:absolute; top:-12px; left:20px; background:var(--bg-deep); padding:0 8px; font-size:18px; }
+.insight-box .label { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--cyan); margin-bottom:8px; }
+.code-block { background:#0d1117; border:1px solid var(--border); border-radius:6px; padding:20px; margin:20px 0; overflow-x:auto; position:relative; }
+.code-block::before { content:attr(data-lang); position:absolute; top:8px; right:12px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-dim); letter-spacing:0.5px; }
+.code-block pre { font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.6; color:var(--text-secondary); }
+.code-block .kw { color:var(--purple); }
+.code-block .fn { color:var(--cyan); }
+.code-block .str { color:var(--green); }
+.code-block .cm { color:var(--text-dim); font-style:italic; }
+.code-block .ann { color:var(--orange); }
+.code-block .tp { color:var(--yellow); }
+.evolution-steps { position:relative; padding-left:32px; margin:28px 0; }
+.evolution-steps::before { content:''; position:absolute; left:11px; top:8px; bottom:8px; width:2px; background:linear-gradient(to bottom,var(--cyan),var(--purple),var(--orange)); }
+.evo-step { position:relative; margin-bottom:24px; padding-left:20px; }
+.evo-step::before { content:''; position:absolute; left:-25px; top:8px; width:10px; height:10px; border-radius:50%; border:2px solid; }
+.evo-step:nth-child(1)::before { border-color:var(--text-dim); background:var(--bg-deep); }
+.evo-step:nth-child(2)::before { border-color:var(--text-secondary); background:var(--bg-deep); }
+.evo-step:nth-child(3)::before { border-color:var(--cyan-dim); background:var(--bg-deep); }
+.evo-step:nth-child(4)::before { border-color:var(--purple); background:var(--bg-deep); }
+.evo-step:nth-child(5)::before { border-color:var(--cyan); background:var(--cyan); }
+.evo-step:nth-child(6)::before { border-color:var(--green); background:var(--green); }
+.evo-step-title { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; margin-bottom:4px; }
+.evo-step-desc { font-size:13.5px; color:var(--text-secondary); line-height:1.6; }
+.article-footer { max-width:860px; margin:0 auto; padding:40px 32px; border-top:1px solid var(--border); font-size:12px; color:var(--text-dim); }
+.nav-links { display:flex; justify-content:space-between; align-items:center; margin-top:20px; }
+.nav-link { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--cyan); text-decoration:none; padding:8px 16px; border:1px solid var(--border); border-radius:4px; transition:all 0.2s; }
+.nav-link:hover { border-color:var(--cyan); background:var(--cyan-glow); }
+@media (max-width:640px) {
+  .article-title { font-size:24px; }
+  .bookshelf { grid-template-columns:1fr; }
+  .checklist { grid-template-columns:1fr; }
+  .article-meta { flex-direction:column; gap:8px; }
+}
+@media print {
+  :root { --bg-deep:#fff; --bg-surface:#f8f9fa; --bg-card:#f1f3f5; --bg-card-hover:#f1f3f5; --border:#dee2e6; --border-accent:#adb5bd; --text-primary:#212529; --text-secondary:#495057; --text-dim:#868e96; --cyan:#0c8599; --purple:#7048e8; --orange:#e8590c; --green:#099268; --rose:#e03131; --yellow:#e67700; }
+  body { font-size:11pt; line-height:1.5; }
+  .article-header::before { display:none; }
+  .article-header { padding:24px 0; }
+  .diagram-container::before { display:none; }
+  .book-card:hover { transform:none; }
+  .nav-links { display:none; }
+  .code-block { border:1px solid #dee2e6; background:#f8f9fa; }
+  .code-block pre { color:#212529; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header class="article-header">
+  <div class="header-content">
+    <div class="series-badge" style="color:var(--purple); border-color:var(--purple-dim); background:var(--purple-glow)">Layer 1 · Design Thinking · 设计思维层</div>
+    <h1 class="article-title">Error Handling & Observability</h1>
+    <div class="article-title-cn">错误处理与可观测性：信号架构</div>
+    <div class="article-meta">
+      <span class="meta-item"><span class="meta-dot" style="background:var(--purple)"></span> Article 1.4 of 20</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--cyan)"></span> ~18 min read</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--orange)"></span> 3 Source Books × 4 AI Angles</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════ BODY ═══════════════ -->
+<main class="article-body">
+
+<!-- ─── §01 CORE INSIGHT ─── -->
+<h2><span class="num">01</span> Core Insight — The Signal Architecture</h2>
+
+<p>
+Most teams treat error handling and observability as afterthoughts — bolted on after the "real" architecture is done. A <code>try/catch</code> here, a <code>log.error()</code> there, a dashboard assembled during the first postmortem. This is backwards. <strong>The way your system communicates failure is itself an architecture</strong> — one that requires the same deliberate design as your domain model or API contracts.
+</p>
+<p class="cn-note">
+多数团队将错误处理和可观测性视为事后补丁——在"真正的"架构完成后才加上。try/catch这里一个，log.error()那里一个，仪表盘在第一次事后复盘时才拼凑。这是本末倒置的。系统传达失败的方式本身就是一种架构——需要与领域模型或API契约同等程度的刻意设计。
+</p>
+
+<p>
+Michael Nygard's insight from <em>Release It!</em> is foundational: <strong>most production failures happen at integration points</strong>. Not in your business logic, not in your algorithms — at the boundaries where systems meet. In the AI era, this insight intensifies. AI services introduce integration points with entirely novel failure modes: hallucinations that return syntactically valid but semantically wrong data, latency distributions with fat tails, token limits that silently truncate context, and rate limits that materialize under load. Your signal architecture must detect, classify, and respond to failures that no one anticipated at design time.
+</p>
+<p class="cn-note">
+Nygard的核心洞察：大多数生产故障发生在集成点。AI时代让这一洞察更加尖锐——AI服务引入了全新的故障模式：语法正确但语义错误的幻觉、肥尾延迟分布、静默截断上下文的token限制。你的信号架构必须检测、分类和响应设计时无人预见的故障。
+</p>
+
+<div class="insight-box">
+  <div class="label">The Reframing 核心重构</div>
+  <p style="margin:0; font-size:15px; line-height:1.7">
+    <strong>Errors are not exceptions — they are signals.</strong> A well-designed error is a structured message that tells three audiences what happened: the end user (what to do next), the operator (where to look), and the machine (how to auto-remediate). In the AI era, a fourth audience emerges: the AI system itself, which learns from error patterns to prevent future failures. Design your errors for all four consumers from day one.
+  </p>
+</div>
+<p class="cn-note">
+错误不是异常——而是信号。设计良好的错误是结构化消息，同时告知三类受众发生了什么：终端用户（下一步做什么）、运维人员（去哪里排查）、机器（如何自动修复）。AI时代出现了第四类受众：AI系统本身，它从错误模式中学习以预防未来故障。
+</p>
+
+<!-- HERO DIAGRAM: THE SIGNAL ARCHITECTURE -->
+<div class="diagram-container">
+  <div class="diagram-label">◆ Hero Diagram — The Signal Architecture</div>
+  <svg viewBox="0 0 800 380" xmlns="http://www.w3.org/2000/svg" style="width:100%; font-family:'JetBrains Mono',monospace;">
+    <defs>
+      <linearGradient id="flowGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="var(--rose,#f43f5e)"/>
+        <stop offset="25%" stop-color="var(--orange,#f97316)"/>
+        <stop offset="50%" stop-color="var(--yellow,#eab308)"/>
+        <stop offset="75%" stop-color="var(--cyan,#22d3ee)"/>
+        <stop offset="100%" stop-color="var(--green,#10b981)"/>
+      </linearGradient>
+      <linearGradient id="loopGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--purple,#a78bfa)"/>
+        <stop offset="100%" stop-color="var(--cyan,#22d3ee)"/>
+      </linearGradient>
+    </defs>
+
+    <!-- Title -->
+    <text x="400" y="24" text-anchor="middle" font-size="10" fill="var(--text-secondary,#94a3b8)" font-weight="600" letter-spacing="2">ERROR FLOW → CLASSIFICATION → DETECTION → REMEDIATION → LEARNING</text>
+
+    <!-- Main flow arrow bar -->
+    <rect x="40" y="38" width="720" height="4" rx="2" fill="url(#flowGrad)" opacity="0.6"/>
+
+    <!-- Stage 1: Error Sources -->
+    <rect x="20" y="60" width="140" height="120" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--rose,#f43f5e)" stroke-width="1.2"/>
+    <text x="90" y="80" text-anchor="middle" font-size="9" fill="var(--rose,#f43f5e)" font-weight="600" letter-spacing="1">ERROR SOURCES</text>
+    <line x1="40" y1="88" x2="140" y2="88" stroke="var(--border,#1e2a45)" stroke-width="0.5"/>
+    <text x="90" y="104" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Tax Authority (SII)</text>
+    <text x="90" y="118" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Network / Timeout</text>
+    <text x="90" y="132" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Validation / Logic</text>
+    <text x="90" y="146" text-anchor="middle" font-size="8" fill="var(--cyan,#22d3ee)">AI Hallucination</text>
+    <text x="90" y="160" text-anchor="middle" font-size="8" fill="var(--cyan,#22d3ee)">Token Limit / Cost</text>
+    <text x="90" y="172" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">错误来源</text>
+
+    <!-- Arrow 1→2 -->
+    <line x1="164" y1="120" x2="186" y2="120" stroke="var(--orange,#f97316)" stroke-width="1.5" marker-end="url(#arrowOrange)"/>
+    <defs><marker id="arrowOrange" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="var(--orange,#f97316)"/></marker></defs>
+
+    <!-- Stage 2: Classification -->
+    <rect x="190" y="60" width="140" height="120" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--orange,#f97316)" stroke-width="1.2"/>
+    <text x="260" y="80" text-anchor="middle" font-size="9" fill="var(--orange,#f97316)" font-weight="600" letter-spacing="1">CLASSIFICATION</text>
+    <line x1="210" y1="88" x2="310" y2="88" stroke="var(--border,#1e2a45)" stroke-width="0.5"/>
+    <text x="260" y="104" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Error Code + Category</text>
+    <text x="260" y="118" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Severity Level</text>
+    <text x="260" y="132" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Retry Strategy</text>
+    <text x="260" y="146" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Trace Context</text>
+    <text x="260" y="160" text-anchor="middle" font-size="8" fill="var(--cyan,#22d3ee)">AI Confidence Score</text>
+    <text x="260" y="172" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">错误分类</text>
+
+    <!-- Arrow 2→3 -->
+    <line x1="334" y1="120" x2="356" y2="120" stroke="var(--yellow,#eab308)" stroke-width="1.5" marker-end="url(#arrowYellow)"/>
+    <defs><marker id="arrowYellow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="var(--yellow,#eab308)"/></marker></defs>
+
+    <!-- Stage 3: Detection -->
+    <rect x="360" y="60" width="140" height="120" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--yellow,#eab308)" stroke-width="1.2"/>
+    <text x="430" y="80" text-anchor="middle" font-size="9" fill="var(--yellow,#eab308)" font-weight="600" letter-spacing="1">DETECTION</text>
+    <line x1="380" y1="88" x2="480" y2="88" stroke="var(--border,#1e2a45)" stroke-width="0.5"/>
+    <text x="430" y="104" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Threshold Alerts</text>
+    <text x="430" y="118" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Distributed Traces</text>
+    <text x="430" y="132" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Metric Dashboards</text>
+    <text x="430" y="146" text-anchor="middle" font-size="8" fill="var(--cyan,#22d3ee)">AI Anomaly Detection</text>
+    <text x="430" y="160" text-anchor="middle" font-size="8" fill="var(--cyan,#22d3ee)">Cross-Signal Correlation</text>
+    <text x="430" y="172" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">异常检测</text>
+
+    <!-- Arrow 3→4 -->
+    <line x1="504" y1="120" x2="526" y2="120" stroke="var(--cyan,#22d3ee)" stroke-width="1.5" marker-end="url(#arrowCyan)"/>
+    <defs><marker id="arrowCyan" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="var(--cyan,#22d3ee)"/></marker></defs>
+
+    <!-- Stage 4: Remediation -->
+    <rect x="530" y="60" width="140" height="120" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1.2"/>
+    <text x="600" y="80" text-anchor="middle" font-size="9" fill="var(--cyan,#22d3ee)" font-weight="600" letter-spacing="1">REMEDIATION</text>
+    <line x1="550" y1="88" x2="650" y2="88" stroke="var(--border,#1e2a45)" stroke-width="0.5"/>
+    <text x="600" y="104" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Circuit Breaker Reset</text>
+    <text x="600" y="118" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Runbook Execution</text>
+    <text x="600" y="132" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Escalation to Human</text>
+    <text x="600" y="146" text-anchor="middle" font-size="8" fill="var(--cyan,#22d3ee)">AI Auto-Remediation</text>
+    <text x="600" y="160" text-anchor="middle" font-size="8" fill="var(--cyan,#22d3ee)">Predictive Prevention</text>
+    <text x="600" y="172" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">自动修复</text>
+
+    <!-- Arrow 4→5 -->
+    <line x1="674" y1="120" x2="696" y2="120" stroke="var(--green,#10b981)" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+    <defs><marker id="arrowGreen" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="var(--green,#10b981)"/></marker></defs>
+
+    <!-- Stage 5: Learning Loop -->
+    <rect x="700" y="60" width="80" height="120" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="1.2"/>
+    <text x="740" y="80" text-anchor="middle" font-size="9" fill="var(--green,#10b981)" font-weight="600" letter-spacing="1">LEARN</text>
+    <line x1="710" y1="88" x2="770" y2="88" stroke="var(--border,#1e2a45)" stroke-width="0.5"/>
+    <text x="740" y="106" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Error</text>
+    <text x="740" y="118" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Catalog</text>
+    <text x="740" y="134" text-anchor="middle" font-size="8" fill="var(--cyan,#22d3ee)">AI</text>
+    <text x="740" y="146" text-anchor="middle" font-size="8" fill="var(--cyan,#22d3ee)">Training</text>
+    <text x="740" y="162" text-anchor="middle" font-size="8" fill="var(--cyan,#22d3ee)">Data</text>
+    <text x="740" y="172" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">学习</text>
+
+    <!-- Learning Loop Feedback Arrow (curved bottom path) -->
+    <path d="M740,184 L740,210 Q740,230 720,230 L80,230 Q60,230 60,210 L60,184" fill="none" stroke="url(#loopGrad)" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrowPurple)"/>
+    <defs><marker id="arrowPurple" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="var(--purple,#a78bfa)"/></marker></defs>
+    <text x="400" y="248" text-anchor="middle" font-size="9" fill="var(--purple,#a78bfa)" font-weight="500" letter-spacing="1">FEEDBACK LOOP: Errors train AI → AI prevents future errors 反馈循环</text>
+
+    <!-- NRS Example Box -->
+    <rect x="80" y="270" width="640" height="55" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--purple,#a78bfa)" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="400" y="290" text-anchor="middle" font-size="10" fill="var(--purple,#a78bfa)" font-weight="600">NRS EXAMPLE: Chile Invoice → SII Rejection (Code 99) → Classification → Circuit Breaker</text>
+    <text x="400" y="306" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)">→ AI detects pattern: "CAF exhaustion" → Auto-request new CAF range → Update error catalog</text>
+    <text x="400" y="320" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">NRS 示例：智利发票 → SII 拒绝 → 分类 → 熔断器 → AI 模式识别 → 自动修复</text>
+
+    <!-- Legend -->
+    <rect x="200" y="340" width="12" height="12" rx="2" fill="none" stroke="var(--text-secondary,#94a3b8)" stroke-width="1"/>
+    <text x="218" y="350" font-size="8" fill="var(--text-secondary,#94a3b8)">Classical</text>
+    <rect x="280" y="340" width="12" height="12" rx="2" fill="none" stroke="var(--cyan,#22d3ee)" stroke-width="1"/>
+    <text x="298" y="350" font-size="8" fill="var(--cyan,#22d3ee)">AI-Augmented</text>
+    <line x1="380" y1="346" x2="410" y2="346" stroke="var(--purple,#a78bfa)" stroke-width="1.5" stroke-dasharray="6,3"/>
+    <text x="418" y="350" font-size="8" fill="var(--purple,#a78bfa)">Learning Feedback Loop</text>
+  </svg>
+</div>
+
+
+<!-- ─── §02 CLASSICAL FOUNDATION ─── -->
+<h2><span class="num">02</span> Classical Foundation — Source Books</h2>
+
+<p>
+Three books define the classical approach to error handling and production observability. The first teaches you to design for failure at integration points. The second transforms how you ask questions about your running systems. The third provides the operational framework — SLIs, SLOs, and error budgets — that turns reliability from a vague aspiration into a measurable engineering discipline.
+</p>
+<p class="cn-note">
+三本书定义了错误处理和生产可观测性的经典方法。第一本教你在集成点设计容错。第二本变革你对运行系统提问的方式。第三本提供运维框架——SLI、SLO和错误预算——将可靠性从模糊愿望转变为可测量的工程纪律。
+</p>
+
+<div class="bookshelf">
+  <div class="book-card tier1">
+    <div class="book-title">Release It! Design and Deploy Production-Ready Software, 2nd Ed</div>
+    <div class="book-author">Michael Nygard · 2018</div>
+    <div class="book-desc">Stability patterns: Circuit Breaker, Bulkhead, Timeout, Retry. Anti-patterns: Cascading Failure, Integration Points, Chain Reactions. Key insight: most failures happen at integration points. In AI era: AI services are integration points with unique failure modes — hallucination, latency spikes, token limits.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · STABILITY PATTERNS</span>
+  </div>
+  <div class="book-card tier1">
+    <div class="book-title">Observability Engineering</div>
+    <div class="book-author">Charity Majors, Liz Fong-Jones, George Miranda · 2022</div>
+    <div class="book-desc">The shift from monitoring (known-unknowns) to observability (unknown-unknowns). Three pillars: structured logs, distributed traces, metrics. High-cardinality, high-dimensionality data. Key insight: ask arbitrary questions of production without deploying new code.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · OBSERVABILITY</span>
+  </div>
+  <div class="book-card tier2">
+    <div class="book-title">Site Reliability Engineering</div>
+    <div class="book-author">Betsy Beyer et al., Google · 2016</div>
+    <div class="book-desc">SRE practices: SLIs, SLOs, Error Budgets, Toil elimination. The error budget concept: spend your reliability budget wisely. In AI era: AI components consume error budget differently — a 1% hallucination rate vs a 1% downtime rate require fundamentally different treatment.</div>
+    <span class="book-tag tag-practice">PRACTICE · SRE FRAMEWORK</span>
+  </div>
+</div>
+
+<p>
+What unites these three books is a shared conviction that production behavior is a first-class design concern, not an operational afterthought. Nygard designs the defenses (Circuit Breakers, Bulkheads), Majors provides the eyes (observability), and Beyer supplies the governance (error budgets). Together, they form the "signal architecture" — the subsystem that ensures your system can communicate its health, detect anomalies, and respond to failure before users notice. In the NRS context, this signal architecture must span multiple country tax authorities (Chile SII, Mexico SAT), internal microservices, and increasingly, AI-powered document processing pipelines.
+</p>
+<p class="cn-note">
+三本书的共同信念：生产行为是第一类设计关注点，而非运维的事后考虑。Nygard设计防御（熔断器、舱壁），Majors提供视野（可观测性），Beyer提供治理（错误预算）。在NRS场景中，信号架构必须跨越多国税务机关、内部微服务以及AI文档处理管道。
+</p>
+
+
+<!-- ─── §03 AI CO-EVOLUTION ─── -->
+<h2><span class="num">03</span> AI Co-Evolution — Four Angles</h2>
+
+<p>
+The signal architecture extends naturally into the AI era. Each angle below follows the strict micro-format: one classical principle, one AI-era extension, one concrete example. The throughline: AI doesn't replace your observability stack — it becomes both a consumer and a subject of it.
+</p>
+<p class="cn-note">
+信号架构自然延伸到AI时代。以下每个角度遵循严格的微格式：一个经典原则、一个AI时代延伸、一个具体示例。贯穿线索：AI不是替代你的可观测性栈——它同时成为其消费者和被观测对象。
+</p>
+
+<!-- ANGLE A -->
+<h3>Angle A · From Threshold Alerts to AI Anomaly Detection — 从阈值告警到AI异常检测</h3>
+
+<p>
+<strong>Classical principle:</strong> Set thresholds on metrics — CPU > 80%, error rate > 5%, latency p99 > 2s — and alert when exceeded. This is Nygard's operational awareness applied to metrics: you define the boundaries of normal, and the system screams when they are breached.
+</p>
+
+<p>
+<strong>AI extension:</strong> Threshold alerts produce alert fatigue and miss slow-burn degradation. AI anomaly detection learns baseline patterns and flags deviations that humans would miss: "Error rate is 3% — below your 5% threshold — but it has been climbing 0.2%/hour for 6 hours, which is anomalous." More powerfully, AI correlates across signals that humans track in separate dashboards: a latency spike in Service A + error rate increase in Service B + a recent deploy in Service C suggests a root cause that no single threshold would catch.
+</p>
+
+<p>
+<strong>Concrete example:</strong> Consider the NRS platform monitoring Chile SII integrations. A classical threshold alert fires only when the SII rejection rate exceeds 10%. An AI anomaly detector notices that rejections for a specific document type (Factura Exenta) climbed from 0.5% to 2.8% over four hours — well below threshold, but three standard deviations from its learned baseline. It correlates this with a SII API version change logged 6 hours prior, and surfaces the probable cause before any customer reports an issue.
+</p>
+<p class="cn-note">
+经典原则：对指标设置阈值并告警。AI延伸：AI异常检测学习基线模式，发现人类会忽略的缓慢退化——"错误率3%低于5%阈值，但6小时内以0.2%/小时攀升，这是异常的。"AI还能跨信号关联：服务A延迟飙升+服务B错误率上升+服务C最近部署→AI推断根因。具体示例：NRS平台中AI检测到特定文档类型的SII拒绝率异常攀升，关联SII API版本变更，在用户投诉前定位问题。
+</p>
+
+<!-- ANGLE B -->
+<h3>Angle B · Structured Errors as Training Data — 结构化错误作为训练数据</h3>
+
+<p>
+<strong>Classical principle:</strong> Nygard's error handling patterns: categorize errors by type (transient vs permanent, client vs server), provide actionable error messages, and fail fast when recovery is impossible. An error response should tell the caller exactly what went wrong and what they can do about it.
+</p>
+
+<p>
+<strong>AI extension:</strong> When errors are structured — JSON envelopes with error code, category, context fields, trace ID, and timestamp — they become a machine-readable knowledge base. Over time, AI learns correlations: "SII error code 99 with context <code>CAF_SEQUENCE_EXHAUSTED</code> and document type <code>FACTURA</code> has been resolved 47 out of 50 times by requesting a new CAF range from SII." The error catalog evolves from a human-readable reference into an AI training dataset. The critical design decision: <strong>structure your errors for machine consumption from day one</strong>, not just human reading.
+</p>
+
+<div class="code-block" data-lang="JSON — NRS Error Envelope">
+<pre>{
+  <span class="str">"error"</span>: {
+    <span class="str">"code"</span>: <span class="str">"SII_REJECTION_099"</span>,
+    <span class="str">"category"</span>: <span class="str">"TAX_AUTHORITY"</span>,
+    <span class="str">"severity"</span>: <span class="str">"RECOVERABLE"</span>,
+    <span class="str">"message"</span>: <span class="str">"SII rejected document: CAF sequence exhausted"</span>,
+    <span class="str">"context"</span>: {
+      <span class="str">"country"</span>: <span class="str">"CL"</span>,
+      <span class="str">"authority"</span>: <span class="str">"SII"</span>,
+      <span class="str">"document_type"</span>: <span class="str">"FACTURA"</span>,
+      <span class="str">"caf_range"</span>: <span class="str">"1000-1999"</span>,
+      <span class="str">"caf_remaining"</span>: <span class="tp">0</span>,
+      <span class="str">"sii_response_code"</span>: <span class="tp">99</span>
+    },
+    <span class="str">"trace_id"</span>: <span class="str">"abc-123-def-456"</span>,
+    <span class="str">"timestamp"</span>: <span class="str">"2026-03-25T14:32:00Z"</span>,
+    <span class="str">"retry"</span>: {
+      <span class="str">"strategy"</span>: <span class="str">"NONE"</span>,
+      <span class="str">"remediation_hint"</span>: <span class="str">"REQUEST_NEW_CAF_RANGE"</span>
+    }
+  },
+  <span class="str">"_ai_meta"</span>: {
+    <span class="cm">// Machine-readable fields for AI consumption</span>
+    <span class="str">"error_fingerprint"</span>: <span class="str">"sii-099-caf-exhausted"</span>,
+    <span class="str">"historical_resolution_rate"</span>: <span class="tp">0.94</span>,
+    <span class="str">"auto_remediation_eligible"</span>: <span class="tp">true</span>,
+    <span class="str">"related_errors"</span>: [<span class="str">"SII_REJECTION_098"</span>, <span class="str">"CAF_EXPIRY_WARNING"</span>]
+  }
+}</pre>
+</div>
+<p class="cn-note">
+经典原则：按类型分类错误，提供可操作的错误消息，无法恢复时快速失败。AI延伸：结构化错误（带错误码、类别、上下文、追踪ID的JSON信封）成为机器可读的知识库。AI学习关联："SII错误码99+CAF序列耗尽，94%的情况下通过请求新CAF范围解决。"关键设计决策：从第一天起为机器消费设计错误结构。
+</p>
+
+<!-- ANGLE C -->
+<h3>Angle C · Auto-Remediation Pipelines — 自动修复管道</h3>
+
+<p>
+<strong>Classical principle:</strong> Runbooks — documented step-by-step procedures that human operators follow to resolve known incident types. Google's SRE book formalizes this: every on-call rotation should have runbooks for the top 10 known failure modes, and toil (repetitive manual work) should be systematically eliminated.
+</p>
+
+<p>
+<strong>AI extension:</strong> AI reads runbooks and executes auto-remediation for known error patterns, progressively reducing human involvement. Circuit Breaker trips? AI checks downstream service health, verifies the root cause is transient, and resets the breaker after confirmation. SII returns a rate-limit error? AI implements exponential backoff, redistributes the queue across time windows, and alerts the team only if the backlog grows beyond SLO. Novel, never-seen-before errors? AI escalates to a human with a context summary, similar past incidents, and three suggested actions ranked by historical success rate.
+</p>
+
+<div class="evolution-steps">
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--text-dim)">Level 0 — No Runbooks</div>
+    <div class="evo-step-desc">Senior engineer's tribal knowledge. They wake up at 3am, SSH into production, and figure it out.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--text-secondary)">Level 1 — Documented Runbooks</div>
+    <div class="evo-step-desc">Step-by-step procedures in a wiki. Any on-call engineer can follow them. Still manual execution.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--cyan-dim)">Level 2 — Scripted Remediation</div>
+    <div class="evo-step-desc">Runbooks translated to scripts. Human triggers execution. <code>./fix-caf-exhaustion.sh --country CL</code></div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--purple)">Level 3 — Alert-Triggered Automation</div>
+    <div class="evo-step-desc">Alert fires → script runs automatically for known patterns. Human reviews outcome. PagerDuty + Rundeck.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--cyan)">Level 4 — AI-Assisted Remediation (2025→)</div>
+    <div class="evo-step-desc">AI reads error context + runbook + past incidents. Selects and executes remediation. Escalates unknowns with suggested actions and confidence scores.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--green)">Level 5 — AI-Autonomous Operations (2026→)</div>
+    <div class="evo-step-desc">Full loop: AI detects anomaly → diagnoses root cause → executes remediation → verifies fix → writes postmortem → updates runbook. Human oversight shifts from approval to audit.</div>
+  </div>
+</div>
+<p class="cn-note">
+经典原则：Runbook——运维人员解决已知故障的文档化步骤。AI延伸：AI读取Runbook并对已知错误模式执行自动修复。熔断器触发→AI检查下游健康→确认是瞬态故障→自动重置。未知错误→AI携带上下文摘要、相似历史事件和三个建议操作升级给人类。进化路径从"3AM的SSH"到"AI自主运维"。
+</p>
+
+<!-- ANGLE D -->
+<h3>Angle D · Observability for AI Components — AI组件的可观测性</h3>
+
+<p>
+<strong>Classical principle:</strong> The three pillars of observability — structured logs, distributed traces, and metrics — give you the ability to ask arbitrary questions about your production system's behavior. Majors' key insight: observability is not about dashboards you built in advance; it's about being able to explore dimensions you didn't anticipate.
+</p>
+
+<p>
+<strong>AI extension:</strong> AI components need additional observability dimensions that traditional services never required. A database query either succeeds or fails; an AI inference can succeed syntactically but fail semantically (hallucination). Traditional latency is network + compute; AI latency includes prompt tokenization, model inference, and output decoding — with distributions that look nothing like your typical p50/p99 curves. Your observability stack must treat AI components as first-class citizens with their own SLIs and SLOs.
+</p>
+
+<table class="decision-table">
+  <thead>
+    <tr>
+      <th class="col-scenario">Dimension</th>
+      <th class="col-classic"><span class="classic-badge">CLASSIC</span> Traditional SLI</th>
+      <th class="col-ai"><span class="ai-badge">AI+</span> AI-Specific SLI</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="col-scenario">Correctness<br><small style="color:var(--text-dim)">正确性</small></td>
+      <td>HTTP 2xx rate, data integrity checks</td>
+      <td>Hallucination rate, semantic correctness score, factual grounding rate</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Latency<br><small style="color:var(--text-dim)">延迟</small></td>
+      <td>Request p50/p95/p99 in milliseconds</td>
+      <td>Time-to-first-token, total inference time, prompt/completion token ratio</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Cost<br><small style="color:var(--text-dim)">成本</small></td>
+      <td>CPU/memory utilization per request</td>
+      <td>Token usage per request, cost per inference, cache hit rate for RAG</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Availability<br><small style="color:var(--text-dim)">可用性</small></td>
+      <td>Uptime percentage, successful request rate</td>
+      <td>Model endpoint availability + rate limit headroom + fallback model health</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Quality<br><small style="color:var(--text-dim)">质量</small></td>
+      <td>Error rate, data validation pass rate</td>
+      <td>Confidence score distribution, output schema compliance, drift detection</td>
+    </tr>
+  </tbody>
+</table>
+<p class="cn-note">
+经典原则：可观测性三大支柱让你能对生产系统提出任意问题。AI延伸：AI组件需要传统服务从未需要的额外可观测维度——幻觉率（语义正确性）、token用量（成本追踪）、置信度分布、RAG缓存命中率。将AI组件视为拥有自身SLI/SLO的一等公民。
+</p>
+
+
+<!-- ─── §04 DECISION TABLE ─── -->
+<h2><span class="num">04</span> Decision Table — When to Apply What</h2>
+
+<p>
+The practicing architect faces concrete decisions every sprint. This table maps eight common error handling and observability scenarios to their classical and AI-augmented approaches. As with all decision tables in this series: the AI column extends, it does not replace.
+</p>
+<p class="cn-note">
+实践中的架构师每个迭代都面对具体决策。此表将八个常见场景映射到经典方法和AI增强方法。AI列是扩展而非替代。
+</p>
+
+<table class="decision-table">
+  <thead>
+    <tr>
+      <th class="col-scenario">Scenario 场景</th>
+      <th class="col-classic"><span class="classic-badge">CLASSIC</span> Classical Approach</th>
+      <th class="col-ai"><span class="ai-badge">AI+</span> AI-Augmented Approach</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="col-scenario">Error Categorization<br><small style="color:var(--text-dim)">错误分类策略</small></td>
+      <td>Manual error code catalog. Categories: client, server, transient, permanent. Documented in wiki.</td>
+      <td>AI-maintained error catalog. Auto-classifies new errors by pattern similarity. Suggests category + severity + retry strategy based on historical data.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Alert Configuration<br><small style="color:var(--text-dim)">告警配置</small></td>
+      <td>Static thresholds per metric. Tuned by experience. Separate dashboards per service.</td>
+      <td>AI-learned baselines with dynamic thresholds. Cross-signal correlation. Alert fatigue reduction via intelligent grouping and deduplication.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Incident Response<br><small style="color:var(--text-dim)">事件响应</small></td>
+      <td>PagerDuty alert → on-call engineer → check runbook → diagnose → fix → postmortem.</td>
+      <td>AI pre-diagnoses before paging. Provides context summary, similar past incidents, and ranked remediation options. Postmortem draft auto-generated.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Circuit Breaker<br><small style="color:var(--text-dim)">熔断器实现</small></td>
+      <td>Resilience4j / Hystrix. Fixed thresholds: 50% failure in 10-second window → open. Fixed recovery timeout.</td>
+      <td>AI-tuned thresholds based on traffic patterns. Adaptive recovery: AI monitors downstream health before closing circuit. Per-endpoint breaker tuning.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Log Aggregation<br><small style="color:var(--text-dim)">日志聚合</small></td>
+      <td>ELK / Splunk. Structured logging standard. Grep-based investigation.</td>
+      <td>Natural language log querying: "Show me all SII rejections for Factura Exenta in the last 24h." AI summarizes log patterns, highlights anomalies.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Distributed Tracing<br><small style="color:var(--text-dim)">分布式追踪</small></td>
+      <td>Jaeger / Zipkin. Manual trace ID propagation. Developers search traces by ID.</td>
+      <td>AI identifies slow-path traces automatically. Correlates trace anomalies with deploys, config changes, and external API status. Trace-based root cause ranking.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">SLO for AI Services<br><small style="color:var(--text-dim)">AI服务SLO</small></td>
+      <td>Standard SLOs: 99.9% availability, p99 latency < 500ms. Same framework for all services.</td>
+      <td>AI-specific SLOs: hallucination rate < 0.5%, token cost per request < $0.02, confidence score > 0.85 for auto-approved responses. Separate error budget for semantic failures.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Runbook Automation<br><small style="color:var(--text-dim)">Runbook自动化</small></td>
+      <td>Wiki-based runbooks. Human follows steps. Periodic review to keep runbooks current.</td>
+      <td>AI-executable runbooks in structured format. AI selects and runs remediation, reports outcome. Auto-updates runbooks based on successful novel resolutions.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- ─── §05 PRACTICAL CHECKLIST ─── -->
+<h2><span class="num">05</span> Practical Checklist — Building Your Signal Architecture</h2>
+
+<p>
+Twelve concrete actions to build a production-grade signal architecture. Each item is tagged by maturity stage (S2-S6). Start from your current stage. The jump from S4 to S5 is where AI transitions from being an observed component to an active participant in your observability pipeline.
+</p>
+<p class="cn-note">
+构建生产级信号架构的十二项具体行动，按成熟度阶段标注（S2-S6）。从当前阶段开始。S4到S5的跳跃是AI从被观测组件转变为可观测管道主动参与者的转折点。
+</p>
+
+<div class="checklist">
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Define a structured JSON error envelope standard for all APIs
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Set up basic metric dashboards (request rate, error rate, latency)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Implement Circuit Breaker on all external integration points
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Deploy distributed tracing with trace ID propagation across services
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Define SLIs and SLOs for every user-facing service
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    Enable AI anomaly detection on key metrics (error rate, latency)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    Build structured error catalog with fingerprints and resolution history
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    Map every error category to a runbook (error-to-runbook mapping)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Auto-remediation for top 10 known error patterns
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Add AI-specific observability dimensions (token cost, hallucination rate, confidence)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Error-as-training-data pipeline: structured errors feed AI learning loop
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    Full AI-driven incident lifecycle: detect → diagnose → remediate → postmortem → SLO management
+  </div>
+</div>
+
+
+<!-- ─── §06 TAKEAWAY ─── -->
+<h2><span class="num">06</span> The Architect's Takeaway</h2>
+
+<p>
+Errors and observability are not afterthoughts — they are architecture. The "signal architecture" — the subsystem that detects, classifies, communicates, and responds to failure — deserves the same deliberate design attention as your domain model, your API contracts, and your data schema. Nygard's stability patterns, Majors' observability framework, and Google's SRE practices form the classical foundation. The AI era extends this foundation with anomaly detection that sees what humans miss, structured errors that train future remediation, and auto-remediation pipelines that close the loop from detection to resolution without human intervention.
+</p>
+<p class="cn-note">
+错误和可观测性不是事后补丁——它们是架构。信号架构——检测、分类、传达和响应故障的子系统——值得与领域模型、API契约和数据模式同等的设计关注。Nygard的稳定性模式、Majors的可观测性框架、Google的SRE实践构成经典基础。AI时代以异常检测、结构化错误训练和自动修复管道扩展了这一基础。
+</p>
+
+<p>
+This article completes Layer 1 — Design Thinking. Across four articles, we have moved from design patterns (how we structure solutions) through domain-driven design (how we model the problem space) to API design (how we expose capabilities) and now error handling and observability (how we ensure those capabilities work in production). Together, these form the design foundation that every system-level decision builds upon.
+</p>
+<p class="cn-note">
+本文完成了第一层——设计思维。四篇文章从设计模式（如何结构化解决方案）到领域驱动设计（如何建模问题空间），再到API设计（如何暴露能力），最后到错误处理与可观测性（如何确保这些能力在生产中运行）。这些共同构成了每个系统级决策所依赖的设计基础。
+</p>
+
+<div class="insight-box" style="margin-top:40px;">
+  <div class="label">Next in Series → Article 2.1</div>
+  <p style="margin:0; font-size:14px; line-height:1.6">
+    <strong>Architecture Styles Landscape</strong> — With patterns, domain models, APIs, and observability as our design foundation, we zoom out to architecture — where system-level decisions, distribution, and integration define the playing field. From monoliths to microservices, from event-driven to serverless, the architectural style you choose constrains and enables everything that follows.
+    <br><span style="color:var(--text-dim); font-style:italic; font-family:'Noto Serif SC',serif;">下一篇：架构风格全景——从设计思维层上升到架构层，系统级决策、分布与集成定义了竞技场。</span>
+  </p>
+</div>
+
+</main>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="article-footer">
+  <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim)">
+    Software Knowledge Base · Layer 1: Design Thinking · Article 1.4 of 20 · Final article in L1<br>
+    Classical Foundations × AI Co-Evolution · 经典基础 × AI协同进化
+  </div>
+  <div class="nav-links">
+    <a class="nav-link" href="./1.3-api-design.html">← Prev: 1.3 API Design</a>
+    <a class="nav-link" href="../L2-architecture/2.1-architecture-styles.html">Next: 2.1 Architecture Styles →</a>
+  </div>
+</footer>
+
+</body>
+</html>
