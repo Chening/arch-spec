@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2.2 Microservices & Distributed Systems — Taming Complexity</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<!--
+  CSS Architecture Note:
+  The canonical design system lives in templates/article-base.css.
+  For single-file distribution, it is inlined here.
+  When editing styles, update article-base.css first, then re-inline.
+-->
+<style>
+/* ═══ INLINED FROM templates/article-base.css ═══ */
+:root {
+  --bg-deep: #0a0e17;
+  --bg-surface: #0f1420;
+  --bg-card: #141b2d;
+  --bg-card-hover: #1a2340;
+  --border: #1e2a45;
+  --border-accent: #2d4a7a;
+  --cyan: #22d3ee;
+  --cyan-dim: #0e7490;
+  --cyan-glow: rgba(34, 211, 238, 0.15);
+  --purple: #a78bfa;
+  --purple-dim: #6d5dbb;
+  --purple-glow: rgba(167, 139, 250, 0.12);
+  --orange: #f97316;
+  --orange-glow: rgba(249, 115, 22, 0.12);
+  --green: #10b981;
+  --green-glow: rgba(16, 185, 129, 0.12);
+  --rose: #f43f5e;
+  --rose-glow: rgba(244, 63, 94, 0.12);
+  --yellow: #eab308;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg-deep); color:var(--text-primary); font-family:'IBM Plex Sans',sans-serif; line-height:1.75; font-size:16px; -webkit-font-smoothing:antialiased; }
+.article-header { position:relative; padding:80px 0 60px; overflow:hidden; border-bottom:1px solid var(--border); }
+.article-header::before { content:''; position:absolute; top:0;left:0;right:0;bottom:0; background:radial-gradient(ellipse 800px 400px at 20% 50%,rgba(34,211,238,0.06),transparent),radial-gradient(ellipse 600px 300px at 80% 30%,rgba(167,139,250,0.04),transparent); }
+.header-content { position:relative; max-width:860px; margin:0 auto; padding:0 32px; }
+.series-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--cyan); border:1px solid var(--cyan-dim); padding:4px 12px; border-radius:3px; margin-bottom:20px; background:var(--cyan-glow); }
+.article-title { font-family:'JetBrains Mono',monospace; font-size:36px; font-weight:700; line-height:1.25; color:var(--text-primary); margin-bottom:8px; }
+.article-title-cn { font-family:'Noto Serif SC',serif; font-size:20px; font-weight:400; color:var(--text-dim); font-style:italic; margin-bottom:24px; }
+.article-meta { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-dim); display:flex; gap:24px; flex-wrap:wrap; }
+.meta-item { display:flex; align-items:center; gap:6px; }
+.meta-dot { width:6px; height:6px; border-radius:50%; }
+.article-body { max-width:860px; margin:0 auto; padding:48px 32px; }
+h2 { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:var(--cyan); margin:56px 0 8px; padding-bottom:12px; border-bottom:1px solid var(--border); letter-spacing:-0.5px; }
+.article-body > h2:first-child { margin-top:0; }
+h2 .num { color:var(--text-dim); font-weight:400; margin-right:8px; }
+h3 { font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; color:var(--purple); margin:36px 0 12px; }
+p { margin-bottom:18px; color:var(--text-primary); font-size:15.5px; }
+.cn-note { font-family:'Noto Serif SC',serif; font-style:italic; color:var(--text-dim); font-size:14px; line-height:1.8; margin:-8px 0 24px; padding-left:16px; border-left:2px solid var(--border); }
+code { font-family:'JetBrains Mono',monospace; font-size:0.88em; background:rgba(34,211,238,0.08); padding:2px 6px; border-radius:3px; color:var(--cyan); }
+.diagram-container { margin:40px -16px; padding:32px 24px; background:var(--bg-surface); border:1px solid var(--border); border-radius:8px; position:relative; overflow-x:auto; }
+.diagram-container::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--cyan),var(--purple),var(--orange)); }
+.diagram-label { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:20px; }
+.diagram-sublabel { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-dim); margin-top:-16px; margin-bottom:16px; font-style:italic; }
+.bookshelf { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin:24px 0; align-items:stretch; }
+.book-card { background:var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:16px; transition:all 0.25s ease; position:relative; overflow:hidden; min-height:190px; display:flex; flex-direction:column; }
+.book-card::before { content:''; position:absolute; left:0;top:0;bottom:0; width:3px; }
+.book-card.tier1::before { background:var(--cyan); }
+.book-card.tier2::before { background:var(--purple); }
+.book-card:hover { border-color:var(--border-accent); background:var(--bg-card-hover); transform:translateY(-2px); }
+.book-title { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:4px; line-height:1.4; }
+.book-author { font-size:11px; color:var(--text-dim); }
+.book-desc { font-size:12px; color:var(--text-secondary); margin-top:8px; line-height:1.5; flex:1; }
+.book-tag { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:2px 6px; border-radius:3px; margin-top:8px; letter-spacing:0.5px; }
+.tag-foundation { background:rgba(34,211,238,0.1); color:var(--cyan); border:1px solid rgba(34,211,238,0.2); }
+.tag-practice { background:rgba(167,139,250,0.1); color:var(--purple); border:1px solid rgba(167,139,250,0.2); }
+.decision-table { width:100%; border-collapse:collapse; margin:24px 0; font-size:13px; }
+.decision-table th { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; text-align:left; padding:12px 16px; border-bottom:2px solid var(--border-accent); color:var(--text-secondary); background:var(--bg-surface); }
+.decision-table td { padding:12px 16px; border-bottom:1px solid var(--border); color:var(--text-primary); vertical-align:top; line-height:1.5; }
+.decision-table tr:hover td { background:rgba(34,211,238,0.03); }
+.decision-table .col-scenario { width:22%; font-weight:500; color:var(--text-secondary); }
+.decision-table .col-classic { width:39%; }
+.decision-table .col-ai { width:39%; }
+.classic-badge,.ai-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:1px 5px; border-radius:2px; margin-right:4px; vertical-align:middle; }
+.classic-badge { background:rgba(148,163,184,0.15); color:var(--text-secondary); }
+.ai-badge { background:rgba(34,211,238,0.12); color:var(--cyan); }
+.checklist { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:24px 0; }
+.check-item { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:5px; font-size:13px; color:var(--text-primary); line-height:1.4; transition:border-color 0.2s; }
+.check-item:hover { border-color:var(--border-accent); }
+.check-stage { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:600; padding:2px 7px; border-radius:3px; white-space:nowrap; flex-shrink:0; }
+.insight-box { margin:32px 0; padding:24px; background:linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04)); border:1px solid var(--border-accent); border-radius:8px; position:relative; }
+.insight-box::before { content:'⚡'; position:absolute; top:-12px; left:20px; background:var(--bg-deep); padding:0 8px; font-size:18px; }
+.insight-box .label { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--cyan); margin-bottom:8px; }
+.code-block { background:#0d1117; border:1px solid var(--border); border-radius:6px; padding:20px; margin:20px 0; overflow-x:auto; position:relative; }
+.code-block::before { content:attr(data-lang); position:absolute; top:8px; right:12px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-dim); letter-spacing:0.5px; }
+.code-block pre { font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.6; color:var(--text-secondary); }
+.code-block .kw { color:var(--purple); }
+.code-block .fn { color:var(--cyan); }
+.code-block .str { color:var(--green); }
+.code-block .cm { color:var(--text-dim); font-style:italic; }
+.code-block .ann { color:var(--orange); }
+.code-block .tp { color:var(--yellow); }
+.evolution-steps { position:relative; padding-left:32px; margin:28px 0; }
+.evolution-steps::before { content:''; position:absolute; left:11px; top:8px; bottom:8px; width:2px; background:linear-gradient(to bottom,var(--cyan),var(--purple),var(--orange)); }
+.evo-step { position:relative; margin-bottom:24px; padding-left:20px; }
+.evo-step::before { content:''; position:absolute; left:-25px; top:8px; width:10px; height:10px; border-radius:50%; border:2px solid; }
+.evo-step:nth-child(1)::before { border-color:var(--text-dim); background:var(--bg-deep); }
+.evo-step:nth-child(2)::before { border-color:var(--text-secondary); background:var(--bg-deep); }
+.evo-step:nth-child(3)::before { border-color:var(--cyan-dim); background:var(--bg-deep); }
+.evo-step:nth-child(4)::before { border-color:var(--purple); background:var(--bg-deep); }
+.evo-step:nth-child(5)::before { border-color:var(--cyan); background:var(--cyan); }
+.evo-step:nth-child(6)::before { border-color:var(--green); background:var(--green); }
+.evo-step-title { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; margin-bottom:4px; }
+.evo-step-desc { font-size:13.5px; color:var(--text-secondary); line-height:1.6; }
+.article-footer { max-width:860px; margin:0 auto; padding:40px 32px; border-top:1px solid var(--border); font-size:12px; color:var(--text-dim); }
+.nav-links { display:flex; justify-content:space-between; align-items:center; margin-top:20px; }
+.nav-link { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--cyan); text-decoration:none; padding:8px 16px; border:1px solid var(--border); border-radius:4px; transition:all 0.2s; }
+.nav-link:hover { border-color:var(--cyan); background:var(--cyan-glow); }
+@media (max-width:640px) {
+  .article-title { font-size:24px; }
+  .bookshelf { grid-template-columns:1fr; }
+  .checklist { grid-template-columns:1fr; }
+  .article-meta { flex-direction:column; gap:8px; }
+}
+@media print {
+  :root { --bg-deep:#fff; --bg-surface:#f8f9fa; --bg-card:#f1f3f5; --bg-card-hover:#f1f3f5; --border:#dee2e6; --border-accent:#adb5bd; --text-primary:#212529; --text-secondary:#495057; --text-dim:#868e96; --cyan:#0c8599; --purple:#7048e8; --orange:#e8590c; --green:#099268; --rose:#e03131; --yellow:#e67700; }
+  body { font-size:11pt; line-height:1.5; }
+  .article-header::before { display:none; }
+  .article-header { padding:24px 0; }
+  .diagram-container::before { display:none; }
+  .book-card:hover { transform:none; }
+  .nav-links { display:none; }
+  .code-block { border:1px solid #dee2e6; background:#f8f9fa; }
+  .code-block pre { color:#212529; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header class="article-header">
+  <div class="header-content">
+    <div class="series-badge" style="color:var(--orange); border-color:var(--orange); background:var(--orange-glow);">Layer 2 · Architecture · 架构决策层</div>
+    <h1 class="article-title">Microservices &amp; Distributed Systems — Taming Complexity</h1>
+    <div class="article-title-cn">微服务与分布式系统：驯服复杂性</div>
+    <div class="article-meta">
+      <span class="meta-item"><span class="meta-dot" style="background:var(--orange)"></span> Article 2.2 of 20</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--purple)"></span> ~19 min read</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--cyan)"></span> 4 Source Books × 4 AI Angles</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════ BODY ═══════════════ -->
+<main class="article-body">
+
+<!-- ─── §01 CORE INSIGHT ─── -->
+<h2><span class="num">01</span> Core Insight — The Thesis</h2>
+
+<p>
+Microservices are not a technology choice. They are an organizational strategy that happens to be implemented in technology. Sam Newman's central argument in <em>Building Microservices</em> is that service boundaries should mirror team boundaries — Conway's Law as a deliberate design tool, not an accidental side effect. When you decompose a monolith, you are really decomposing an organization's communication structure. Get the boundaries wrong, and you trade a monolith's internal complexity for distributed complexity with network calls, eventual consistency, and cascading failures.
+</p>
+<p class="cn-note">
+微服务不是技术选择，而是恰好用技术实现的组织策略。Newman的核心论点：服务边界应映射团队边界——Conway定律作为有意的设计工具。边界划错，你只是把单体的内部复杂度换成了分布式复杂度。
+</p>
+
+<p>
+The AI era amplifies both the rewards and the risks. A well-decomposed microservices architecture gives AI agents clear, bounded contexts to operate within — each service becomes a self-contained problem space that an LLM can reason about. But a poorly decomposed system? AI inherits every distributed systems nightmare: inconsistent data across services, saga failures without clear compensation paths, and the silent corruption that comes from misunderstood eventual consistency. The patterns in this article — Saga, CQRS, Service Mesh, intelligent partitioning — are the vocabulary for managing this complexity. AI is the amplifier, but the patterns are the signal.
+</p>
+<p class="cn-note">
+AI时代放大了收益和风险。良好分解的微服务架构为AI代理提供清晰的有界上下文；而分解不当的系统？AI继承所有分布式系统噩梦。本文的模式——Saga、CQRS、Service Mesh、智能分区——是管理复杂度的词汇表。AI是放大器，模式才是信号。
+</p>
+
+<div class="insight-box">
+  <div class="label">The Reframing 核心重构</div>
+  <p style="margin:0; font-size:15px; line-height:1.7">
+    <strong>Distributed systems are hard. AI makes them manageable, not simple.</strong> Every classical distributed systems pattern — Saga for transactions, CQRS for read/write separation, Circuit Breaker for fault isolation — becomes more powerful when orchestrated by AI. But AI cannot invent these patterns from first principles during a production incident. The architect who has internalized Kleppmann's consistency models and Richardson's pattern catalog can wield AI as a force multiplier. The architect who hasn't is deploying complexity they cannot debug.
+  </p>
+</div>
+<p class="cn-note">
+分布式系统是困难的。AI让它们可管理，但不简单。每个经典模式在AI编排下更强大，但AI无法在生产事故中从第一性原理发明这些模式。内化了Kleppmann一致性模型和Richardson模式目录的架构师，才能将AI作为力量倍增器。
+</p>
+
+<!-- HERO DIAGRAM: MICROSERVICES TOPOLOGY -->
+<div class="diagram-container">
+  <div class="diagram-label">◆ Hero Diagram — Microservices Topology with AI Components</div>
+  <svg viewBox="0 0 800 420" xmlns="http://www.w3.org/2000/svg" style="width:100%; font-family:'JetBrains Mono',monospace;">
+    <defs>
+      <linearGradient id="meshGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="var(--cyan,#22d3ee)" stop-opacity="0.15"/>
+        <stop offset="100%" stop-color="var(--purple,#a78bfa)" stop-opacity="0.08"/>
+      </linearGradient>
+    </defs>
+
+    <!-- Service Mesh Background -->
+    <rect x="30" y="60" width="740" height="240" rx="12" fill="url(#meshGrad)" stroke="var(--border,#1e2a45)" stroke-width="1" stroke-dasharray="6,3"/>
+    <text x="60" y="85" font-size="9" fill="var(--cyan,#22d3ee)" font-weight="600" letter-spacing="1.5">SERVICE MESH (ISTIO / LINKERD)</text>
+
+    <!-- API Gateway -->
+    <rect x="320" y="10" width="160" height="38" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--orange,#f97316)" stroke-width="1.5"/>
+    <text x="400" y="34" text-anchor="middle" font-size="10" fill="var(--orange,#f97316)" font-weight="600">API GATEWAY</text>
+    <line x1="400" y1="48" x2="400" y2="100" stroke="var(--orange,#f97316)" stroke-width="1" stroke-dasharray="4,3"/>
+
+    <!-- Service A: Order Service -->
+    <rect x="60" y="100" width="140" height="80" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--orange,#f97316)" stroke-width="1.2"/>
+    <text x="130" y="124" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Order Service</text>
+    <text x="130" y="140" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">订单服务</text>
+    <rect x="80" y="150" width="100" height="18" rx="3" fill="var(--bg-surface,#0f1420)" stroke="var(--border,#1e2a45)" stroke-width="0.5"/>
+    <text x="130" y="163" text-anchor="middle" font-size="7.5" fill="var(--text-secondary,#94a3b8)">DB: PostgreSQL</text>
+
+    <!-- Service B: Invoice Service -->
+    <rect x="240" y="100" width="140" height="80" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--orange,#f97316)" stroke-width="1.2"/>
+    <text x="310" y="124" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Invoice Service</text>
+    <text x="310" y="140" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">发票服务</text>
+    <rect x="260" y="150" width="100" height="18" rx="3" fill="var(--bg-surface,#0f1420)" stroke="var(--border,#1e2a45)" stroke-width="0.5"/>
+    <text x="310" y="163" text-anchor="middle" font-size="7.5" fill="var(--text-secondary,#94a3b8)">DB: MongoDB</text>
+
+    <!-- Service C: Payment Service -->
+    <rect x="420" y="100" width="140" height="80" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--orange,#f97316)" stroke-width="1.2"/>
+    <text x="490" y="124" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Payment Service</text>
+    <text x="490" y="140" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">支付服务</text>
+    <rect x="440" y="150" width="100" height="18" rx="3" fill="var(--bg-surface,#0f1420)" stroke="var(--border,#1e2a45)" stroke-width="0.5"/>
+    <text x="490" y="163" text-anchor="middle" font-size="7.5" fill="var(--text-secondary,#94a3b8)">DB: PostgreSQL</text>
+
+    <!-- Service D: AI Inference Service -->
+    <rect x="600" y="100" width="140" height="80" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1.5"/>
+    <text x="670" y="124" text-anchor="middle" font-size="10" fill="var(--cyan,#22d3ee)" font-weight="600">AI Inference</text>
+    <text x="670" y="140" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">AI推理服务</text>
+    <rect x="620" y="150" width="100" height="18" rx="3" fill="var(--bg-surface,#0f1420)" stroke="var(--border,#1e2a45)" stroke-width="0.5"/>
+    <text x="670" y="163" text-anchor="middle" font-size="7.5" fill="var(--cyan,#22d3ee)">Vector DB</text>
+
+    <!-- Event Bus -->
+    <rect x="100" y="220" width="580" height="34" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--purple,#a78bfa)" stroke-width="1.5"/>
+    <text x="390" y="242" text-anchor="middle" font-size="10" fill="var(--purple,#a78bfa)" font-weight="600">EVENT BUS (Kafka / RabbitMQ)</text>
+
+    <!-- Connections: services to event bus -->
+    <line x1="130" y1="180" x2="130" y2="220" stroke="var(--purple,#a78bfa)" stroke-width="1" stroke-dasharray="3,2"/>
+    <line x1="310" y1="180" x2="310" y2="220" stroke="var(--purple,#a78bfa)" stroke-width="1" stroke-dasharray="3,2"/>
+    <line x1="490" y1="180" x2="490" y2="220" stroke="var(--purple,#a78bfa)" stroke-width="1" stroke-dasharray="3,2"/>
+    <line x1="670" y1="180" x2="670" y2="220" stroke="var(--cyan,#22d3ee)" stroke-width="1" stroke-dasharray="3,2"/>
+
+    <!-- AI Sidecar proxies (small boxes next to each service) -->
+    <rect x="170" y="108" width="24" height="24" rx="3" fill="var(--bg-surface,#0f1420)" stroke="var(--cyan,#22d3ee)" stroke-width="1"/>
+    <text x="182" y="124" text-anchor="middle" font-size="7" fill="var(--cyan,#22d3ee)">AI</text>
+    <rect x="350" y="108" width="24" height="24" rx="3" fill="var(--bg-surface,#0f1420)" stroke="var(--cyan,#22d3ee)" stroke-width="1"/>
+    <text x="362" y="124" text-anchor="middle" font-size="7" fill="var(--cyan,#22d3ee)">AI</text>
+    <rect x="530" y="108" width="24" height="24" rx="3" fill="var(--bg-surface,#0f1420)" stroke="var(--cyan,#22d3ee)" stroke-width="1"/>
+    <text x="542" y="124" text-anchor="middle" font-size="7" fill="var(--cyan,#22d3ee)">AI</text>
+
+    <!-- Bottom layer: projections -->
+    <rect x="80" y="280" width="150" height="50" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+    <text x="155" y="302" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)" font-weight="500">Operational View</text>
+    <text x="155" y="318" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">CQRS Read Model</text>
+
+    <rect x="260" y="280" width="150" height="50" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+    <text x="335" y="302" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)" font-weight="500">Analytics View</text>
+    <text x="335" y="318" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Data Warehouse</text>
+
+    <rect x="440" y="280" width="150" height="50" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1.2"/>
+    <text x="515" y="302" text-anchor="middle" font-size="9" fill="var(--cyan,#22d3ee)" font-weight="500">AI / Vector View</text>
+    <text x="515" y="318" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Embeddings + RAG</text>
+
+    <!-- Arrows from event bus to projections -->
+    <line x1="200" y1="254" x2="155" y2="280" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+    <line x1="380" y1="254" x2="335" y2="280" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+    <line x1="540" y1="254" x2="515" y2="280" stroke="var(--cyan,#22d3ee)" stroke-width="1"/>
+
+    <!-- Legend -->
+    <rect x="60" y="360" width="12" height="12" rx="2" fill="none" stroke="var(--orange,#f97316)" stroke-width="1.5"/>
+    <text x="80" y="370" font-size="8.5" fill="var(--text-secondary,#94a3b8)">Business Service</text>
+
+    <rect x="200" y="360" width="12" height="12" rx="2" fill="none" stroke="var(--cyan,#22d3ee)" stroke-width="1.5"/>
+    <text x="220" y="370" font-size="8.5" fill="var(--text-secondary,#94a3b8)">AI Component</text>
+
+    <rect x="330" y="360" width="12" height="12" rx="2" fill="none" stroke="var(--purple,#a78bfa)" stroke-width="1.5"/>
+    <text x="350" y="370" font-size="8.5" fill="var(--text-secondary,#94a3b8)">Event Bus</text>
+
+    <rect x="450" y="360" width="12" height="12" rx="2" fill="var(--bg-surface,#0f1420)" stroke="var(--cyan,#22d3ee)" stroke-width="1"/>
+    <text x="470" y="370" font-size="8.5" fill="var(--text-secondary,#94a3b8)">AI Sidecar</text>
+
+    <!-- Key insight -->
+    <rect x="80" y="388" width="640" height="24" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--orange,#f97316)" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="400" y="404" text-anchor="middle" font-size="9" fill="var(--orange,#f97316)" font-weight="600">Each service owns its data. Events flow through the bus. AI sidecars add intelligence at the edge.</text>
+  </svg>
+</div>
+
+
+<!-- ─── §02 CLASSICAL FOUNDATION ─── -->
+<h2><span class="num">02</span> Classical Foundation — Source Books</h2>
+
+<p>
+The distributed systems canon is vast, but four books form the essential toolkit. Newman provides the organizational lens — how to decompose, integrate, and deploy services. Kleppmann provides the data lens — replication, partitioning, and the consistency trade-offs that every distributed system must confront. Richardson offers the pattern catalog — the building blocks you compose into real architectures. Burns brings the container-native perspective — distributed systems as composable container patterns. Together, they cover the full spectrum from "why microservices?" to "how do I implement a distributed saga in Kubernetes?"
+</p>
+<p class="cn-note">
+分布式系统经典浩瀚，但四本书构成核心工具箱。Newman提供组织视角，Kleppmann提供数据视角，Richardson提供模式目录，Burns带来容器原生视角。从"为什么微服务"到"如何在Kubernetes中实现分布式Saga"，全面覆盖。
+</p>
+
+<div class="bookshelf">
+  <div class="book-card tier1">
+    <div class="book-title">Building Microservices, 2nd Ed</div>
+    <div class="book-author">Sam Newman · 2021</div>
+    <div class="book-desc">The definitive microservices guide. Decomposition strategies, integration patterns, deployment, security. Key insight: microservices are about organizational alignment (Conway's Law), not just technical modularity. Newman's "incremental decomposition" over "big-bang migration."</div>
+    <span class="book-tag tag-foundation">FOUNDATION · DECOMPOSITION</span>
+  </div>
+  <div class="book-card tier1">
+    <div class="book-title">Designing Data-Intensive Applications</div>
+    <div class="book-author">Martin Kleppmann · 2017</div>
+    <div class="book-desc">The distributed systems bible. Replication, partitioning, consistency models, stream processing. CAP theorem nuances. Key insight: understand your data model and access patterns BEFORE choosing infrastructure. AI workloads introduce unique data access patterns (embeddings, vector search, batch inference).</div>
+    <span class="book-tag tag-foundation">FOUNDATION · DATA SYSTEMS</span>
+  </div>
+  <div class="book-card tier2">
+    <div class="book-title">Microservices Patterns</div>
+    <div class="book-author">Chris Richardson · 2018</div>
+    <div class="book-desc">Pattern catalog for microservices: Saga, CQRS, Event Sourcing, API Gateway, Service Mesh, Circuit Breaker. The Saga pattern for distributed transactions. Transactional Outbox for reliable event publishing. These patterns are the building blocks of distributed AI systems.</div>
+    <span class="book-tag tag-practice">PRACTICE · PATTERNS</span>
+  </div>
+  <div class="book-card tier2">
+    <div class="book-title">Designing Distributed Systems</div>
+    <div class="book-author">Brendan Burns · 2018</div>
+    <div class="book-desc">Container-native patterns: Sidecar, Ambassador, Adapter. Multi-node patterns: Leader Election, Work Queue, Scatter/Gather. Burns frames distributed systems as composable container patterns. In the AI era: AI inference as sidecar, AI routing as ambassador.</div>
+    <span class="book-tag tag-practice">PRACTICE · CONTAINERS</span>
+  </div>
+</div>
+
+<p>
+What unites these four books is a shared respect for distributed systems' fundamental difficulty. Newman warns against premature decomposition. Kleppmann warns against ignoring consistency trade-offs. Richardson warns against ad-hoc distributed transactions. Burns warns against reinventing infrastructure patterns. The common thread: understand the problem deeply before reaching for a distributed solution. A well-designed monolith deployed on Monday beats a poorly designed microservices architecture that ships in six months.
+</p>
+<p class="cn-note">
+四本书的共同点：对分布式系统基本困难的深刻尊重。Newman警告过早分解，Kleppmann警告忽视一致性权衡，Richardson警告临时分布式事务，Burns警告重新发明基础设施模式。共同线索：在选择分布式方案前，先深刻理解问题。
+</p>
+
+
+<!-- ─── §03 AI CO-EVOLUTION ─── -->
+<h2><span class="num">03</span> AI Co-Evolution — Four Angles</h2>
+
+<p>
+The classical distributed systems patterns were designed for human-operated, request-response architectures. AI introduces workflows that are inherently long-running, multi-step, and probabilistic. Each angle below maps a classical pattern to its AI-era extension: same foundational principle, new execution model.
+</p>
+<p class="cn-note">
+经典分布式模式为人工操作、请求-响应架构而设计。AI引入本质上长时间运行、多步骤、概率性的工作流。下面每个角度将经典模式映射到AI时代的扩展：相同基础原则，新的执行模型。
+</p>
+
+<!-- ANGLE A -->
+<h3>Angle A · Saga Pattern for AI-Augmented Workflows — AI增强工作流的Saga模式</h3>
+
+<p>
+<strong>Classical principle:</strong> Richardson's Saga pattern decomposes a distributed transaction into a sequence of local transactions, each with a compensating transaction for rollback. Unlike two-phase commit (2PC), Sagas don't hold locks across services — they achieve eventual consistency through choreography or orchestration. The trade-off: you give up ACID atomicity for availability and partition tolerance.
+</p>
+
+<p>
+<strong>AI extension:</strong> AI workflows are inherently saga-like. Consider a multi-country invoice validation pipeline: extract data from PDF (step 1), validate against country A's tax authority (step 2), validate against country B (step 3), generate compliance report (step 4). Each step can fail independently. AI extends the Saga pattern in three ways: (1) an AI orchestrator manages saga state and decides the next step based on intermediate results, not just success/failure; (2) AI determines compensation strategy based on failure type — a timeout gets a retry, a validation rejection gets a human review escalation, a data quality issue triggers re-extraction with different parameters; (3) AI enables "partial rollback" — keeping successful outputs while retrying only the failed steps, something classical Sagas handle poorly.
+</p>
+
+<p>
+<strong>Concrete example:</strong> A multi-country invoice validation saga where each country validation is a saga step. The AI orchestrator detects that Brazil's tax authority returned an ambiguous rejection, classifies it as "data quality issue" rather than "hard reject," and triggers re-extraction with OCR parameter tuning — while preserving the already-validated results for Mexico and Argentina. Classical Saga would have compensated all steps and restarted from scratch.
+</p>
+<p class="cn-note">
+经典原则：Richardson的Saga模式将分布式事务分解为本地事务序列，每个有补偿事务。AI延伸：AI工作流天生类似Saga——AI编排器根据失败类型决定补偿策略，支持"部分回滚"——保留成功输出，仅重试失败步骤。示例：多国发票验证Saga，AI检测巴西税务局的模糊拒绝，分类为"数据质量问题"而非"硬拒绝"，触发重新提取——同时保留墨西哥和阿根廷的已验证结果。
+</p>
+
+<!-- Saga Flow Diagram -->
+<div class="diagram-container">
+  <div class="diagram-label">◆ AI-Orchestrated Saga Flow</div>
+  <svg viewBox="0 0 800 280" xmlns="http://www.w3.org/2000/svg" style="width:100%; font-family:'JetBrains Mono',monospace;">
+    <!-- Saga steps -->
+    <rect x="30" y="40" width="150" height="55" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--orange,#f97316)" stroke-width="1.2"/>
+    <text x="105" y="62" text-anchor="middle" font-size="9" fill="var(--orange,#f97316)" font-weight="600">STEP 1</text>
+    <text x="105" y="78" text-anchor="middle" font-size="8.5" fill="var(--text-primary,#e2e8f0)">Extract Invoice Data</text>
+    <text x="105" y="90" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">AI OCR + validation</text>
+
+    <rect x="210" y="40" width="150" height="55" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--orange,#f97316)" stroke-width="1.2"/>
+    <text x="285" y="62" text-anchor="middle" font-size="9" fill="var(--orange,#f97316)" font-weight="600">STEP 2</text>
+    <text x="285" y="78" text-anchor="middle" font-size="8.5" fill="var(--text-primary,#e2e8f0)">Validate: Mexico</text>
+    <text x="285" y="90" text-anchor="middle" font-size="7" fill="var(--green,#10b981)">&#10003; Success</text>
+
+    <rect x="390" y="40" width="150" height="55" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--rose,#f43f5e)" stroke-width="1.5"/>
+    <text x="465" y="62" text-anchor="middle" font-size="9" fill="var(--orange,#f97316)" font-weight="600">STEP 3</text>
+    <text x="465" y="78" text-anchor="middle" font-size="8.5" fill="var(--text-primary,#e2e8f0)">Validate: Brazil</text>
+    <text x="465" y="90" text-anchor="middle" font-size="7" fill="var(--rose,#f43f5e)">&#10007; Ambiguous reject</text>
+
+    <rect x="570" y="40" width="150" height="55" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--text-dim,#64748b)" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="645" y="62" text-anchor="middle" font-size="9" fill="var(--text-dim,#64748b)" font-weight="600">STEP 4</text>
+    <text x="645" y="78" text-anchor="middle" font-size="8.5" fill="var(--text-dim,#64748b)">Compliance Report</text>
+    <text x="645" y="90" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Pending...</text>
+
+    <!-- Arrows between steps -->
+    <line x1="180" y1="67" x2="210" y2="67" stroke="var(--text-secondary,#94a3b8)" stroke-width="1.2"/>
+    <polygon points="208,64 214,67 208,70" fill="var(--text-secondary,#94a3b8)"/>
+    <line x1="360" y1="67" x2="390" y2="67" stroke="var(--text-secondary,#94a3b8)" stroke-width="1.2"/>
+    <polygon points="388,64 394,67 388,70" fill="var(--text-secondary,#94a3b8)"/>
+    <line x1="540" y1="67" x2="570" y2="67" stroke="var(--text-dim,#64748b)" stroke-width="1" stroke-dasharray="3,2"/>
+
+    <!-- AI Orchestrator -->
+    <rect x="250" y="130" width="300" height="50" rx="8" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1.5"/>
+    <text x="400" y="152" text-anchor="middle" font-size="10" fill="var(--cyan,#22d3ee)" font-weight="600">AI SAGA ORCHESTRATOR</text>
+    <text x="400" y="168" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Classifies failure type → decides compensation strategy</text>
+
+    <!-- AI decision arrow from step 3 failure -->
+    <line x1="465" y1="95" x2="465" y2="115" stroke="var(--rose,#f43f5e)" stroke-width="1"/>
+    <line x1="465" y1="115" x2="430" y2="130" stroke="var(--cyan,#22d3ee)" stroke-width="1"/>
+
+    <!-- AI decision outputs -->
+    <rect x="120" y="210" width="180" height="44" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="1"/>
+    <text x="210" y="230" text-anchor="middle" font-size="8.5" fill="var(--green,#10b981)" font-weight="500">KEEP: Mexico result valid</text>
+    <text x="210" y="244" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">No compensation needed</text>
+
+    <rect x="330" y="210" width="180" height="44" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--yellow,#eab308)" stroke-width="1"/>
+    <text x="420" y="230" text-anchor="middle" font-size="8.5" fill="var(--yellow,#eab308)" font-weight="500">RETRY: Brazil re-extract</text>
+    <text x="420" y="244" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Tuned OCR parameters</text>
+
+    <rect x="540" y="210" width="180" height="44" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--text-dim,#64748b)" stroke-width="1" stroke-dasharray="3,2"/>
+    <text x="630" y="230" text-anchor="middle" font-size="8.5" fill="var(--text-dim,#64748b)" font-weight="500">WAIT: Report deferred</text>
+    <text x="630" y="244" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Until all countries pass</text>
+
+    <!-- Arrows from orchestrator to decisions -->
+    <line x1="340" y1="180" x2="210" y2="210" stroke="var(--green,#10b981)" stroke-width="1"/>
+    <line x1="400" y1="180" x2="420" y2="210" stroke="var(--yellow,#eab308)" stroke-width="1"/>
+    <line x1="460" y1="180" x2="630" y2="210" stroke="var(--text-dim,#64748b)" stroke-width="1" stroke-dasharray="3,2"/>
+
+    <!-- Classical vs AI label -->
+    <text x="60" y="270" font-size="8" fill="var(--text-dim,#64748b)">Classical Saga: compensate ALL and restart from step 1</text>
+    <text x="60" y="282" font-size="8" fill="var(--cyan,#22d3ee)">AI Saga: partial rollback — keep successes, retry only failures</text>
+  </svg>
+</div>
+
+<!-- ANGLE B -->
+<h3>Angle B · CQRS + Event Sourcing for AI-Ready Data — 面向AI的CQRS与事件溯源</h3>
+
+<p>
+<strong>Classical principle:</strong> CQRS (Command Query Responsibility Segregation) separates the write model from the read model. Event Sourcing stores every state change as an immutable event rather than overwriting the current state. Together, they enable temporal queries ("what was the state at time T?"), complete audit trails, and independently optimized read and write paths. Richardson's <em>Microservices Patterns</em> positions CQRS + Event Sourcing as the foundation for eventually-consistent microservices communication.
+</p>
+
+<p>
+<strong>AI extension:</strong> Event-sourced data is perfect for AI. Why? Because AI models learn from sequences, not snapshots. A complete event stream — <code>OrderCreated</code>, <code>PaymentReceived</code>, <code>InvoiceGenerated</code>, <code>ShipmentDispatched</code> — carries causal ordering that a simple database row cannot express. AI can replay events to understand how the system behaves over time, detect anomalies in event sequences, and predict future events. The CQRS read side becomes a natural place for AI-optimized projections: vector embeddings for semantic search, materialized feature stores for ML models, and pre-computed aggregations for real-time inference. The beauty is that adding an AI projection doesn't touch the write path — it's just another consumer of the event stream.
+</p>
+
+<p>
+<strong>Concrete example:</strong> An event store captures all invoice lifecycle events. Three projections consume the same stream: (1) an operational view for the dashboard, (2) an analytics warehouse for business intelligence, and (3) an AI/vector projection that generates embeddings for each invoice, enabling semantic search ("find invoices similar to this disputed one") and anomaly detection ("this invoice pattern is unusual for this supplier"). The AI projection runs independently — if it falls behind, it catches up by replaying events. No impact on the write path.
+</p>
+<p class="cn-note">
+经典原则：CQRS分离读写模型，事件溯源将每个状态变化存储为不可变事件。AI延伸：事件溯源数据完美契合AI——AI从序列学习而非快照。事件流携带因果排序，AI可以回放事件理解系统行为。CQRS读端成为AI优化投影的天然位置：向量嵌入、特征存储、预计算聚合。添加AI投影不影响写路径——它只是事件流的另一个消费者。
+</p>
+
+<!-- ANGLE C -->
+<h3>Angle C · Service Mesh as AI Traffic Controller — 服务网格作为AI流量控制器</h3>
+
+<p>
+<strong>Classical principle:</strong> A service mesh (Istio, Linkerd) extracts cross-cutting concerns — mutual TLS, load balancing, circuit breaking, distributed tracing, observability — from application code into a transparent infrastructure layer. Burns' sidecar pattern is the foundational building block: each service gets a proxy sidecar that intercepts all network traffic. The application code stays clean; the mesh handles the operational complexity.
+</p>
+
+<p>
+<strong>AI extension:</strong> The service mesh becomes an AI-aware control plane. Instead of round-robin load balancing, the mesh routes requests based on request semantics — sending complex queries to GPU-equipped nodes and simple lookups to lightweight instances. Instead of threshold-based circuit breaking, AI predicts failures before they cascade by analyzing latency patterns and error rate trends. The mesh becomes the natural deployment layer for AI model versioning: canary deployments that route 5% of traffic to a new model version while monitoring accuracy metrics, with automatic rollback if the new model's error rate exceeds the baseline. A/B testing of AI models happens at the mesh layer, invisible to the application code.
+</p>
+
+<div class="code-block" data-lang="YAML — Istio VirtualService for AI Canary">
+<pre><span class="cm"># AI model canary deployment via service mesh</span>
+<span class="kw">apiVersion</span>: networking.istio.io/v1beta1
+<span class="kw">kind</span>: VirtualService
+<span class="kw">metadata</span>:
+  <span class="kw">name</span>: <span class="str">invoice-classifier</span>
+<span class="kw">spec</span>:
+  <span class="kw">hosts</span>:
+    - <span class="str">invoice-classifier.prod.svc.cluster.local</span>
+  <span class="kw">http</span>:
+    - <span class="kw">match</span>:
+        - <span class="kw">headers</span>:
+            <span class="kw">x-model-experiment</span>:
+              <span class="kw">exact</span>: <span class="str">"canary-v2"</span>
+      <span class="kw">route</span>:
+        - <span class="kw">destination</span>:
+            <span class="kw">host</span>: <span class="str">invoice-classifier</span>
+            <span class="kw">subset</span>: <span class="str">v2-gpt4o</span>       <span class="cm"># new model version</span>
+          <span class="kw">weight</span>: <span class="tp">100</span>
+    - <span class="kw">route</span>:                          <span class="cm"># default: stable model</span>
+        - <span class="kw">destination</span>:
+            <span class="kw">host</span>: <span class="str">invoice-classifier</span>
+            <span class="kw">subset</span>: <span class="str">v1-stable</span>
+          <span class="kw">weight</span>: <span class="tp">95</span>
+        - <span class="kw">destination</span>:
+            <span class="kw">host</span>: <span class="str">invoice-classifier</span>
+            <span class="kw">subset</span>: <span class="str">v2-gpt4o</span>       <span class="cm"># 5% canary traffic</span>
+          <span class="kw">weight</span>: <span class="tp">5</span>
+---
+<span class="cm"># Auto-rollback: Flagger watches accuracy metrics</span>
+<span class="kw">apiVersion</span>: flagger.app/v1beta1
+<span class="kw">kind</span>: Canary
+<span class="kw">metadata</span>:
+  <span class="kw">name</span>: <span class="str">invoice-classifier</span>
+<span class="kw">spec</span>:
+  <span class="kw">analysis</span>:
+    <span class="kw">metrics</span>:
+      - <span class="kw">name</span>: <span class="str">classification-accuracy</span>
+        <span class="kw">thresholdRange</span>:
+          <span class="kw">min</span>: <span class="tp">0.95</span>             <span class="cm"># rollback if accuracy &lt; 95%</span>
+      - <span class="kw">name</span>: <span class="str">request-duration</span>
+        <span class="kw">thresholdRange</span>:
+          <span class="kw">max</span>: <span class="tp">2000</span>             <span class="cm"># rollback if p99 &gt; 2s</span>
+    <span class="kw">interval</span>: <span class="str">1m</span>
+    <span class="kw">threshold</span>: <span class="tp">5</span>              <span class="cm"># max failed checks before rollback</span></pre>
+</div>
+<p class="cn-note">
+经典原则：服务网格将交叉关注点从应用代码提取到透明基础设施层。AI延伸：服务网格成为AI感知的控制平面——基于请求语义智能路由，AI预测故障避免级联，AI模型版本的金丝雀部署在网格层进行，应用代码无感知。上方YAML展示了通过Istio进行AI模型金丝雀部署及基于准确率的自动回滚。
+</p>
+
+<!-- ANGLE D -->
+<h3>Angle D · Data Partitioning for AI Workloads — AI工作负载的数据分区</h3>
+
+<p>
+<strong>Classical principle:</strong> Kleppmann's partitioning strategies address the fundamental scaling question: how do you distribute data across nodes so that queries remain efficient and the load stays balanced? Hash partitioning distributes evenly but loses range query efficiency. Range partitioning preserves locality but risks hotspots. Composite strategies (hash the tenant, range the timestamp) offer pragmatic middle grounds. Replication strategies (leader-follower, multi-leader, leaderless) trade consistency for availability along the spectrum the CAP theorem describes.
+</p>
+
+<p>
+<strong>AI extension:</strong> AI workloads introduce partitioning dimensions that Kleppmann didn't anticipate. Vector databases need similarity-based partitioning: embeddings that are semantically close should be stored on the same partition for efficient approximate nearest neighbor (ANN) search. RAG systems need partition strategies that keep related documents together — splitting a user manual across partitions destroys the context window that makes retrieval effective. Embedding stores need locality-aware replication: the closest replica (in embedding space, not network topology) should serve the query. The classical trade-offs — consistency versus availability, latency versus throughput — still apply, but with new dimensions: latency to the nearest relevant embedding versus global model consistency across all partitions.
+</p>
+
+<p>
+<strong>Concrete example:</strong>
+</p>
+
+<table class="decision-table">
+  <thead>
+    <tr>
+      <th style="width:20%">Dimension</th>
+      <th style="width:40%"><span class="classic-badge">CLASSIC</span> Traditional Partitioning</th>
+      <th style="width:40%"><span class="ai-badge">AI+</span> AI-Aware Partitioning</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="font-weight:500; color:var(--text-secondary)">Key Strategy</td>
+      <td>Hash(user_id) or Range(timestamp)</td>
+      <td>Locality-Sensitive Hashing (LSH) on embedding vectors</td>
+    </tr>
+    <tr>
+      <td style="font-weight:500; color:var(--text-secondary)">Locality Goal</td>
+      <td>Same-user data co-located</td>
+      <td>Semantically similar data co-located</td>
+    </tr>
+    <tr>
+      <td style="font-weight:500; color:var(--text-secondary)">Replication</td>
+      <td>Leader-follower for read scaling</td>
+      <td>Embedding-aware replicas for ANN queries</td>
+    </tr>
+    <tr>
+      <td style="font-weight:500; color:var(--text-secondary)">Hotspot Risk</td>
+      <td>Popular users / time ranges</td>
+      <td>Popular embedding clusters (trending topics)</td>
+    </tr>
+    <tr>
+      <td style="font-weight:500; color:var(--text-secondary)">Consistency</td>
+      <td>Strong (ACID) or eventual</td>
+      <td>Eventual + stale embeddings tolerable for search</td>
+    </tr>
+  </tbody>
+</table>
+<p class="cn-note">
+经典原则：Kleppmann的分区策略解决数据在节点间的分布问题——哈希分区均匀分布但失去范围查询效率，范围分区保留局部性但有热点风险。AI延伸：向量数据库需要基于相似度的分区，RAG系统需要保持相关文档在同一分区，嵌入存储需要感知局部性的副本。经典权衡依然适用，但增加了新维度。
+</p>
+
+
+<!-- ─── §04 DECISION TABLE ─── -->
+<h2><span class="num">04</span> Decision Table — When to Apply What</h2>
+
+<p>
+Distributed architecture decisions are not binary. They live on spectrums — and the AI era adds a new axis to each spectrum. This table maps eight critical decisions to both the classical approach and the AI-augmented approach, showing where AI changes the calculus.
+</p>
+<p class="cn-note">
+分布式架构决策不是二元的，它们在光谱上。AI时代为每个光谱增加新轴。此表将八个关键决策映射到经典和AI增强方法。
+</p>
+
+<table class="decision-table">
+  <thead>
+    <tr>
+      <th class="col-scenario">Scenario 场景</th>
+      <th class="col-classic"><span class="classic-badge">CLASSIC</span> Classical Approach</th>
+      <th class="col-ai"><span class="ai-badge">AI+</span> AI-Augmented Approach</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="col-scenario">Monolith Extraction<br><small style="color:var(--text-dim)">单体拆分策略</small></td>
+      <td>Strangler Fig pattern. Extract bounded contexts one at a time. Newman's "incremental decomposition." Prioritize by team pain points.</td>
+      <td>AI analyzes code dependencies and call graphs to identify optimal decomposition boundaries. AI-generated service dependency maps highlight hidden coupling that manual analysis misses.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Sync REST vs Async Events<br><small style="color:var(--text-dim)">同步REST vs 异步事件</small></td>
+      <td>REST for queries, events for state changes. Synchronous where latency matters. Avoid distributed monolith (everything sync).</td>
+      <td>AI workloads are inherently async (inference takes variable time). Default to events for AI pipelines. Use sync only for real-time user-facing AI (chat, autocomplete).</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Distributed Transactions<br><small style="color:var(--text-dim)">分布式事务方案</small></td>
+      <td>2PC for strong consistency (databases only). Saga for cross-service workflows. Accept eventual consistency where possible.</td>
+      <td>AI-orchestrated Sagas with intelligent compensation. AI classifies failure types and decides: retry, compensate, escalate, or partial rollback.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Database per Service<br><small style="color:var(--text-dim)">每服务独立数据库</small></td>
+      <td>Database per service for loose coupling. Shared DB only for legacy transition. API for cross-service data access.</td>
+      <td>Database per service + shared vector DB for AI features. Embedding store as a cross-cutting concern (like a service mesh for data).</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Service Mesh Adoption<br><small style="color:var(--text-dim)">服务网格采用时机</small></td>
+      <td>Adopt when you have 10+ services. Simpler alternatives (client-side LB, manual mTLS) below that threshold. Istio/Linkerd for production.</td>
+      <td>Adopt earlier if deploying AI models — mesh provides model versioning, canary deployments, and AI-specific observability (latency, accuracy) out of the box.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">CQRS / Event Sourcing<br><small style="color:var(--text-dim)">CQRS/事件溯源适用性</small></td>
+      <td>CQRS for read-heavy systems with complex queries. Event Sourcing for audit-critical domains (finance, healthcare). High implementation cost.</td>
+      <td>Event Sourcing becomes high-value when AI needs training data: complete event streams are superior to snapshot-based data for model training and anomaly detection.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Container Orchestration<br><small style="color:var(--text-dim)">容器编排选择</small></td>
+      <td>Kubernetes for complex deployments. ECS/Cloud Run for simpler setups. Match operational maturity to platform complexity.</td>
+      <td>Kubernetes with GPU node pools for AI inference. KNative for serverless AI endpoints. KEDA for AI workload autoscaling based on queue depth.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">AI Model Serving<br><small style="color:var(--text-dim)">AI模型服务架构</small></td>
+      <td>N/A — classical architecture didn't address this.</td>
+      <td>Sidecar for lightweight inference (classification, embeddings). Dedicated service for heavy inference (LLM, image generation). Burns' Ambassador pattern for AI routing.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- ─── §05 PRACTICAL CHECKLIST ─── -->
+<h2><span class="num">05</span> Practical Checklist — Taming Distributed Complexity</h2>
+
+<p>
+Adopt these practices incrementally. Each stage builds on the previous. Jumping to S5 without S3 foundations guarantees distributed chaos. Start where you are, not where you want to be.
+</p>
+<p class="cn-note">
+逐步采用这些实践。每个阶段建立在前一阶段之上。跳过S3基础直接到S5，必然导致分布式混乱。从你所在的位置开始。
+</p>
+
+<div class="checklist">
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Map all service dependencies; identify coupling hotspots
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Document data ownership per service (who owns which tables?)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Circuit Breaker on all inter-service calls (Resilience4j / Polly)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Standardize API contracts (OpenAPI spec for every service)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    Event-driven backbone for key workflows (Kafka / RabbitMQ)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    CQRS for read-heavy services; separate query models from commands
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Service mesh for AI traffic routing and model canary deployments
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Saga pattern for multi-step AI workflows with intelligent compensation
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    AI-optimized data projections (vector embeddings, feature stores)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Distributed tracing with AI-aware correlation IDs across saga steps
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    Full event-sourced architecture with AI replay and anomaly detection
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    AI-managed service mesh with autonomous scaling and self-healing
+  </div>
+</div>
+
+
+<!-- ─── §06 TAKEAWAY ─── -->
+<h2><span class="num">06</span> The Architect's Takeaway</h2>
+
+<p>
+Distributed systems are hard. This is not a cliche — it is Kleppmann's opening thesis, Newman's persistent warning, and Richardson's reason for writing an entire book of patterns to manage the complexity. The fallacies of distributed computing (the network is reliable, latency is zero, bandwidth is infinite) are as true today as when Peter Deutsch articulated them in 1994. AI does not make these fallacies go away. What AI does is give you better tools for detecting, predicting, and recovering from the failures that these fallacies guarantee.
+</p>
+<p class="cn-note">
+分布式系统是困难的。这不是陈词滥调——这是Kleppmann的开篇论点、Newman的持续警告、Richardson撰写整本模式书的原因。分布式计算的谬误今天与1994年Deutsch提出时一样真实。AI不会让这些谬误消失，但给你更好的工具来检测、预测和恢复这些谬误保证的故障。
+</p>
+
+<p>
+The patterns are the vocabulary. Saga gives you a language for distributed transactions. CQRS gives you a language for read/write separation. Service Mesh gives you a language for cross-cutting concerns. AI is the amplifier that makes each pattern more powerful: smarter compensation in Sagas, richer projections in CQRS, predictive routing in the mesh. But the amplifier is useless without the signal. An architect who deploys an AI-orchestrated saga without understanding Richardson's compensation semantics is building on sand. Read the books. Learn the patterns. Then let AI amplify your judgment.
+</p>
+<p class="cn-note">
+模式是词汇表。Saga给你分布式事务的语言，CQRS给你读写分离的语言，Service Mesh给你交叉关注点的语言。AI是放大器——让每个模式更强大。但放大器没有信号就无用。不理解Richardson补偿语义就部署AI编排Saga的架构师，是在沙上建楼。读书，学模式，然后让AI放大你的判断力。
+</p>
+
+<div class="insight-box" style="margin-top:40px;">
+  <div class="label">Next in Series → Article 2.3</div>
+  <p style="margin:0; font-size:14px; line-height:1.6">
+    <strong>Event-Driven &amp; Reactive Architecture: Streams All the Way Down</strong> — How event-driven design, reactive programming, and stream processing create architectures that respond to change in real time. From Hohpe's messaging patterns to AI-powered event correlation and predictive scaling.
+    <br><span style="color:var(--text-dim); font-style:italic; font-family:'Noto Serif SC',serif;">下一篇：事件驱动与响应式架构——一切皆流。</span>
+  </p>
+</div>
+
+</main>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="article-footer">
+  <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim)">
+    Software Knowledge Base · Layer 2: Architecture · Article 2.2 of 20<br>
+    Classical Foundations × AI Co-Evolution · 经典基础 × AI协同进化
+  </div>
+  <div class="nav-links">
+    <a class="nav-link" href="./2.1-architecture-styles.html">← Prev: 2.1 Architecture Styles</a>
+    <a class="nav-link" href="./2.3-event-driven-reactive.html">Next: 2.3 Event-Driven & Reactive →</a>
+  </div>
+</footer>
+
+</body>
+</html>

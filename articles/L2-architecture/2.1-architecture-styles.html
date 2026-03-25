@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2.1 Architecture Styles Landscape — Monolith to AI-Native</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<!--
+  CSS Architecture Note:
+  The canonical design system lives in templates/article-base.css.
+  For single-file distribution, it is inlined here.
+  When editing styles, update article-base.css first, then re-inline.
+-->
+<style>
+/* ═══ INLINED FROM templates/article-base.css ═══ */
+:root {
+  --bg-deep: #0a0e17;
+  --bg-surface: #0f1420;
+  --bg-card: #141b2d;
+  --bg-card-hover: #1a2340;
+  --border: #1e2a45;
+  --border-accent: #2d4a7a;
+  --cyan: #22d3ee;
+  --cyan-dim: #0e7490;
+  --cyan-glow: rgba(34, 211, 238, 0.15);
+  --purple: #a78bfa;
+  --purple-dim: #6d5dbb;
+  --purple-glow: rgba(167, 139, 250, 0.12);
+  --orange: #f97316;
+  --orange-glow: rgba(249, 115, 22, 0.12);
+  --green: #10b981;
+  --green-glow: rgba(16, 185, 129, 0.12);
+  --rose: #f43f5e;
+  --rose-glow: rgba(244, 63, 94, 0.12);
+  --yellow: #eab308;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg-deep); color:var(--text-primary); font-family:'IBM Plex Sans',sans-serif; line-height:1.75; font-size:16px; -webkit-font-smoothing:antialiased; }
+.article-header { position:relative; padding:80px 0 60px; overflow:hidden; border-bottom:1px solid var(--border); }
+.article-header::before { content:''; position:absolute; top:0;left:0;right:0;bottom:0; background:radial-gradient(ellipse 800px 400px at 20% 50%,rgba(34,211,238,0.06),transparent),radial-gradient(ellipse 600px 300px at 80% 30%,rgba(167,139,250,0.04),transparent); }
+.header-content { position:relative; max-width:860px; margin:0 auto; padding:0 32px; }
+.series-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--cyan); border:1px solid var(--cyan-dim); padding:4px 12px; border-radius:3px; margin-bottom:20px; background:var(--cyan-glow); }
+.article-title { font-family:'JetBrains Mono',monospace; font-size:36px; font-weight:700; line-height:1.25; color:var(--text-primary); margin-bottom:8px; }
+.article-title-cn { font-family:'Noto Serif SC',serif; font-size:20px; font-weight:400; color:var(--text-dim); font-style:italic; margin-bottom:24px; }
+.article-meta { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-dim); display:flex; gap:24px; flex-wrap:wrap; }
+.meta-item { display:flex; align-items:center; gap:6px; }
+.meta-dot { width:6px; height:6px; border-radius:50%; }
+.article-body { max-width:860px; margin:0 auto; padding:48px 32px; }
+h2 { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:var(--cyan); margin:56px 0 8px; padding-bottom:12px; border-bottom:1px solid var(--border); letter-spacing:-0.5px; }
+.article-body > h2:first-child { margin-top:0; }
+h2 .num { color:var(--text-dim); font-weight:400; margin-right:8px; }
+h3 { font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; color:var(--purple); margin:36px 0 12px; }
+p { margin-bottom:18px; color:var(--text-primary); font-size:15.5px; }
+.cn-note { font-family:'Noto Serif SC',serif; font-style:italic; color:var(--text-dim); font-size:14px; line-height:1.8; margin:-8px 0 24px; padding-left:16px; border-left:2px solid var(--border); }
+code { font-family:'JetBrains Mono',monospace; font-size:0.88em; background:rgba(34,211,238,0.08); padding:2px 6px; border-radius:3px; color:var(--cyan); }
+.diagram-container { margin:40px -16px; padding:32px 24px; background:var(--bg-surface); border:1px solid var(--border); border-radius:8px; position:relative; overflow-x:auto; }
+.diagram-container::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--cyan),var(--purple),var(--orange)); }
+.diagram-label { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:20px; }
+.diagram-sublabel { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-dim); margin-top:-16px; margin-bottom:16px; font-style:italic; }
+.bookshelf { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin:24px 0; align-items:stretch; }
+.book-card { background:var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:16px; transition:all 0.25s ease; position:relative; overflow:hidden; min-height:190px; display:flex; flex-direction:column; }
+.book-card::before { content:''; position:absolute; left:0;top:0;bottom:0; width:3px; }
+.book-card.tier1::before { background:var(--cyan); }
+.book-card.tier2::before { background:var(--purple); }
+.book-card:hover { border-color:var(--border-accent); background:var(--bg-card-hover); transform:translateY(-2px); }
+.book-title { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:4px; line-height:1.4; }
+.book-author { font-size:11px; color:var(--text-dim); }
+.book-desc { font-size:12px; color:var(--text-secondary); margin-top:8px; line-height:1.5; flex:1; }
+.book-tag { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:2px 6px; border-radius:3px; margin-top:8px; letter-spacing:0.5px; }
+.tag-foundation { background:rgba(34,211,238,0.1); color:var(--cyan); border:1px solid rgba(34,211,238,0.2); }
+.tag-practice { background:rgba(167,139,250,0.1); color:var(--purple); border:1px solid rgba(167,139,250,0.2); }
+.decision-table { width:100%; border-collapse:collapse; margin:24px 0; font-size:13px; }
+.decision-table th { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; text-align:left; padding:12px 16px; border-bottom:2px solid var(--border-accent); color:var(--text-secondary); background:var(--bg-surface); }
+.decision-table td { padding:12px 16px; border-bottom:1px solid var(--border); color:var(--text-primary); vertical-align:top; line-height:1.5; }
+.decision-table tr:hover td { background:rgba(34,211,238,0.03); }
+.decision-table .col-scenario { width:22%; font-weight:500; color:var(--text-secondary); }
+.decision-table .col-classic { width:39%; }
+.decision-table .col-ai { width:39%; }
+.classic-badge,.ai-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:1px 5px; border-radius:2px; margin-right:4px; vertical-align:middle; }
+.classic-badge { background:rgba(148,163,184,0.15); color:var(--text-secondary); }
+.ai-badge { background:rgba(34,211,238,0.12); color:var(--cyan); }
+.checklist { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:24px 0; }
+.check-item { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:5px; font-size:13px; color:var(--text-primary); line-height:1.4; transition:border-color 0.2s; }
+.check-item:hover { border-color:var(--border-accent); }
+.check-stage { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:600; padding:2px 7px; border-radius:3px; white-space:nowrap; flex-shrink:0; }
+.insight-box { margin:32px 0; padding:24px; background:linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04)); border:1px solid var(--border-accent); border-radius:8px; position:relative; }
+.insight-box::before { content:'⚡'; position:absolute; top:-12px; left:20px; background:var(--bg-deep); padding:0 8px; font-size:18px; }
+.insight-box .label { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--cyan); margin-bottom:8px; }
+.code-block { background:#0d1117; border:1px solid var(--border); border-radius:6px; padding:20px; margin:20px 0; overflow-x:auto; position:relative; }
+.code-block::before { content:attr(data-lang); position:absolute; top:8px; right:12px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-dim); letter-spacing:0.5px; }
+.code-block pre { font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.6; color:var(--text-secondary); }
+.code-block .kw { color:var(--purple); }
+.code-block .fn { color:var(--cyan); }
+.code-block .str { color:var(--green); }
+.code-block .cm { color:var(--text-dim); font-style:italic; }
+.code-block .ann { color:var(--orange); }
+.code-block .tp { color:var(--yellow); }
+.evolution-steps { position:relative; padding-left:32px; margin:28px 0; }
+.evolution-steps::before { content:''; position:absolute; left:11px; top:8px; bottom:8px; width:2px; background:linear-gradient(to bottom,var(--cyan),var(--purple),var(--orange)); }
+.evo-step { position:relative; margin-bottom:24px; padding-left:20px; }
+.evo-step::before { content:''; position:absolute; left:-25px; top:8px; width:10px; height:10px; border-radius:50%; border:2px solid; }
+.evo-step:nth-child(1)::before { border-color:var(--text-dim); background:var(--bg-deep); }
+.evo-step:nth-child(2)::before { border-color:var(--text-secondary); background:var(--bg-deep); }
+.evo-step:nth-child(3)::before { border-color:var(--cyan-dim); background:var(--bg-deep); }
+.evo-step:nth-child(4)::before { border-color:var(--purple); background:var(--bg-deep); }
+.evo-step:nth-child(5)::before { border-color:var(--cyan); background:var(--cyan); }
+.evo-step:nth-child(6)::before { border-color:var(--green); background:var(--green); }
+.evo-step-title { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; margin-bottom:4px; }
+.evo-step-desc { font-size:13.5px; color:var(--text-secondary); line-height:1.6; }
+.article-footer { max-width:860px; margin:0 auto; padding:40px 32px; border-top:1px solid var(--border); font-size:12px; color:var(--text-dim); }
+.nav-links { display:flex; justify-content:space-between; align-items:center; margin-top:20px; }
+.nav-link { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--cyan); text-decoration:none; padding:8px 16px; border:1px solid var(--border); border-radius:4px; transition:all 0.2s; }
+.nav-link:hover { border-color:var(--cyan); background:var(--cyan-glow); }
+@media (max-width:640px) {
+  .article-title { font-size:24px; }
+  .bookshelf { grid-template-columns:1fr; }
+  .checklist { grid-template-columns:1fr; }
+  .article-meta { flex-direction:column; gap:8px; }
+}
+@media print {
+  :root { --bg-deep:#fff; --bg-surface:#f8f9fa; --bg-card:#f1f3f5; --bg-card-hover:#f1f3f5; --border:#dee2e6; --border-accent:#adb5bd; --text-primary:#212529; --text-secondary:#495057; --text-dim:#868e96; --cyan:#0c8599; --purple:#7048e8; --orange:#e8590c; --green:#099268; --rose:#e03131; --yellow:#e67700; }
+  body { font-size:11pt; line-height:1.5; }
+  .article-header::before { display:none; }
+  .article-header { padding:24px 0; }
+  .diagram-container::before { display:none; }
+  .book-card:hover { transform:none; }
+  .nav-links { display:none; }
+  .code-block { border:1px solid #dee2e6; background:#f8f9fa; }
+  .code-block pre { color:#212529; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header class="article-header">
+  <div class="header-content">
+    <div class="series-badge" style="color:var(--orange); border-color:var(--orange); background:var(--orange-glow);">Layer 2 · Architecture · 架构决策层</div>
+    <h1 class="article-title">Architecture Styles Landscape</h1>
+    <div class="article-title-cn">架构风格全景：从单体到AI原生</div>
+    <div class="article-meta">
+      <span class="meta-item"><span class="meta-dot" style="background:var(--orange)"></span> Article 2.1 of 20</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--purple)"></span> ~20 min read</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--cyan)"></span> 4 Source Books × 4 AI Angles</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════ BODY ═══════════════ -->
+<main class="article-body">
+
+<!-- ─── §01 CORE INSIGHT ─── -->
+<h2><span class="num">01</span> Core Insight — The Thesis</h2>
+
+<p>
+Architecture style is the highest-leverage decision a software team makes. Choose monolith when you need microservices, and you'll drown in a distributed ball of mud. Choose microservices when a modular monolith would suffice, and you'll spend years paying a "distribution tax" — network serialization, eventual consistency, deployment orchestration — that buys you nothing. The books agree: there are no best architectures, only trade-offs made explicit.
+</p>
+<p class="cn-note">
+架构风格是软件团队做出的最高杠杆决策。在需要微服务时选择单体，你将淹没在分布式泥球中。在模块化单体足够时选择微服务，你将花数年支付毫无回报的"分布税"。这些书的共识：没有最佳架构，只有被显式化的权衡。
+</p>
+
+<p>
+Here is the AI-era twist: <strong>AI doesn't change which architecture style is right for your context — it changes how safely and quickly you can evolve between styles.</strong> A modular monolith with AI-enforced boundaries can remain a monolith longer without accumulating the coupling that historically forced premature decomposition. When decomposition finally becomes necessary, AI-assisted analysis of module boundaries, data affinity, and communication patterns makes the extraction dramatically less risky. The spectrum of styles hasn't changed; the cost of moving along it has dropped by an order of magnitude.
+</p>
+<p class="cn-note">
+AI时代的转折：AI不会改变哪种架构风格适合你的场景——它改变的是你在风格之间演进的安全性和速度。AI执行的模块边界让单体可以更久地保持单体形态，而当分解真正必要时，AI辅助分析使提取风险大幅降低。风格光谱没变，沿光谱移动的成本降低了一个数量级。
+</p>
+
+<div class="insight-box">
+  <div class="label">The Reframing 核心重构</div>
+  <p style="margin:0; font-size:15px; line-height:1.7">
+    <strong>Architecture style is a spectrum, not a binary choice.</strong> Classical books gave us the taxonomy — monolith, SOA, microservices, event-driven, serverless. AI adds a new position: "AI-native architecture" where intelligent agents are first-class architectural components, not bolted-on features. But more importantly, AI transforms the <em>transitions</em> between styles. The question shifts from "which style should we pick forever?" to "where are we on the spectrum today, and what evidence would trigger movement?"
+  </p>
+</div>
+<p class="cn-note">
+架构风格是一个光谱，不是二元选择。经典书籍给出了分类法，AI添加了新位置："AI原生架构"。但更重要的是，AI改变了风格之间的转换。问题从"我们该永远选哪种风格"变为"我们今天在光谱上的哪个位置，什么证据会触发移动？"
+</p>
+
+<!-- HERO DIAGRAM: ARCHITECTURE STYLES SPECTRUM -->
+<div class="diagram-container">
+  <div class="diagram-label">◆ Hero Diagram — Architecture Styles Spectrum: Monolith to AI-Native</div>
+  <svg viewBox="0 0 800 340" xmlns="http://www.w3.org/2000/svg" style="width:100%; font-family:'JetBrains Mono',monospace;">
+    <defs>
+      <linearGradient id="archGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="var(--yellow,#eab308)"/>
+        <stop offset="20%" stop-color="var(--orange,#f97316)"/>
+        <stop offset="40%" stop-color="var(--purple,#a78bfa)"/>
+        <stop offset="60%" stop-color="var(--cyan,#22d3ee)"/>
+        <stop offset="80%" stop-color="var(--cyan,#22d3ee)"/>
+        <stop offset="100%" stop-color="var(--green,#10b981)"/>
+      </linearGradient>
+      <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="var(--text-dim,#64748b)"/>
+      </marker>
+    </defs>
+
+    <!-- Spectrum bar -->
+    <rect x="30" y="48" width="740" height="8" rx="4" fill="url(#archGrad)" opacity="0.7"/>
+
+    <!-- Era labels -->
+    <text x="155" y="30" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)" font-weight="500" letter-spacing="1">CLASSICAL STYLES 经典风格</text>
+    <line x1="400" y1="20" x2="400" y2="56" stroke="var(--text-dim,#64748b)" stroke-width="1" stroke-dasharray="3,3"/>
+    <text x="620" y="30" text-anchor="middle" font-size="9" fill="var(--cyan,#22d3ee)" font-weight="500" letter-spacing="1">AI-ERA STYLES AI时代风格</text>
+
+    <!-- Complexity axis label -->
+    <text x="400" y="78" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)" letter-spacing="0.5">INCREASING DISTRIBUTION & OPERATIONAL COMPLEXITY →</text>
+
+    <!-- 6 Style Cards -->
+    <!-- Card 1: Monolith -->
+    <rect x="15" y="92" width="118" height="120" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--yellow,#eab308)" stroke-width="1.2"/>
+    <circle cx="74" cy="112" r="11" fill="none" stroke="var(--yellow,#eab308)" stroke-width="1.5"/>
+    <text x="74" y="116" text-anchor="middle" font-size="11" fill="var(--yellow,#eab308)" font-weight="700">1</text>
+    <text x="74" y="136" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Monolith</text>
+    <text x="74" y="150" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">单体架构</text>
+    <text x="74" y="167" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Single deploy unit</text>
+    <text x="74" y="178" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Shared database</text>
+    <text x="74" y="200" text-anchor="middle" font-size="7" fill="var(--yellow,#eab308)">Simple ops, tight coupling</text>
+
+    <!-- Card 2: Modular Monolith -->
+    <rect x="148" y="92" width="118" height="120" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--orange,#f97316)" stroke-width="1.2"/>
+    <circle cx="207" cy="112" r="11" fill="none" stroke="var(--orange,#f97316)" stroke-width="1.5"/>
+    <text x="207" y="116" text-anchor="middle" font-size="11" fill="var(--orange,#f97316)" font-weight="700">2</text>
+    <text x="207" y="136" text-anchor="middle" font-size="9.5" fill="var(--text-primary,#e2e8f0)" font-weight="600">Modular Mono</text>
+    <text x="207" y="150" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">模块化单体</text>
+    <text x="207" y="167" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Strict boundaries</text>
+    <text x="207" y="178" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Single deploy</text>
+    <text x="207" y="200" text-anchor="middle" font-size="7" fill="var(--orange,#f97316)">Best starting point ★</text>
+
+    <!-- Card 3: Service-Based -->
+    <rect x="281" y="92" width="118" height="120" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--purple,#a78bfa)" stroke-width="1.2"/>
+    <circle cx="340" cy="112" r="11" fill="none" stroke="var(--purple,#a78bfa)" stroke-width="1.5"/>
+    <text x="340" y="116" text-anchor="middle" font-size="11" fill="var(--purple,#a78bfa)" font-weight="700">3</text>
+    <text x="340" y="136" text-anchor="middle" font-size="9.5" fill="var(--text-primary,#e2e8f0)" font-weight="600">Service-Based</text>
+    <text x="340" y="150" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">服务化架构</text>
+    <text x="340" y="167" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Coarse services</text>
+    <text x="340" y="178" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Shared or split DB</text>
+    <text x="340" y="200" text-anchor="middle" font-size="7" fill="var(--purple,#a78bfa)">Pragmatic middle ground</text>
+
+    <!-- Card 4: Microservices -->
+    <rect x="414" y="92" width="118" height="120" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1.2"/>
+    <circle cx="473" cy="112" r="11" fill="none" stroke="var(--cyan,#22d3ee)" stroke-width="1.5"/>
+    <text x="473" y="116" text-anchor="middle" font-size="11" fill="var(--cyan,#22d3ee)" font-weight="700">4</text>
+    <text x="473" y="136" text-anchor="middle" font-size="9.5" fill="var(--text-primary,#e2e8f0)" font-weight="600">Microservices</text>
+    <text x="473" y="150" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">微服务</text>
+    <text x="473" y="167" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">DB per service</text>
+    <text x="473" y="178" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Independent deploy</text>
+    <text x="473" y="200" text-anchor="middle" font-size="7" fill="var(--cyan,#22d3ee)">Scale + complexity</text>
+
+    <!-- Card 5: Serverless/Event -->
+    <rect x="547" y="92" width="118" height="120" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1.2"/>
+    <circle cx="606" cy="112" r="11" fill="none" stroke="var(--cyan,#22d3ee)" stroke-width="1.5"/>
+    <text x="606" y="116" text-anchor="middle" font-size="11" fill="var(--cyan,#22d3ee)" font-weight="700">5</text>
+    <text x="606" y="136" text-anchor="middle" font-size="9" fill="var(--text-primary,#e2e8f0)" font-weight="600">Serverless/Event</text>
+    <text x="606" y="150" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">无服务器/事件驱动</text>
+    <text x="606" y="167" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Function-level</text>
+    <text x="606" y="178" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Event backbone</text>
+    <text x="606" y="200" text-anchor="middle" font-size="7" fill="var(--cyan,#22d3ee)">Max elasticity</text>
+
+    <!-- Card 6: AI-Native -->
+    <rect x="680" y="92" width="105" height="120" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="1.2"/>
+    <circle cx="732" cy="112" r="11" fill="none" stroke="var(--green,#10b981)" stroke-width="1.5"/>
+    <text x="732" y="116" text-anchor="middle" font-size="11" fill="var(--green,#10b981)" font-weight="700">6</text>
+    <text x="732" y="136" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">AI-Native</text>
+    <text x="732" y="150" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">AI原生</text>
+    <text x="732" y="167" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Agents as components</text>
+    <text x="732" y="178" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Contract-first APIs</text>
+    <text x="732" y="200" text-anchor="middle" font-size="7" fill="var(--green,#10b981)">Observability-native</text>
+
+    <!-- Key Insight Box -->
+    <rect x="60" y="232" width="680" height="48" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--orange,#f97316)" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="400" y="253" text-anchor="middle" font-size="11" fill="var(--orange,#f97316)" font-weight="600">KEY INSIGHT: AI doesn't change which style is right — it changes the cost of evolving between them.</text>
+    <text x="400" y="269" text-anchor="middle" font-size="10" fill="var(--text-secondary,#94a3b8)">Start modular monolith. Extract when data demands it. AI makes both phases safer.</text>
+
+    <!-- Bottom legend -->
+    <rect x="120" y="296" width="200" height="24" rx="4" fill="none" stroke="var(--text-secondary,#94a3b8)" stroke-width="1" stroke-dasharray="3,3"/>
+    <text x="220" y="312" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)">Classical Architecture Books</text>
+    <text x="400" y="312" text-anchor="middle" font-size="14" fill="var(--text-dim,#64748b)">+</text>
+    <rect x="480" y="296" width="200" height="24" rx="4" fill="none" stroke="var(--orange,#f97316)" stroke-width="1" stroke-dasharray="3,3"/>
+    <text x="580" y="312" text-anchor="middle" font-size="9" fill="var(--orange,#f97316)">AI-Powered Evolution Safety</text>
+  </svg>
+</div>
+
+
+<!-- ─── §02 CLASSICAL FOUNDATION ─── -->
+<h2><span class="num">02</span> Classical Foundation — Source Books</h2>
+
+<p>
+Four books form the intellectual bedrock of architecture style decisions. Two address the taxonomy and trade-off analysis directly; two provide the structural principles and evolutionary mechanisms that make style transitions possible. Together they cover the full decision chain: which style to choose, how to structure it internally, and how to evolve it over time.
+</p>
+<p class="cn-note">
+四本书构成架构风格决策的知识基石。两本直接处理分类法和权衡分析，两本提供使风格转换成为可能的结构原则和演进机制。它们共同覆盖完整的决策链：选择哪种风格、如何在内部组织、以及如何随时间演进。
+</p>
+
+<div class="bookshelf">
+  <div class="book-card tier1">
+    <div class="book-title">Software Architecture: The Hard Parts</div>
+    <div class="book-author">Ford, Richards, Sadalage, Dehghani · 2021</div>
+    <div class="book-desc">Trade-off analysis for architecture decisions. Modularity drivers, data decomposition, distributed workflow patterns. Key insight: there are no right answers in architecture, only trade-offs. The book provides analytical frameworks for making those trade-offs explicit and defensible.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · TRADE-OFF ANALYSIS</span>
+  </div>
+  <div class="book-card tier1">
+    <div class="book-title">Fundamentals of Software Architecture</div>
+    <div class="book-author">Richards & Ford · 2020</div>
+    <div class="book-desc">Comprehensive taxonomy of architecture styles: layered, microkernel, event-driven, microservices, space-based, service-based. Defines architecture characteristics (the "-ilities") and introduces fitness functions for evolutionary architecture. The ADR pattern for documenting decisions.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · TAXONOMY</span>
+  </div>
+  <div class="book-card tier2">
+    <div class="book-title">Clean Architecture</div>
+    <div class="book-author">Robert C. Martin · 2017</div>
+    <div class="book-desc">The Dependency Rule: dependencies point inward. Entities, Use Cases, Interface Adapters, Frameworks — concentric rings where policy is protected from detail. In the AI era, AI components are "details" (outer ring); domain logic remains the inviolable core.</div>
+    <span class="book-tag tag-practice">PRACTICE · DEPENDENCY RULE</span>
+  </div>
+  <div class="book-card tier2">
+    <div class="book-title">Building Evolutionary Architectures</div>
+    <div class="book-author">Ford, Parsons, Kua · 2017</div>
+    <div class="book-desc">Fitness functions: automated checks that architecture characteristics are maintained over time. Guided, incremental change. The architecture quantum — the smallest independently deployable unit with high functional cohesion. AI can now evaluate fitness functions continuously.</div>
+    <span class="book-tag tag-practice">PRACTICE · EVOLUTIONARY ARCH</span>
+  </div>
+</div>
+
+<p>
+What connects these four books is a shared conviction that architecture is not a one-time decision but a continuous evolution. Ford and Richards give you the language for discussing trade-offs. Martin gives you the structural invariant (the Dependency Rule) that holds regardless of which style you choose. Ford, Parsons, and Kua give you the mechanism for ensuring your architecture stays healthy as it evolves. The AI era doesn't invalidate any of this — it accelerates the feedback loops, lowers the cost of conformance checking, and makes the "evolutionary" part of evolutionary architecture actually practical for teams without dedicated architecture review boards.
+</p>
+<p class="cn-note">
+这四本书的共同信念：架构不是一次性决策，而是持续演进。Ford和Richards提供权衡讨论的语言，Martin提供无论选择哪种风格都成立的结构不变量（依赖规则），Ford、Parsons和Kua提供确保架构健康演进的机制。AI时代没有使这些失效——它加速了反馈循环，降低了合规检查成本，让演进式架构对没有专门架构审查委员会的团队变得切实可行。
+</p>
+
+
+<!-- ─── §03 AI CO-EVOLUTION ─── -->
+<h2><span class="num">03</span> AI Co-Evolution — Four Angles</h2>
+
+<p>
+Each angle below takes one classical architecture principle and extends it with an AI capability that shifts the economics of architecture decisions. The pattern: classical principle provides the <em>what</em> and <em>why</em>; AI provides the <em>how continuously</em> and <em>how safely</em>.
+</p>
+<p class="cn-note">
+以下每个角度取一个经典架构原则，用AI能力扩展它，改变架构决策的经济学。模式：经典原则提供"做什么"和"为什么"；AI提供"如何持续"和"如何安全"。
+</p>
+
+<!-- ANGLE A -->
+<h3>Angle A · The Architecture Style Spectrum in 2025 — 2025年架构风格光谱</h3>
+
+<p>
+<strong>Classical principle:</strong> Richards and Ford (<em>Fundamentals of Software Architecture</em>) provide a comprehensive taxonomy: layered, microkernel, pipeline, event-driven, space-based, service-based, microservices. Each style has an architecture characteristics star chart — how well it supports elasticity, fault tolerance, scalability, simplicity, etc. The choice depends on which "-ilities" matter most for your domain.
+</p>
+
+<p>
+<strong>AI extension:</strong> The 2025 spectrum adds a new position: "AI-native architecture" where AI agents are first-class architectural components, not bolted-on features. Characteristics of AI-native: stateless compute with stateful context (vector stores, conversation memory), event-driven by default (agents react to events, not just HTTP requests), contract-first APIs (agents need explicit schemas to function), and observability as architecture (every agent call is traced, every decision is logged). This isn't a separate style — it's an evolution of event-driven + microservices that treats intelligence as a distributed capability.
+</p>
+
+<div class="evolution-steps">
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--text-dim)">Monolith — Single Process, Single Database</div>
+    <div class="evo-step-desc">Everything in one deployable unit. Simple to develop and test initially. Coupling accumulates silently. Works for small teams and early-stage products.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--text-secondary)">Modular Monolith — Boundaries Without Distribution</div>
+    <div class="evo-step-desc">Single deploy unit with enforced module boundaries. Internal APIs between modules. The "sweet spot" for most teams — monolith simplicity with service-level modularity.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--cyan-dim)">Service-Based — Coarse-Grained Services</div>
+    <div class="evo-step-desc">4-12 domain-aligned services. Shared database still possible. Independent deployability without full microservice operational overhead.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--purple)">Microservices — Full Distribution</div>
+    <div class="evo-step-desc">Database per service. Independent deployment, scaling, and technology choice. High operational cost. Only justified when independent deployability is a hard requirement.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--cyan)">Serverless / Event-Driven — Function-Level Granularity</div>
+    <div class="evo-step-desc">Functions triggered by events. Maximum elasticity, pay-per-use. Complex orchestration, cold starts, vendor lock-in. Natural fit for event-heavy AI workloads.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--green)">AI-Native — Agents as First-Class Components (2025→)</div>
+    <div class="evo-step-desc">AI agents integrated into the architecture fabric. Contract-first APIs, event-driven backbone, observability-native, stateless compute with stateful context stores. Intelligence as a distributed architectural capability.</div>
+  </div>
+</div>
+<p class="cn-note">
+经典原则：Richards和Ford提供了完整的架构风格分类法，每种风格有特征星图。AI延伸：2025年光谱增加了"AI原生架构"——AI代理作为一等架构组件。特征包括：无状态计算+有状态上下文、默认事件驱动、契约优先API、可观测性即架构。
+</p>
+
+<!-- ANGLE B -->
+<h3>Angle B · AI as Architecture Fitness Function Evaluator — AI作为架构适应度函数评估器</h3>
+
+<p>
+<strong>Classical principle:</strong> Ford, Parsons, and Kua introduced fitness functions in <em>Building Evolutionary Architectures</em> — automated checks that verify architecture characteristics are maintained over time. Examples: "no cyclic dependencies between modules," "p99 latency under 200ms," "no direct database access from the presentation layer." These are the immune system of your architecture.
+</p>
+
+<p>
+<strong>AI extension:</strong> Classical fitness functions are rule-based — you can check cyclomatic complexity or dependency direction with static analysis. But many architecture characteristics are "soft" — coherence of module responsibilities, adherence to stated principles in ADRs, semantic coupling between bounded contexts. AI can evaluate these soft fitness functions that were previously manual. An AI agent reads your ADR history, your module structure, and a pull request diff, then answers: "Does this PR increase coupling between the Order and Inventory bounded contexts?" or "Does this change violate ADR-012 which states that all inter-service communication must be asynchronous?" This transforms architecture governance from periodic manual review to continuous automated evaluation.
+</p>
+
+<p>
+<strong>Concrete example:</strong> A CI pipeline that runs AI fitness function evaluation on every pull request. Step 1: traditional static analysis (ArchUnit, dependency-cruiser). Step 2: AI reads the PR diff against the <code>.ai/architecture.md</code> and the ADR directory, evaluating semantic conformance. Step 3: AI produces a structured verdict — PASS, WARN, or BLOCK — with citations to specific ADRs or architecture principles that the change supports or violates.
+</p>
+<p class="cn-note">
+经典原则：适应度函数——验证架构特征随时间维护的自动化检查。AI延伸：AI可以评估"软"适应度函数——模块职责一致性、ADR原则遵循、语义耦合——这些以前只能人工评审。AI读取ADR历史和PR差异，持续判断变更是否违反架构原则。具体示例：CI管道在每个PR上运行AI适应度函数评估，产出PASS/WARN/BLOCK裁定。
+</p>
+
+<!-- ANGLE C -->
+<h3>Angle C · The Modular Monolith Renaissance + AI — 模块化单体的文艺复兴</h3>
+
+<p>
+<strong>Classical principle:</strong> Ford, Richards, Sadalage, and Dehghani (<em>The Hard Parts</em>, Ch. 2-3) make a compelling case: the modular monolith gives you the best of both worlds for many teams. Deploy as one unit but maintain strict module boundaries. You get monolith simplicity (one database, one deployment pipeline, no distributed transactions) with service-level modularity (clear APIs between modules, independent team ownership, future extractability). The key requirement is discipline — without enforcement, module boundaries erode under deadline pressure.
+</p>
+
+<p>
+<strong>AI extension:</strong> AI makes the modular monolith MORE viable by solving the discipline problem. ArchUnit and similar tools enforce structural rules (no package X importing from package Y). AI adds semantic enforcement: it understands <em>why</em> a boundary exists, not just <em>where</em> it is. AI detects coupling drift before it becomes architectural erosion — "Module A is starting to reach into Module B's internal data model; this wasn't the case 30 days ago." When decomposition finally becomes necessary, AI assists by analyzing module boundaries, data affinity, and communication patterns to recommend the optimal extraction sequence. The mantra: "Start monolith, extract when data shows you must" becomes dramatically safer with AI guardrails.
+</p>
+
+<!-- Modular monolith diagram -->
+<div class="diagram-container">
+  <div class="diagram-label">◆ Modular Monolith with AI Boundary Enforcement</div>
+  <svg viewBox="0 0 800 260" xmlns="http://www.w3.org/2000/svg" style="width:100%; font-family:'JetBrains Mono',monospace;">
+    <!-- Outer monolith boundary -->
+    <rect x="40" y="20" width="720" height="180" rx="8" fill="var(--bg-card,#141b2d)" stroke="var(--orange,#f97316)" stroke-width="1.5"/>
+    <text x="400" y="16" text-anchor="middle" font-size="10" fill="var(--orange,#f97316)" font-weight="600">SINGLE DEPLOY UNIT 单一部署单元</text>
+
+    <!-- Module A -->
+    <rect x="65" y="45" width="150" height="130" rx="6" fill="var(--bg-surface,#0f1420)" stroke="var(--cyan,#22d3ee)" stroke-width="1"/>
+    <text x="140" y="68" text-anchor="middle" font-size="10" fill="var(--cyan,#22d3ee)" font-weight="600">Order Module</text>
+    <text x="140" y="82" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">订单模块</text>
+    <rect x="80" y="92" width="120" height="22" rx="3" fill="var(--bg-card,#141b2d)" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="140" y="107" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Domain Logic</text>
+    <rect x="80" y="120" width="120" height="22" rx="3" fill="var(--bg-card,#141b2d)" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="140" y="135" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Internal API</text>
+    <rect x="80" y="148" width="120" height="18" rx="3" fill="var(--bg-card,#141b2d)" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="140" y="161" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Order Schema</text>
+
+    <!-- Module B -->
+    <rect x="245" y="45" width="150" height="130" rx="6" fill="var(--bg-surface,#0f1420)" stroke="var(--purple,#a78bfa)" stroke-width="1"/>
+    <text x="320" y="68" text-anchor="middle" font-size="10" fill="var(--purple,#a78bfa)" font-weight="600">Inventory Module</text>
+    <text x="320" y="82" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">库存模块</text>
+    <rect x="260" y="92" width="120" height="22" rx="3" fill="var(--bg-card,#141b2d)" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="320" y="107" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Domain Logic</text>
+    <rect x="260" y="120" width="120" height="22" rx="3" fill="var(--bg-card,#141b2d)" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="320" y="135" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Internal API</text>
+    <rect x="260" y="148" width="120" height="18" rx="3" fill="var(--bg-card,#141b2d)" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="320" y="161" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Inventory Schema</text>
+
+    <!-- Module C -->
+    <rect x="425" y="45" width="150" height="130" rx="6" fill="var(--bg-surface,#0f1420)" stroke="var(--green,#10b981)" stroke-width="1"/>
+    <text x="500" y="68" text-anchor="middle" font-size="10" fill="var(--green,#10b981)" font-weight="600">Payment Module</text>
+    <text x="500" y="82" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">支付模块</text>
+    <rect x="440" y="92" width="120" height="22" rx="3" fill="var(--bg-card,#141b2d)" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="500" y="107" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Domain Logic</text>
+    <rect x="440" y="120" width="120" height="22" rx="3" fill="var(--bg-card,#141b2d)" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="500" y="135" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Internal API</text>
+    <rect x="440" y="148" width="120" height="18" rx="3" fill="var(--bg-card,#141b2d)" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="500" y="161" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Payment Schema</text>
+
+    <!-- AI Guardian -->
+    <rect x="605" y="45" width="140" height="130" rx="6" fill="var(--bg-surface,#0f1420)" stroke="var(--cyan,#22d3ee)" stroke-width="1.5" stroke-dasharray="5,3"/>
+    <text x="675" y="68" text-anchor="middle" font-size="10" fill="var(--cyan,#22d3ee)" font-weight="600">AI Guardian</text>
+    <text x="675" y="82" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">AI边界守护</text>
+    <text x="675" y="102" text-anchor="middle" font-size="7.5" fill="var(--text-secondary,#94a3b8)">ArchUnit rules</text>
+    <text x="675" y="116" text-anchor="middle" font-size="7.5" fill="var(--text-secondary,#94a3b8)">+ AI semantic check</text>
+    <text x="675" y="130" text-anchor="middle" font-size="7.5" fill="var(--text-secondary,#94a3b8)">Coupling drift alert</text>
+    <text x="675" y="148" text-anchor="middle" font-size="7.5" fill="var(--cyan,#22d3ee)">Runs on every PR</text>
+    <text x="675" y="162" text-anchor="middle" font-size="7.5" fill="var(--cyan,#22d3ee)">+ nightly audit</text>
+
+    <!-- Inter-module arrows -->
+    <line x1="215" y1="110" x2="245" y2="110" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#arrow)"/>
+    <line x1="395" y1="110" x2="425" y2="110" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#arrow)"/>
+
+    <!-- AI enforcement arrows -->
+    <line x1="605" y1="80" x2="577" y2="80" stroke="var(--cyan,#22d3ee)" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arrow)"/>
+    <line x1="605" y1="120" x2="397" y2="120" stroke="var(--cyan,#22d3ee)" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arrow)"/>
+    <line x1="605" y1="145" x2="217" y2="145" stroke="var(--cyan,#22d3ee)" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arrow)"/>
+
+    <!-- Bottom insight -->
+    <text x="400" y="225" text-anchor="middle" font-size="9" fill="var(--orange,#f97316)" font-weight="600">Module boundaries enforced by ArchUnit (structural) + AI (semantic)</text>
+    <text x="400" y="242" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Decompose to services ONLY when data proves independent scaling or deployment is needed</text>
+  </svg>
+</div>
+<p class="cn-note">
+经典原则：模块化单体——单一部署单元但维持严格模块边界，兼得单体简单性和服务级模块化。AI延伸：AI通过语义执行解决纪律问题——不仅知道边界在哪里，还理解边界为什么存在。AI检测耦合漂移，在分解真正必要时辅助分析最优提取序列。口诀："以单体开始，当数据表明必须时再提取"——有了AI护栏这变得更安全。
+</p>
+
+<!-- ANGLE D -->
+<h3>Angle D · Architecture Decision Records Meet AI — 架构决策记录遇见AI</h3>
+
+<p>
+<strong>Classical principle:</strong> Michael Nygard introduced Architecture Decision Records (ADRs) — lightweight documents that capture the <em>why</em> behind architecture choices. Each ADR records: Status, Context (the forces at play), Decision (the choice made), and Consequences (the trade-offs accepted). Richards and Ford (<em>Fundamentals</em>) elevated ADRs to a core architecture practice. The power of ADRs is institutional memory — when a new team member asks "why did we choose event sourcing for order processing?", the answer is in ADR-007, not in a departed architect's head.
+</p>
+
+<p>
+<strong>AI extension:</strong> AI transforms ADRs from passive documentation into active architectural guardrails. First, AI <em>consumes</em> ADRs as context for code review and generation. When a developer opens a PR that introduces synchronous REST calls in the order processing pipeline, AI flags: "ADR-007 states that all order processing communication must be asynchronous via the event bus. This PR introduces a synchronous POST to /inventory/reserve. Please reconcile or propose an ADR amendment." Second, AI <em>writes</em> ADRs by analyzing PR discussions, Slack threads, and meeting notes — drafting the ADR for human review. Third, AI <em>validates</em> ADR consistency across the corpus — detecting conflicts between decisions and flagging when new ADRs implicitly supersede old ones without explicit deprecation.
+</p>
+
+<div class="code-block" data-lang="Markdown — ADR Template + AI Integration">
+<pre><span class="cm"># ADR-007: Asynchronous Communication for Order Processing</span>
+
+<span class="kw">## Status</span>
+<span class="str">Accepted</span> — 2025-01-15
+<span class="cm">Supersedes: ADR-003 (synchronous order pipeline)</span>
+
+<span class="kw">## Context</span>
+Order processing involves 4 bounded contexts: Order, Inventory,
+Payment, Notification. Synchronous chains caused cascading failures
+during Black Friday 2024 (incident INC-2847). P99 latency exceeded
+SLA by 340%.
+
+<span class="kw">## Decision</span>
+All inter-module communication in the order processing flow will use
+asynchronous events via Kafka. Each module publishes domain events;
+consumers are idempotent. Saga pattern for distributed transactions.
+
+<span class="kw">## Consequences</span>
+<span class="str">+ Resilient to individual module failures</span>
+<span class="str">+ Independent scaling per module</span>
+<span class="ann">- Eventual consistency (UI must handle pending states)</span>
+<span class="ann">- Operational complexity of Kafka cluster</span>
+<span class="ann">- Debugging distributed flows requires correlation IDs</span>
+
+<span class="cm">## AI Integration</span>
+<span class="fn">- CI fitness function: flag any synchronous HTTP call in</span>
+<span class="fn">  packages matching com.example.order.*</span>
+<span class="fn">- AI reviewer context: include this ADR when reviewing PRs</span>
+<span class="fn">  touching order, inventory, payment, or notification modules</span>
+<span class="fn">- Auto-link: any PR referencing INC-2847 should cite this ADR</span></pre>
+</div>
+<p class="cn-note">
+经典原则：ADR记录架构决策的"为什么"——状态、上下文、决策、后果。AI延伸：AI将ADR从被动文档转化为主动架构护栏。AI消费ADR作为代码审查上下文，标记违反声明原则的PR。AI通过分析PR讨论和Slack线程起草ADR供人类审查。AI验证ADR语料库的一致性，检测决策之间的冲突。
+</p>
+
+
+<!-- ─── §04 DECISION TABLE ─── -->
+<h2><span class="num">04</span> Decision Table — When to Apply What</h2>
+
+<p>
+Architecture style decisions are among the hardest to reverse. This table maps eight common scenarios to both classical guidance and AI-augmented approaches, showing how AI shifts the decision economics rather than the decision itself.
+</p>
+<p class="cn-note">
+架构风格决策是最难逆转的决策之一。此表将八个常见场景映射到经典指导和AI增强方法，展示AI如何改变决策经济学而非决策本身。
+</p>
+
+<table class="decision-table">
+  <thead>
+    <tr>
+      <th class="col-scenario">Scenario 场景</th>
+      <th class="col-classic"><span class="classic-badge">CLASSIC</span> Classical Approach</th>
+      <th class="col-ai"><span class="ai-badge">AI+</span> AI-Augmented Approach</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="col-scenario">Monolith vs Microservices<br><small style="color:var(--text-dim)">单体 vs 微服务</small></td>
+      <td>Evaluate team size, deployment cadence, scaling needs. Use architecture characteristics star chart. Start monolith unless strong distribution requirement exists.</td>
+      <td>Same evaluation + AI continuously monitors coupling metrics. AI flags when modules exceed coupling threshold, recommending extraction only when data supports it. Delays premature decomposition.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Sync vs Async Communication<br><small style="color:var(--text-dim)">同步 vs 异步</small></td>
+      <td>Synchronous for request-response queries. Asynchronous for commands with eventual consistency tolerance. Document in ADR.</td>
+      <td>AI analyzes call chains and latency data to identify synchronous bottlenecks. AI fitness function blocks PRs introducing sync calls where ADR mandates async. AI suggests saga patterns for complex flows.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">DB per Service vs Shared DB<br><small style="color:var(--text-dim)">服务独立库 vs 共享库</small></td>
+      <td>Shared DB for modular monolith. Separate schemas per module as first step. DB per service only with microservices. Accept eventual consistency trade-off.</td>
+      <td>AI analyzes query patterns across module boundaries to quantify data coupling. AI recommends schema separation sequence based on actual data affinity, not assumptions.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Event Sourcing vs CRUD<br><small style="color:var(--text-dim)">事件溯源 vs CRUD</small></td>
+      <td>CRUD by default. Event sourcing only for audit-heavy domains (finance, healthcare) or when full history replay is a requirement. High implementation complexity.</td>
+      <td>Same decision criteria + AI assists with event store implementation patterns. AI generates projection builders and replay handlers. AI validates event schema evolution for backward compatibility.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Serverless vs Containers<br><small style="color:var(--text-dim)">无服务器 vs 容器</small></td>
+      <td>Serverless for event-driven, bursty workloads. Containers for steady-state, long-running processes. Consider cold start latency, vendor lock-in, and cost model.</td>
+      <td>AI analyzes traffic patterns and cost data to recommend optimal compute model per service. AI detects cold-start-sensitive paths and recommends provisioned concurrency or container alternatives.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Architecture for AI Workloads<br><small style="color:var(--text-dim)">AI密集型工作负载架构</small></td>
+      <td>No classical guidance — treat as service integration pattern. Gateway for API calls, queue for async inference, cache for embeddings.</td>
+      <td>AI-native architecture: agents as components with contract-first APIs, event-driven backbone, vector store per bounded context, observability-native with traces on every agent call. GPU resource management as first-class concern.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">When to Decompose<br><small style="color:var(--text-dim)">何时分解单体</small></td>
+      <td>When team scaling requires independent deployment. When performance hotspots need independent scaling. When domain boundaries are well understood (not before).</td>
+      <td>AI provides evidence-based triggers: coupling metrics exceeding threshold, deployment frequency divergence between modules, independent scaling demand patterns. AI proposes extraction sequence ranked by risk.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Buy vs Build AI Infra<br><small style="color:var(--text-dim)">自建 vs 购买AI基础设施</small></td>
+      <td>Buy commodity, build differentiating. Use managed services for databases, queues, compute. Build domain-specific logic.</td>
+      <td>Same principle extended: use managed AI APIs (OpenAI, Anthropic, Google) for general intelligence. Build domain-specific fine-tuned models, RAG pipelines, and agent orchestration only when it's your competitive advantage. AI itself evaluates build-vs-buy ROI from usage data.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- ─── §05 PRACTICAL CHECKLIST ─── -->
+<h2><span class="num">05</span> Practical Checklist — Evolving Your Architecture</h2>
+
+<p>
+Moving along the architecture styles spectrum requires both structural changes and process changes. Each item below is tagged by maturity stage. Start from where you are; don't skip stages.
+</p>
+<p class="cn-note">
+沿架构风格光谱演进需要结构变更和流程变更。每个条目按成熟度阶段标注。从你当前位置开始，不要跳过阶段。
+</p>
+
+<div class="checklist">
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Document your current architecture style explicitly
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Create your first 5 ADRs for existing major decisions
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Define architecture fitness functions for key characteristics
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Establish module boundaries with ArchUnit / dependency-cruiser
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Start ADR practice — every architecture decision gets a record
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    AI evaluates fitness functions in CI on every PR
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    ArchUnit + AI semantic analysis for boundary enforcement
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    AI-assisted ADR drafting from PR discussions and Slack threads
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Modular monolith with AI guardrails and coupling drift alerts
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Event-driven backbone for inter-module communication
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    Full evolutionary architecture with continuous AI fitness evaluation
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    AI-native component integration with contract-first APIs
+  </div>
+</div>
+
+
+<!-- ─── §06 TAKEAWAY ─── -->
+<h2><span class="num">06</span> The Architect's Takeaway</h2>
+
+<p>
+The architecture style choice is the highest-leverage decision you will make on any system. Get it wrong and everything downstream — team structure, data model, deployment pipeline, operational burden — suffers compounding costs. The classical books are not optional reading; they are the vocabulary you need to think clearly about trade-offs. Ford and Richards' taxonomy, Martin's Dependency Rule, and the fitness function concept from evolutionary architecture are not academic exercises — they are daily decision tools.
+</p>
+<p class="cn-note">
+架构风格选择是你对任何系统做出的最高杠杆决策。选错了，下游一切——团队结构、数据模型、部署管道、运维负担——都会承受复利成本。经典书籍不是选修，它们是你清晰思考权衡所需的词汇表。
+</p>
+
+<p>
+AI doesn't change which style is right for your context — it changes how safely you can evolve between styles. A modular monolith with AI-enforced boundaries is a fundamentally different proposition than a modular monolith held together by code review discipline alone. AI fitness functions transform architecture governance from periodic committee reviews to continuous automated evaluation. AI-consumed ADRs transform institutional memory from shelfware into active guardrails. The architecture is still yours to design; AI is the tooling that makes evolutionary architecture practically achievable.
+</p>
+<p class="cn-note">
+AI不改变哪种风格适合你的场景——它改变你在风格之间演进的安全程度。有AI执行边界的模块化单体与仅靠代码审查纪律维持的模块化单体是根本不同的命题。AI适应度函数将架构治理从定期委员会审查转变为持续自动化评估。架构仍由你设计；AI是使演进式架构切实可行的工具。
+</p>
+
+<div class="insight-box" style="margin-top:40px;">
+  <div class="label">Next in Series → Article 2.2</div>
+  <p style="margin:0; font-size:14px; line-height:1.6">
+    <strong>Microservices & Distributed Systems: Taming the Distribution Tax</strong> — How to manage the operational complexity that microservices introduce: service meshes, distributed tracing, saga patterns, and how AI transforms debugging and observability in distributed systems.
+    <br><span style="color:var(--text-dim); font-style:italic; font-family:'Noto Serif SC',serif;">下一篇：微服务与分布式系统——驯服分布税。</span>
+  </p>
+</div>
+
+</main>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="article-footer">
+  <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim)">
+    Software Knowledge Base · Layer 2: Architecture · Article 2.1 of 20<br>
+    Classical Foundations × AI Co-Evolution · 经典基础 × AI协同进化
+  </div>
+  <div class="nav-links">
+    <a class="nav-link" href="../L1-design-thinking/1.4-error-handling-observability.html">← Prev: 1.4 Error Handling & Observability</a>
+    <a class="nav-link" href="./2.2-microservices-distributed.html">Next: 2.2 Microservices & Distributed →</a>
+  </div>
+</footer>
+
+</body>
+</html>

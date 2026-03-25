@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2.5 Data Architecture & the Lakehouse Convergence</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<!--
+  CSS Architecture Note:
+  The canonical design system lives in templates/article-base.css.
+  For single-file distribution, it is inlined here.
+  When editing styles, update article-base.css first, then re-inline.
+-->
+<style>
+/* ═══ INLINED FROM templates/article-base.css ═══ */
+:root {
+  --bg-deep: #0a0e17;
+  --bg-surface: #0f1420;
+  --bg-card: #141b2d;
+  --bg-card-hover: #1a2340;
+  --border: #1e2a45;
+  --border-accent: #2d4a7a;
+  --cyan: #22d3ee;
+  --cyan-dim: #0e7490;
+  --cyan-glow: rgba(34, 211, 238, 0.15);
+  --purple: #a78bfa;
+  --purple-dim: #6d5dbb;
+  --purple-glow: rgba(167, 139, 250, 0.12);
+  --orange: #f97316;
+  --orange-glow: rgba(249, 115, 22, 0.12);
+  --green: #10b981;
+  --green-glow: rgba(16, 185, 129, 0.12);
+  --rose: #f43f5e;
+  --rose-glow: rgba(244, 63, 94, 0.12);
+  --yellow: #eab308;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg-deep); color:var(--text-primary); font-family:'IBM Plex Sans',sans-serif; line-height:1.75; font-size:16px; -webkit-font-smoothing:antialiased; }
+.article-header { position:relative; padding:80px 0 60px; overflow:hidden; border-bottom:1px solid var(--border); }
+.article-header::before { content:''; position:absolute; top:0;left:0;right:0;bottom:0; background:radial-gradient(ellipse 800px 400px at 20% 50%,rgba(34,211,238,0.06),transparent),radial-gradient(ellipse 600px 300px at 80% 30%,rgba(167,139,250,0.04),transparent); }
+.header-content { position:relative; max-width:860px; margin:0 auto; padding:0 32px; }
+.series-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--cyan); border:1px solid var(--cyan-dim); padding:4px 12px; border-radius:3px; margin-bottom:20px; background:var(--cyan-glow); }
+.article-title { font-family:'JetBrains Mono',monospace; font-size:36px; font-weight:700; line-height:1.25; color:var(--text-primary); margin-bottom:8px; }
+.article-title-cn { font-family:'Noto Serif SC',serif; font-size:20px; font-weight:400; color:var(--text-dim); font-style:italic; margin-bottom:24px; }
+.article-meta { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-dim); display:flex; gap:24px; flex-wrap:wrap; }
+.meta-item { display:flex; align-items:center; gap:6px; }
+.meta-dot { width:6px; height:6px; border-radius:50%; }
+.article-body { max-width:860px; margin:0 auto; padding:48px 32px; }
+h2 { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:var(--cyan); margin:56px 0 8px; padding-bottom:12px; border-bottom:1px solid var(--border); letter-spacing:-0.5px; }
+.article-body > h2:first-child { margin-top:0; }
+h2 .num { color:var(--text-dim); font-weight:400; margin-right:8px; }
+h3 { font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; color:var(--purple); margin:36px 0 12px; }
+p { margin-bottom:18px; color:var(--text-primary); font-size:15.5px; }
+.cn-note { font-family:'Noto Serif SC',serif; font-style:italic; color:var(--text-dim); font-size:14px; line-height:1.8; margin:-8px 0 24px; padding-left:16px; border-left:2px solid var(--border); }
+code { font-family:'JetBrains Mono',monospace; font-size:0.88em; background:rgba(34,211,238,0.08); padding:2px 6px; border-radius:3px; color:var(--cyan); }
+.diagram-container { margin:40px -16px; padding:32px 24px; background:var(--bg-surface); border:1px solid var(--border); border-radius:8px; position:relative; overflow-x:auto; }
+.diagram-container::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--cyan),var(--purple),var(--orange)); }
+.diagram-label { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:20px; }
+.diagram-sublabel { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-dim); margin-top:-16px; margin-bottom:16px; font-style:italic; }
+.bookshelf { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin:24px 0; align-items:stretch; }
+.book-card { background:var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:16px; transition:all 0.25s ease; position:relative; overflow:hidden; min-height:190px; display:flex; flex-direction:column; }
+.book-card::before { content:''; position:absolute; left:0;top:0;bottom:0; width:3px; }
+.book-card.tier1::before { background:var(--cyan); }
+.book-card.tier2::before { background:var(--purple); }
+.book-card:hover { border-color:var(--border-accent); background:var(--bg-card-hover); transform:translateY(-2px); }
+.book-title { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:4px; line-height:1.4; }
+.book-author { font-size:11px; color:var(--text-dim); }
+.book-desc { font-size:12px; color:var(--text-secondary); margin-top:8px; line-height:1.5; flex:1; }
+.book-tag { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:2px 6px; border-radius:3px; margin-top:8px; letter-spacing:0.5px; }
+.tag-foundation { background:rgba(34,211,238,0.1); color:var(--cyan); border:1px solid rgba(34,211,238,0.2); }
+.tag-practice { background:rgba(167,139,250,0.1); color:var(--purple); border:1px solid rgba(167,139,250,0.2); }
+.decision-table { width:100%; border-collapse:collapse; margin:24px 0; font-size:13px; }
+.decision-table th { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; text-align:left; padding:12px 16px; border-bottom:2px solid var(--border-accent); color:var(--text-secondary); background:var(--bg-surface); }
+.decision-table td { padding:12px 16px; border-bottom:1px solid var(--border); color:var(--text-primary); vertical-align:top; line-height:1.5; }
+.decision-table tr:hover td { background:rgba(34,211,238,0.03); }
+.decision-table .col-scenario { width:22%; font-weight:500; color:var(--text-secondary); }
+.decision-table .col-classic { width:39%; }
+.decision-table .col-ai { width:39%; }
+.classic-badge,.ai-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:1px 5px; border-radius:2px; margin-right:4px; vertical-align:middle; }
+.classic-badge { background:rgba(148,163,184,0.15); color:var(--text-secondary); }
+.ai-badge { background:rgba(34,211,238,0.12); color:var(--cyan); }
+.checklist { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:24px 0; }
+.check-item { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:5px; font-size:13px; color:var(--text-primary); line-height:1.4; transition:border-color 0.2s; }
+.check-item:hover { border-color:var(--border-accent); }
+.check-stage { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:600; padding:2px 7px; border-radius:3px; white-space:nowrap; flex-shrink:0; }
+.insight-box { margin:32px 0; padding:24px; background:linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04)); border:1px solid var(--border-accent); border-radius:8px; position:relative; }
+.insight-box::before { content:'⚡'; position:absolute; top:-12px; left:20px; background:var(--bg-deep); padding:0 8px; font-size:18px; }
+.insight-box .label { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--cyan); margin-bottom:8px; }
+.code-block { background:#0d1117; border:1px solid var(--border); border-radius:6px; padding:20px; margin:20px 0; overflow-x:auto; position:relative; }
+.code-block::before { content:attr(data-lang); position:absolute; top:8px; right:12px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-dim); letter-spacing:0.5px; }
+.code-block pre { font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.6; color:var(--text-secondary); }
+.code-block .kw { color:var(--purple); }
+.code-block .fn { color:var(--cyan); }
+.code-block .str { color:var(--green); }
+.code-block .cm { color:var(--text-dim); font-style:italic; }
+.code-block .ann { color:var(--orange); }
+.code-block .tp { color:var(--yellow); }
+.evolution-steps { position:relative; padding-left:32px; margin:28px 0; }
+.evolution-steps::before { content:''; position:absolute; left:11px; top:8px; bottom:8px; width:2px; background:linear-gradient(to bottom,var(--cyan),var(--purple),var(--orange)); }
+.evo-step { position:relative; margin-bottom:24px; padding-left:20px; }
+.evo-step::before { content:''; position:absolute; left:-25px; top:8px; width:10px; height:10px; border-radius:50%; border:2px solid; }
+.evo-step:nth-child(1)::before { border-color:var(--text-dim); background:var(--bg-deep); }
+.evo-step:nth-child(2)::before { border-color:var(--text-secondary); background:var(--bg-deep); }
+.evo-step:nth-child(3)::before { border-color:var(--cyan-dim); background:var(--bg-deep); }
+.evo-step:nth-child(4)::before { border-color:var(--purple); background:var(--bg-deep); }
+.evo-step:nth-child(5)::before { border-color:var(--cyan); background:var(--cyan); }
+.evo-step:nth-child(6)::before { border-color:var(--green); background:var(--green); }
+.evo-step-title { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; margin-bottom:4px; }
+.evo-step-desc { font-size:13.5px; color:var(--text-secondary); line-height:1.6; }
+.article-footer { max-width:860px; margin:0 auto; padding:40px 32px; border-top:1px solid var(--border); font-size:12px; color:var(--text-dim); }
+.nav-links { display:flex; justify-content:space-between; align-items:center; margin-top:20px; }
+.nav-link { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--cyan); text-decoration:none; padding:8px 16px; border:1px solid var(--border); border-radius:4px; transition:all 0.2s; }
+.nav-link:hover { border-color:var(--cyan); background:var(--cyan-glow); }
+@media (max-width:640px) {
+  .article-title { font-size:24px; }
+  .bookshelf { grid-template-columns:1fr; }
+  .checklist { grid-template-columns:1fr; }
+  .article-meta { flex-direction:column; gap:8px; }
+}
+@media print {
+  :root { --bg-deep:#fff; --bg-surface:#f8f9fa; --bg-card:#f1f3f5; --bg-card-hover:#f1f3f5; --border:#dee2e6; --border-accent:#adb5bd; --text-primary:#212529; --text-secondary:#495057; --text-dim:#868e96; --cyan:#0c8599; --purple:#7048e8; --orange:#e8590c; --green:#099268; --rose:#e03131; --yellow:#e67700; }
+  body { font-size:11pt; line-height:1.5; }
+  .article-header::before { display:none; }
+  .article-header { padding:24px 0; }
+  .diagram-container::before { display:none; }
+  .book-card:hover { transform:none; }
+  .nav-links { display:none; }
+  .code-block { border:1px solid #dee2e6; background:#f8f9fa; }
+  .code-block pre { color:#212529; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header class="article-header">
+  <div class="header-content">
+    <div class="series-badge" style="color:var(--orange); border-color:var(--orange); background:var(--orange-glow);">Layer 2 · Architecture · 架构决策层</div>
+    <h1 class="article-title">Data Architecture & the Lakehouse Convergence</h1>
+    <div class="article-title-cn">数据架构与湖仓一体化</div>
+    <div class="article-meta">
+      <span class="meta-item"><span class="meta-dot" style="background:var(--orange)"></span> Article 2.5 of 20</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--purple)"></span> ~19 min read</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--cyan)"></span> 3 Source Books × 4 AI Angles</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════ BODY ═══════════════ -->
+<main class="article-body">
+
+<!-- ─── §01 CORE INSIGHT ─── -->
+<h2><span class="num">01</span> Core Insight — The Thesis</h2>
+
+<p>
+Every AI initiative lives or dies by the quality of data architecture beneath it. The most sophisticated model in the world, trained on poorly governed, siloed, inconsistently encoded data, will produce garbage. Yet most organizations still treat data architecture as a downstream concern — something the "data team" handles after the "real" software is built. This is the fundamental architectural mistake of the AI era.
+</p>
+<p class="cn-note">
+每个AI项目的成败取决于其底层数据架构的质量。最先进的模型，若训练在治理不善、孤立、编码不一致的数据之上，仍将产出垃圾。然而大多数组织仍把数据架构视为下游关注点——这是AI时代的根本性架构错误。
+</p>
+
+<p>
+The convergence happening now is the <strong>lakehouse architecture</strong> — a unified platform that combines the structured query power of data warehouses with the raw storage flexibility of data lakes, built on open table formats (Delta Lake, Apache Iceberg) with ACID transactions. When paired with Dehghani's <strong>data mesh</strong> organizational model — domain-oriented ownership, data as a product, self-serve platform, federated governance — you get both the infrastructure and the organizational model that AI demands. The lakehouse is not just a storage pattern; it is the data architecture that makes AI-first organizations possible.
+</p>
+<p class="cn-note">
+当下正在发生的融合是湖仓一体架构——统一平台，结合数据仓库的结构化查询能力与数据湖的原始存储灵活性，构建在开放表格式(Delta Lake、Apache Iceberg)之上并支持ACID事务。与Dehghani的数据网格组织模型结合，你同时获得AI所需的基础设施和组织模型。湖仓不仅是存储模式，更是使AI优先组织成为可能的数据架构。
+</p>
+
+<div class="insight-box">
+  <div class="label">The Reframing 核心重构</div>
+  <p style="margin:0; font-size:15px; line-height:1.7">
+    <strong>Data architecture is the bottleneck for AI adoption.</strong> You can swap models, retrain weekly, fine-tune endlessly — but if features arrive late, embeddings are stale, training data is unlabeled, and governance is absent, no model will save you. The architect's job is not to pick the best model; it is to build the data platform that makes every model effective. Kleppmann's "derived data" concept is the key: embeddings, feature stores, and vector indexes are all derived data — read-optimized views computed from a source of truth. Get the source of truth right, and the AI layer follows.
+  </p>
+</div>
+<p class="cn-note">
+数据架构是AI落地的瓶颈。你可以换模型、每周重训、无限微调——但如果特征延迟到达、嵌入过时、训练数据无标注、治理缺失，任何模型都救不了你。Kleppmann的"派生数据"概念是关键：嵌入、特征存储、向量索引都是派生数据——从单一真相源计算的读优化视图。把真相源做对，AI层自然随之而来。
+</p>
+
+<!-- HERO DIAGRAM: LAKEHOUSE ARCHITECTURE -->
+<div class="diagram-container">
+  <div class="diagram-label">◆ Hero Diagram — Lakehouse Architecture for AI</div>
+  <svg viewBox="0 0 800 420" xmlns="http://www.w3.org/2000/svg" style="width:100%; font-family:'JetBrains Mono',monospace;">
+    <defs>
+      <linearGradient id="lhGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--cyan,#22d3ee)" stop-opacity="0.3"/>
+        <stop offset="100%" stop-color="var(--purple,#a78bfa)" stop-opacity="0.1"/>
+      </linearGradient>
+    </defs>
+
+    <!-- Layer labels on the left -->
+    <text x="12" y="62" font-size="8" fill="var(--text-dim,#64748b)" font-weight="600" letter-spacing="1">SERVING</text>
+    <text x="12" y="152" font-size="8" fill="var(--text-dim,#64748b)" font-weight="600" letter-spacing="1">COMPUTE</text>
+    <text x="12" y="242" font-size="8" fill="var(--text-dim,#64748b)" font-weight="600" letter-spacing="1">TABLE FMT</text>
+    <text x="12" y="332" font-size="8" fill="var(--text-dim,#64748b)" font-weight="600" letter-spacing="1">STORAGE</text>
+
+    <!-- Layer 4: AI Serving (top) -->
+    <rect x="80" y="30" width="160" height="60" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1.2"/>
+    <text x="160" y="55" text-anchor="middle" font-size="10" fill="var(--cyan,#22d3ee)" font-weight="600">BI / Dashboards</text>
+    <text x="160" y="72" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">SQL queries, reports</text>
+
+    <rect x="260" y="30" width="160" height="60" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--orange,#f97316)" stroke-width="1.2"/>
+    <text x="340" y="55" text-anchor="middle" font-size="10" fill="var(--orange,#f97316)" font-weight="600">Feature Store</text>
+    <text x="340" y="72" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Online + offline serving</text>
+
+    <rect x="440" y="30" width="160" height="60" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--purple,#a78bfa)" stroke-width="1.2"/>
+    <text x="520" y="55" text-anchor="middle" font-size="10" fill="var(--purple,#a78bfa)" font-weight="600">Vector DB / RAG</text>
+    <text x="520" y="72" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Similarity search</text>
+
+    <rect x="620" y="30" width="160" height="60" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="1.2"/>
+    <text x="700" y="55" text-anchor="middle" font-size="10" fill="var(--green,#10b981)" font-weight="600">Model Training</text>
+    <text x="700" y="72" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">PyTorch, TensorFlow</text>
+
+    <!-- Arrows down from serving to compute -->
+    <line x1="160" y1="90" x2="160" y2="120" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#arrowDown)"/>
+    <line x1="340" y1="90" x2="340" y2="120" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+    <line x1="520" y1="90" x2="520" y2="120" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+    <line x1="700" y1="90" x2="700" y2="120" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+
+    <!-- Layer 3: Compute engines -->
+    <rect x="80" y="120" width="220" height="60" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--border-accent,#2d4a7a)" stroke-width="1"/>
+    <text x="190" y="145" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">SQL Engines</text>
+    <text x="190" y="162" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Spark SQL / Trino / Presto / DuckDB</text>
+
+    <rect x="320" y="120" width="220" height="60" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--border-accent,#2d4a7a)" stroke-width="1"/>
+    <text x="430" y="145" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">ML / AI Engines</text>
+    <text x="430" y="162" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">PyTorch / Ray / Spark MLlib</text>
+
+    <rect x="560" y="120" width="220" height="60" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--border-accent,#2d4a7a)" stroke-width="1"/>
+    <text x="670" y="145" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Stream Processing</text>
+    <text x="670" y="162" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Flink / Kafka Streams / Spark Streaming</text>
+
+    <!-- Arrows compute to table format -->
+    <line x1="190" y1="180" x2="190" y2="210" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+    <line x1="430" y1="180" x2="430" y2="210" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+    <line x1="670" y1="180" x2="670" y2="210" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+
+    <!-- Layer 2: Open Table Format — the key differentiator -->
+    <rect x="80" y="210" width="700" height="60" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--orange,#f97316)" stroke-width="1.5"/>
+    <text x="430" y="233" text-anchor="middle" font-size="11" fill="var(--orange,#f97316)" font-weight="700">OPEN TABLE FORMAT — THE LAKEHOUSE LAYER</text>
+    <text x="430" y="252" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)">Delta Lake / Apache Iceberg / Apache Hudi — ACID transactions, time travel, schema evolution, partition pruning</text>
+
+    <!-- Arrows table format to storage -->
+    <line x1="250" y1="270" x2="250" y2="300" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+    <line x1="430" y1="270" x2="430" y2="300" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+    <line x1="610" y1="270" x2="610" y2="300" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+
+    <!-- Layer 1: Storage -->
+    <rect x="80" y="300" width="200" height="60" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+    <text x="180" y="325" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Structured Data</text>
+    <text x="180" y="342" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Parquet / ORC files</text>
+
+    <rect x="300" y="300" width="200" height="60" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+    <text x="400" y="325" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Semi-Structured</text>
+    <text x="400" y="342" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">JSON / Avro / logs</text>
+
+    <rect x="520" y="300" width="260" height="60" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+    <text x="650" y="325" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Unstructured Data</text>
+    <text x="650" y="342" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Images / PDFs / audio / video</text>
+
+    <!-- Bottom: Object Storage -->
+    <rect x="80" y="380" width="700" height="30" rx="4" fill="var(--bg-surface,#0f1420)" stroke="var(--border,#1e2a45)" stroke-width="1"/>
+    <text x="430" y="400" text-anchor="middle" font-size="9" fill="var(--text-dim,#64748b)" font-weight="500">OBJECT STORAGE — S3 / GCS / ADLS / MinIO (single source of truth)</text>
+
+    <!-- Key insight callout -->
+    <rect x="80" y="62" width="700" height="0.5" fill="var(--border,#1e2a45)"/>
+  </svg>
+</div>
+
+
+<!-- ─── §02 CLASSICAL FOUNDATION ─── -->
+<h2><span class="num">02</span> Classical Foundation — Source Books</h2>
+
+<p>
+Three books form the intellectual backbone of modern data architecture. Kleppmann provides the systems thinking, Dehghani provides the organizational model, and Reis & Housley provide the engineering lifecycle. Together, they cover the full stack from bits on disk to data products consumed by humans and AI agents alike.
+</p>
+<p class="cn-note">
+三本书构成现代数据架构的知识骨干。Kleppmann提供系统思维，Dehghani提供组织模型，Reis与Housley提供工程生命周期。三者共同覆盖从磁盘比特到人类和AI代理消费的数据产品的完整堆栈。
+</p>
+
+<div class="bookshelf">
+  <div class="book-card tier1">
+    <div class="book-title">Designing Data-Intensive Applications</div>
+    <div class="book-author">Martin Kleppmann · 2017</div>
+    <div class="book-desc">Foundational data systems thinking: storage engines, data models, encoding, replication, partitioning, batch vs stream. The "derived data" concept is key — read-optimized views derived from a source of truth. In the AI era, embeddings and feature stores are derived data.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · DATA SYSTEMS</span>
+  </div>
+  <div class="book-card tier1">
+    <div class="book-title">Data Mesh</div>
+    <div class="book-author">Zhamak Dehghani · 2022</div>
+    <div class="book-desc">Paradigm shift from centralized data team to domain-oriented ownership. Four principles: domain ownership, data as a product, self-serve data platform, federated computational governance. AI is the most demanding data consumer — it needs freshness, lineage, and quality guarantees.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · ORGANIZATION</span>
+  </div>
+  <div class="book-card tier2">
+    <div class="book-title">Fundamentals of Data Engineering</div>
+    <div class="book-author">Reis & Housley · 2022</div>
+    <div class="book-desc">The data engineering lifecycle: generation, storage, ingestion, transformation, serving. Architecture patterns: warehouse, lake, lakehouse, mesh. Key insight: choose architecture based on how data will be CONSUMED, not just stored. AI consumption patterns differ from BI.</div>
+    <span class="book-tag tag-practice">PRACTICE · LIFECYCLE</span>
+  </div>
+</div>
+
+<p>
+What unites these three works is an emphasis on <strong>consumption-driven design</strong>. Kleppmann's derived data views are shaped by read patterns. Dehghani's data products are defined by consumer SLOs. Reis & Housley's lifecycle ends with "serving" — the entire pipeline exists to serve a consumer. In the AI era, the most demanding consumer is the model: it needs massive volumes, low latency, strict versioning, and reproducibility guarantees that traditional BI dashboards never required. Data architecture must be redesigned with this consumer in mind.
+</p>
+<p class="cn-note">
+三部著作的共同点是强调消费驱动设计。Kleppmann的派生视图由读取模式塑造，Dehghani的数据产品由消费者SLO定义，Reis与Housley的生命周期以"服务"结束。在AI时代，最苛刻的消费者是模型：它需要海量数据、低延迟、严格版本控制和传统BI仪表盘从未要求过的可重复性保证。
+</p>
+
+
+<!-- ─── §03 AI CO-EVOLUTION ─── -->
+<h2><span class="num">03</span> AI Co-Evolution — Four Angles</h2>
+
+<p>
+Data architecture is where AI meets its most fundamental dependency. Each angle below traces a classical data architecture concept into its AI-era extension, showing how the lakehouse and data mesh paradigms naturally evolve to serve AI workloads.
+</p>
+<p class="cn-note">
+数据架构是AI遇到其最根本依赖的地方。以下每个角度追溯一个经典数据架构概念到其AI时代延伸，展示湖仓和数据网格范式如何自然演化以服务AI工作负载。
+</p>
+
+<!-- ANGLE A -->
+<h3>Angle A · Lakehouse Architecture for AI Workloads — 面向AI工作负载的湖仓架构</h3>
+
+<p>
+<strong>Classical principle:</strong> The data warehouse (Kimball, Inmon) optimizes for structured, SQL-queryable analytics — star schemas, fact and dimension tables, pre-aggregated cubes. The data lake (Hadoop era) stores everything in raw format with schema-on-read flexibility. Each approach has a fatal flaw for AI: warehouses cannot store unstructured data (images, text, audio), and data lakes lack ACID transactions and governance, leading to the infamous "data swamp."
+</p>
+
+<p>
+<strong>AI extension:</strong> The lakehouse combines both: structured data for feature engineering and training, unstructured data for RAG and embedding pipelines, all on open formats (Parquet, Delta, Iceberg) with ACID transactions. Five properties make the lakehouse the natural AI data platform: (1) structured + unstructured data coexist, (2) ACID transactions enable reproducible training runs, (3) time travel provides dataset versioning without copying data, (4) schema evolution handles the constant flux of ML features, and (5) open formats mean any compute engine — Spark, Presto, PyTorch, DuckDB — can read the same data without ETL.
+</p>
+
+<p>
+<strong>Concrete example:</strong> A recommendation system team needs user clickstream data (structured), product images (unstructured), and NLP-processed reviews (semi-structured). In the pre-lakehouse world, this requires three separate systems: a warehouse for clickstream, an object store for images, and an Elasticsearch cluster for reviews — with brittle ETL pipelines connecting them. With a lakehouse on Iceberg, all three live in the same catalog, queryable through the same engine, governed by the same access policies, and versioned with the same time-travel mechanism. A single <code>SELECT</code> joins structured features with vector embeddings.
+</p>
+<p class="cn-note">
+经典原则：数据仓库优化结构化SQL分析；数据湖以原始格式存储一切。各有致命缺陷。AI延伸：湖仓结合两者——结构化数据做特征工程，非结构化数据做RAG和嵌入，全部基于开放格式加ACID事务。五大属性使湖仓成为天然的AI数据平台。具体示例：推荐系统团队在单一Iceberg目录中统一用户点击流、产品图片和NLP处理后的评论。
+</p>
+
+<!-- ANGLE B -->
+<h3>Angle B · Feature Store as the Bridge — 特征存储：连接数据与模型的桥梁</h3>
+
+<p>
+<strong>Classical principle:</strong> In analytics, materialized views and OLAP cubes pre-compute expensive aggregations so dashboards load instantly. The underlying principle is straightforward: compute once, serve many times. Denormalize for read performance, accepting the cost of storage and freshness lag.
+</p>
+
+<p>
+<strong>AI extension:</strong> Feature stores (Feast, Tecton, Databricks Feature Store) are the AI equivalent of materialized views — pre-computed, versioned, and served features for model training and inference. They split into two stores: an <strong>offline store</strong> (batch-computed features for training, stored in Parquet/Delta) and an <strong>online store</strong> (low-latency key-value lookup for real-time inference, backed by Redis or DynamoDB). The critical problem they solve is <strong>training-serving skew</strong>: when the features used during training differ from those served during inference, model accuracy silently degrades. Feature stores guarantee the same transformation code produces both training and serving features. They are the "CDN for AI data."
+</p>
+
+<div class="code-block" data-lang="Python — Feast Feature Definition">
+<pre><span class="kw">from</span> feast <span class="kw">import</span> Entity, Feature, FeatureView, FileSource, ValueType
+<span class="kw">from</span> datetime <span class="kw">import</span> timedelta
+
+<span class="cm"># Entity: the domain object features describe</span>
+<span class="fn">user</span> = <span class="tp">Entity</span>(
+    name=<span class="str">"user_id"</span>,
+    value_type=<span class="tp">ValueType</span>.INT64,
+    description=<span class="str">"Unique user identifier"</span>,
+)
+
+<span class="cm"># Source: where raw feature data lives (lakehouse!)</span>
+<span class="fn">user_activity_source</span> = <span class="tp">FileSource</span>(
+    path=<span class="str">"s3://lakehouse/features/user_activity.parquet"</span>,
+    event_timestamp_column=<span class="str">"event_ts"</span>,
+)
+
+<span class="cm"># Feature View: defines features + their online/offline serving</span>
+<span class="fn">user_activity_fv</span> = <span class="tp">FeatureView</span>(
+    name=<span class="str">"user_activity"</span>,
+    entities=[<span class="str">"user_id"</span>],
+    ttl=timedelta(days=<span class="str">7</span>),           <span class="cm"># freshness SLO</span>
+    features=[
+        <span class="tp">Feature</span>(name=<span class="str">"purchase_count_7d"</span>,  dtype=<span class="tp">ValueType</span>.INT64),
+        <span class="tp">Feature</span>(name=<span class="str">"avg_session_mins"</span>,   dtype=<span class="tp">ValueType</span>.DOUBLE),
+        <span class="tp">Feature</span>(name=<span class="str">"last_category_viewed"</span>, dtype=<span class="tp">ValueType</span>.STRING),
+        <span class="tp">Feature</span>(name=<span class="str">"embedding_v2"</span>,        dtype=<span class="tp">ValueType</span>.FLOAT_LIST),
+    ],
+    online=<span class="str">True</span>,                       <span class="cm"># serve to inference at &lt;10ms</span>
+    source=user_activity_source,
+)</pre>
+</div>
+<p class="cn-note">
+经典原则：物化视图和OLAP立方体预计算昂贵的聚合——计算一次，服务多次。AI延伸：特征存储是AI版本的物化视图——预计算、版本化、同时服务训练和推理。它们解决的核心问题是训练-服务偏差(training-serving skew)。上方代码展示Feast特征定义：实体、数据源、特征视图，包含在线服务配置和新鲜度SLO。
+</p>
+
+<!-- ANGLE C -->
+<h3>Angle C · Data Mesh + AI Agents = Domain Data Products — 数据网格 + AI代理 = 领域数据产品</h3>
+
+<p>
+<strong>Classical principle:</strong> Dehghani's data mesh argues that the centralized data team is a bottleneck. Each domain (orders, payments, logistics) should own its data as a <em>product</em> — with its own SLOs, documentation, quality guarantees, and consumption interfaces. The self-serve data platform provides the infrastructure; federated governance ensures interoperability without centralized control.
+</p>
+
+<p>
+<strong>AI extension:</strong> Each domain's data product can now include AI-ready interfaces alongside traditional SQL/API endpoints: pre-computed vector embeddings for semantic search, curated labeled datasets for model training, and feature store definitions for real-time inference. The self-serve platform expands to include AI tooling — model registry (MLflow), experiment tracking (Weights & Biases), embedding pipelines (sentence-transformers), and vector indexes. AI agents become first-class data product consumers that respect domain boundaries — echoing the bounded context concept from DDD (Article 1.2). A payment domain's AI-ready data product might expose: a SQL endpoint for revenue analytics, a feature store for fraud detection features, and a vector endpoint for transaction similarity search.
+</p>
+
+<p>
+<strong>Concrete example:</strong> Consider a data product interface contract for a logistics domain:
+</p>
+
+<div class="code-block" data-lang="YAML — Domain Data Product Contract">
+<pre><span class="cm"># logistics-domain/data-product.yaml</span>
+<span class="fn">name</span>: <span class="str">shipment-tracking</span>
+<span class="fn">owner</span>: <span class="str">logistics-team</span>
+<span class="fn">slo</span>:
+  <span class="fn">freshness</span>: <span class="str">5 minutes</span>
+  <span class="fn">completeness</span>: <span class="str">99.5%</span>
+  <span class="fn">availability</span>: <span class="str">99.9%</span>
+
+<span class="fn">interfaces</span>:
+  <span class="cm"># Traditional consumers</span>
+  <span class="fn">sql</span>: <span class="str">catalog.logistics.shipment_events</span>
+  <span class="fn">api</span>: <span class="str">https://api.internal/logistics/shipments/v2</span>
+
+  <span class="cm"># AI-ready consumers</span>
+  <span class="fn">feature_store</span>: <span class="str">feast://logistics/delivery_prediction</span>
+  <span class="fn">embeddings</span>: <span class="str">vector://logistics/shipment_descriptions</span>
+  <span class="fn">training_set</span>: <span class="str">s3://lakehouse/logistics/labeled/eta_dataset_v3/</span>
+
+<span class="fn">governance</span>:
+  <span class="fn">classification</span>: <span class="str">internal</span>
+  <span class="fn">pii_columns</span>: [<span class="str">recipient_name</span>, <span class="str">address</span>]
+  <span class="fn">ai_training_approved</span>: <span class="str">true</span></pre>
+</div>
+<p class="cn-note">
+经典原则：Dehghani的数据网格——每个领域团队拥有自己的数据产品，带有SLO、文档和质量保证。AI延伸：每个领域的数据产品现可包含AI就绪接口：向量嵌入、标注数据集、特征存储定义。AI代理成为尊重领域边界的一等数据产品消费者——呼应DDD的限界上下文。上方YAML展示一个物流领域数据产品合约，同时暴露传统接口和AI就绪接口。
+</p>
+
+<!-- ANGLE D -->
+<h3>Angle D · Vector Databases & Embedding Architecture — 向量数据库与嵌入架构</h3>
+
+<p>
+<strong>Classical principle:</strong> Traditional databases optimize for exact match (B-tree index: <code>WHERE id = 42</code>) or range queries (<code>WHERE price BETWEEN 10 AND 50</code>). Full-text search engines (Elasticsearch, Solr) add inverted indexes for keyword matching. These are all based on discrete, exact comparisons — a query either matches or it doesn't.
+</p>
+
+<p>
+<strong>AI extension:</strong> Vector databases (Pinecone, Weaviate, pgvector, Qdrant, Milvus) optimize for <em>similarity search</em> — "find documents semantically similar to this query." They store high-dimensional vector embeddings and use approximate nearest neighbor (ANN) algorithms to find the closest matches. Architecture decisions multiply: embedded vs standalone vector DB (pgvector within Postgres vs dedicated Qdrant cluster), embedding model selection (OpenAI, Cohere, open-source sentence-transformers), index type (HNSW for low latency, IVF for large datasets), dimension trade-offs (384 vs 768 vs 1536 dimensions — more dimensions capture more nuance but cost more storage and compute), and hybrid search strategies (combine vector similarity with keyword BM25 for best results). This is the data architecture layer that makes RAG (Retrieval-Augmented Generation) possible — and RAG is how most production AI systems ground their answers in organizational data.
+</p>
+
+<div class="evolution-steps">
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--text-dim)">Gen 1 — Keyword Search (SQL LIKE, full-text indexes)</div>
+    <div class="evo-step-desc">Exact string matching. High precision, zero semantic understanding. "Bank" matches finance and riverbank equally.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--text-secondary)">Gen 2 — Search Engines (Elasticsearch, Solr)</div>
+    <div class="evo-step-desc">Inverted indexes, TF-IDF, BM25 scoring. Great for keyword relevance. Still no understanding of meaning.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--cyan-dim)">Gen 3 — Vector Search (Pinecone, Weaviate, pgvector)</div>
+    <div class="evo-step-desc">Semantic similarity via embeddings. "How to terminate an employee" finds HR policies, not assassination guides. ANN indexes (HNSW, IVF).</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--purple)">Gen 4 — Hybrid Search (vector + keyword + metadata)</div>
+    <div class="evo-step-desc">Reciprocal Rank Fusion combines BM25 keyword scores with vector similarity. Metadata filters (department, date) narrow results. Best of all worlds.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--cyan)">Gen 5 — Semantic Data Platform (2025+)</div>
+    <div class="evo-step-desc">Vector indexes integrated into the lakehouse. Every table has an embedding column. <code>SELECT * FROM docs ORDER BY cosine_similarity(embedding, query_vec)</code> is just SQL.</div>
+  </div>
+</div>
+<p class="cn-note">
+经典原则：传统数据库优化精确匹配(B-tree)和范围查询。AI延伸：向量数据库优化相似性搜索——"找到语义上与此查询相似的文档"。架构决策成倍增加：嵌入式vs独立部署、嵌入模型选择、索引类型(HNSW vs IVF)、维度权衡、混合搜索策略。进化步骤展示从关键词搜索到语义数据平台的五代演进——这是使RAG成为可能的数据架构层。
+</p>
+
+
+<!-- ─── §04 DECISION TABLE ─── -->
+<h2><span class="num">04</span> Decision Table — When to Apply What</h2>
+
+<p>
+Data architecture decisions have long-lasting consequences — migrating a data platform mid-stream is orders of magnitude harder than changing an application framework. This table maps eight critical decision points to both classical and AI-augmented approaches.
+</p>
+<p class="cn-note">
+数据架构决策具有持久影响——中途迁移数据平台比更换应用框架难几个数量级。此表将八个关键决策点映射到经典方法和AI增强方法。
+</p>
+
+<table class="decision-table">
+  <thead>
+    <tr>
+      <th class="col-scenario">Scenario 场景</th>
+      <th class="col-classic"><span class="classic-badge">CLASSIC</span> Classical Approach</th>
+      <th class="col-ai"><span class="ai-badge">AI+</span> AI-Augmented Approach</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="col-scenario">Warehouse vs Lakehouse<br><small style="color:var(--text-dim)">仓库 vs 湖仓</small></td>
+      <td>Data warehouse (Snowflake, Redshift) for structured BI workloads. Schema-on-write, star schemas, SQL-first.</td>
+      <td>Lakehouse (Iceberg/Delta on object storage) for unified structured + unstructured. Warehouse for BI-only; lakehouse when AI/ML workloads exist or are planned.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Data Team Model<br><small style="color:var(--text-dim)">数据团队模式</small></td>
+      <td>Centralized data team owns all pipelines, warehouse, and governance. Clear ownership, single bottleneck.</td>
+      <td>Data mesh: domain teams own data products with AI-ready interfaces. Central platform team provides self-serve tooling. AI agents consume from domain products.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Feature Store Timing<br><small style="color:var(--text-dim)">特征存储时机</small></td>
+      <td>Build feature engineering into each ML pipeline. Simple, no infra overhead, works for 1-3 models.</td>
+      <td>Adopt feature store (Feast/Tecton) when: >3 models share features, training-serving skew is detected, or real-time inference needs online serving. Start with offline-only, add online later.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Vector DB Choice<br><small style="color:var(--text-dim)">向量数据库选型</small></td>
+      <td>Not applicable in classical analytics. Full-text search via Elasticsearch for keyword matching.</td>
+      <td>pgvector for first RAG prototype (leverage existing Postgres). Standalone (Qdrant/Weaviate) when >10M vectors, need horizontal scaling, or require advanced filtering. Managed (Pinecone) for zero-ops.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Batch vs Streaming<br><small style="color:var(--text-dim)">批处理 vs 流处理</small></td>
+      <td>Default to batch (daily/hourly ETL). Simpler, cheaper, debuggable. Stream only for sub-minute latency needs.</td>
+      <td>Kappa architecture: stream-first with materialized batch views. AI inference features need real-time freshness. Use Flink/Spark Streaming with lakehouse sink for unified batch+stream.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Data Versioning<br><small style="color:var(--text-dim)">数据版本策略</small></td>
+      <td>Database backups, change-data-capture logs. Versioning is an afterthought.</td>
+      <td>Lakehouse time travel for dataset snapshots. DVC or LakeFS for ML dataset versioning. Every training run references an immutable dataset version. Reproducibility is non-negotiable for AI.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Data Quality<br><small style="color:var(--text-dim)">数据质量保障</small></td>
+      <td>Manual spot-checks, periodic audits. Great Expectations or dbt tests in CI. Rule-based validation.</td>
+      <td>AI-powered anomaly detection on data quality metrics. LLM-based semantic validation (does this address field look real?). Automated data quality scoring per data product SLO.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">AI Training Governance<br><small style="color:var(--text-dim)">AI训练数据治理</small></td>
+      <td>Not applicable in classical data governance. Focus on access control and compliance.</td>
+      <td>Data lineage tracking from source to model prediction. PII tagging for training data exclusion. Consent management for user data in model training. <code>ai_training_approved</code> flag per dataset.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- ─── §05 PRACTICAL CHECKLIST ─── -->
+<h2><span class="num">05</span> Practical Checklist — Building Your Data Architecture</h2>
+
+<p>
+Transforming data architecture is a multi-year journey. Each item below is tagged by maturity stage (S2 = team basics, S6 = industry-leading). Start from your current stage; each builds on the previous.
+</p>
+<p class="cn-note">
+转型数据架构是多年征程。每项按成熟度阶段标注(S2=团队基础，S6=行业领先)。从当前阶段开始，逐级构建。
+</p>
+
+<div class="checklist">
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Audit current data architecture: document all data stores, flows, and consumers
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Map data lineage: source systems to reporting/analytics endpoints
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Identify all current and planned data consumers (BI, ML, AI agents)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Adopt open table format (Delta Lake or Apache Iceberg) for new data
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Implement basic data quality gates (Great Expectations or dbt tests in CI)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    Deploy feature store for top ML use cases (start with Feast offline-only)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    Add pgvector to existing Postgres for first RAG implementation
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Full lakehouse architecture on object storage with ACID table format
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Pilot data mesh: one domain team publishes data product with SLO contract
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Standalone vector DB for production RAG (Qdrant/Weaviate with hybrid search)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    Full data mesh with AI-ready data products across all domains
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    Automated data quality via AI anomaly detection + semantic data catalog
+  </div>
+</div>
+
+
+<!-- ─── §06 TAKEAWAY ─── -->
+<h2><span class="num">06</span> The Architect's Takeaway</h2>
+
+<p>
+Data architecture is THE bottleneck for AI adoption. You can have the best models, the most talented ML engineers, and unlimited GPU budget — but without a solid data platform, it is garbage in, garbage out. The lakehouse gives you the unified storage and compute layer; the data mesh gives you the organizational model for scaling data ownership. Together, they form the architecture that makes AI-first organizations possible.
+</p>
+<p class="cn-note">
+数据架构是AI落地的首要瓶颈。你可以拥有最好的模型、最有才华的ML工程师和无限的GPU预算——但没有扎实的数据平台，就是垃圾进垃圾出。湖仓提供统一的存储与计算层；数据网格提供扩展数据所有权的组织模型。两者共同构成使AI优先组织成为可能的架构。
+</p>
+
+<p>
+The key architectural insight from Kleppmann is that embeddings, feature stores, and vector indexes are all <em>derived data</em> — read-optimized views computed from a source of truth. If your source of truth is a mess (duplicated across silos, ungoverned, undocumented), then every derived view inherits that mess. Fix the foundation first. Adopt open table formats. Define data products with explicit SLOs. Then layer on feature stores and vector databases. The order matters.
+</p>
+<p class="cn-note">
+Kleppmann的关键架构洞察：嵌入、特征存储和向量索引都是派生数据——从单一真相源计算的读优化视图。如果真相源混乱（跨孤岛重复、无治理、无文档），所有派生视图都继承这种混乱。先修基础，再叠加AI层。顺序很重要。
+</p>
+
+<p>
+This article completes Layer 2 (Architecture). Across five articles — from distributed system patterns (2.1) through API design (2.2), event-driven architecture (2.3), security (2.4), and now data architecture (2.5) — we have covered the major architectural decisions that shape a modern system. But architecture decisions on paper mean nothing without the infrastructure to bring them to life.
+</p>
+<p class="cn-note">
+本文完成第二层(架构)。跨越五篇文章——从分布式系统模式到API设计、事件驱动架构、安全和数据架构——我们覆盖了塑造现代系统的主要架构决策。但纸上的架构决策若没有基础设施来实现，则毫无意义。
+</p>
+
+<div class="insight-box" style="margin-top:40px;">
+  <div class="label">Next in Series → Article 3.1</div>
+  <p style="margin:0; font-size:14px; line-height:1.6">
+    <strong>CI/CD Pipeline Design: From Continuous Integration to Continuous Intelligence</strong> — With architecture decisions made, we zoom into the infrastructure that brings them to life. How classical CI/CD pipelines (Humble & Farley) evolve to handle AI model deployment, data pipeline testing, and autonomous quality gates.
+    <br><span style="color:var(--text-dim); font-style:italic; font-family:'Noto Serif SC',serif;">下一篇：CI/CD流水线设计——从持续集成到持续智能。架构决策已定，我们深入实现它们的基础设施。</span>
+  </p>
+</div>
+
+</main>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="article-footer">
+  <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim)">
+    Software Knowledge Base · Layer 2: Architecture · Article 2.5 of 20 · Final article in L2<br>
+    Classical Foundations × AI Co-Evolution · 经典基础 × AI协同进化
+  </div>
+  <div class="nav-links">
+    <a class="nav-link" href="./2.4-security-ai-attack-surface.html">← Prev: 2.4 Security & AI Attack Surface</a>
+    <a class="nav-link" href="../L3-infrastructure/3.1-cicd-pipeline.html">Next: 3.1 CI/CD Pipeline Design →</a>
+  </div>
+</footer>
+
+</body>
+</html>
