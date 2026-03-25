@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>0.2 AI-Era Refactoring — Machines Propose, Humans Dispose</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<!--
+  CSS Architecture Note:
+  The canonical design system lives in templates/article-base.css.
+  For single-file distribution, it is inlined here.
+  When editing styles, update article-base.css first, then re-inline.
+-->
+<style>
+/* ═══ INLINED FROM templates/article-base.css ═══ */
+:root {
+  --bg-deep: #0a0e17;
+  --bg-surface: #0f1420;
+  --bg-card: #141b2d;
+  --bg-card-hover: #1a2340;
+  --border: #1e2a45;
+  --border-accent: #2d4a7a;
+  --cyan: #22d3ee;
+  --cyan-dim: #0e7490;
+  --cyan-glow: rgba(34, 211, 238, 0.15);
+  --purple: #a78bfa;
+  --purple-dim: #6d5dbb;
+  --purple-glow: rgba(167, 139, 250, 0.12);
+  --orange: #f97316;
+  --orange-glow: rgba(249, 115, 22, 0.12);
+  --green: #10b981;
+  --green-glow: rgba(16, 185, 129, 0.12);
+  --rose: #f43f5e;
+  --rose-glow: rgba(244, 63, 94, 0.12);
+  --yellow: #eab308;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg-deep); color:var(--text-primary); font-family:'IBM Plex Sans',sans-serif; line-height:1.75; font-size:16px; -webkit-font-smoothing:antialiased; }
+.article-header { position:relative; padding:80px 0 60px; overflow:hidden; border-bottom:1px solid var(--border); }
+.article-header::before { content:''; position:absolute; top:0;left:0;right:0;bottom:0; background:radial-gradient(ellipse 800px 400px at 20% 50%,rgba(34,211,238,0.06),transparent),radial-gradient(ellipse 600px 300px at 80% 30%,rgba(167,139,250,0.04),transparent); }
+.header-content { position:relative; max-width:860px; margin:0 auto; padding:0 32px; }
+.series-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--cyan); border:1px solid var(--cyan-dim); padding:4px 12px; border-radius:3px; margin-bottom:20px; background:var(--cyan-glow); }
+.article-title { font-family:'JetBrains Mono',monospace; font-size:36px; font-weight:700; line-height:1.25; color:var(--text-primary); margin-bottom:8px; }
+.article-title-cn { font-family:'Noto Serif SC',serif; font-size:20px; font-weight:400; color:var(--text-dim); font-style:italic; margin-bottom:24px; }
+.article-meta { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-dim); display:flex; gap:24px; flex-wrap:wrap; }
+.meta-item { display:flex; align-items:center; gap:6px; }
+.meta-dot { width:6px; height:6px; border-radius:50%; }
+.article-body { max-width:860px; margin:0 auto; padding:48px 32px; }
+h2 { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:var(--cyan); margin:56px 0 8px; padding-bottom:12px; border-bottom:1px solid var(--border); letter-spacing:-0.5px; }
+.article-body > h2:first-child { margin-top:0; }
+h2 .num { color:var(--text-dim); font-weight:400; margin-right:8px; }
+h3 { font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; color:var(--purple); margin:36px 0 12px; }
+p { margin-bottom:18px; color:var(--text-primary); font-size:15.5px; }
+.cn-note { font-family:'Noto Serif SC',serif; font-style:italic; color:var(--text-dim); font-size:14px; line-height:1.8; margin:-8px 0 24px; padding-left:16px; border-left:2px solid var(--border); }
+code { font-family:'JetBrains Mono',monospace; font-size:0.88em; background:rgba(34,211,238,0.08); padding:2px 6px; border-radius:3px; color:var(--cyan); }
+.diagram-container { margin:40px -16px; padding:32px 24px; background:var(--bg-surface); border:1px solid var(--border); border-radius:8px; position:relative; overflow-x:auto; }
+.diagram-container::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--cyan),var(--purple),var(--orange)); }
+.diagram-label { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:20px; }
+.diagram-sublabel { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-dim); margin-top:-16px; margin-bottom:16px; font-style:italic; }
+.bookshelf { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin:24px 0; align-items:stretch; }
+.book-card { background:var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:16px; transition:all 0.25s ease; position:relative; overflow:hidden; min-height:190px; display:flex; flex-direction:column; }
+.book-card::before { content:''; position:absolute; left:0;top:0;bottom:0; width:3px; }
+.book-card.tier1::before { background:var(--cyan); }
+.book-card.tier2::before { background:var(--purple); }
+.book-card:hover { border-color:var(--border-accent); background:var(--bg-card-hover); transform:translateY(-2px); }
+.book-title { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:4px; line-height:1.4; }
+.book-author { font-size:11px; color:var(--text-dim); }
+.book-desc { font-size:12px; color:var(--text-secondary); margin-top:8px; line-height:1.5; flex:1; }
+.book-tag { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:2px 6px; border-radius:3px; margin-top:8px; letter-spacing:0.5px; }
+.tag-foundation { background:rgba(34,211,238,0.1); color:var(--cyan); border:1px solid rgba(34,211,238,0.2); }
+.tag-practice { background:rgba(167,139,250,0.1); color:var(--purple); border:1px solid rgba(167,139,250,0.2); }
+.decision-table { width:100%; border-collapse:collapse; margin:24px 0; font-size:13px; }
+.decision-table th { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; text-align:left; padding:12px 16px; border-bottom:2px solid var(--border-accent); color:var(--text-secondary); background:var(--bg-surface); }
+.decision-table td { padding:12px 16px; border-bottom:1px solid var(--border); color:var(--text-primary); vertical-align:top; line-height:1.5; }
+.decision-table tr:hover td { background:rgba(34,211,238,0.03); }
+.decision-table .col-scenario { width:22%; font-weight:500; color:var(--text-secondary); }
+.decision-table .col-classic { width:39%; }
+.decision-table .col-ai { width:39%; }
+.classic-badge,.ai-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:1px 5px; border-radius:2px; margin-right:4px; vertical-align:middle; }
+.classic-badge { background:rgba(148,163,184,0.15); color:var(--text-secondary); }
+.ai-badge { background:rgba(34,211,238,0.12); color:var(--cyan); }
+.checklist { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:24px 0; }
+.check-item { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:5px; font-size:13px; color:var(--text-primary); line-height:1.4; transition:border-color 0.2s; }
+.check-item:hover { border-color:var(--border-accent); }
+.check-stage { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:600; padding:2px 7px; border-radius:3px; white-space:nowrap; flex-shrink:0; }
+.insight-box { margin:32px 0; padding:24px; background:linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04)); border:1px solid var(--border-accent); border-radius:8px; position:relative; }
+.insight-box::before { content:'⚡'; position:absolute; top:-12px; left:20px; background:var(--bg-deep); padding:0 8px; font-size:18px; }
+.insight-box .label { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--cyan); margin-bottom:8px; }
+.code-block { background:#0d1117; border:1px solid var(--border); border-radius:6px; padding:20px; margin:20px 0; overflow-x:auto; position:relative; }
+.code-block::before { content:attr(data-lang); position:absolute; top:8px; right:12px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-dim); letter-spacing:0.5px; }
+.code-block pre { font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.6; color:var(--text-secondary); }
+.code-block .kw { color:var(--purple); }
+.code-block .fn { color:var(--cyan); }
+.code-block .str { color:var(--green); }
+.code-block .cm { color:var(--text-dim); font-style:italic; }
+.code-block .ann { color:var(--orange); }
+.code-block .tp { color:var(--yellow); }
+.evolution-steps { position:relative; padding-left:32px; margin:28px 0; }
+.evolution-steps::before { content:''; position:absolute; left:11px; top:8px; bottom:8px; width:2px; background:linear-gradient(to bottom,var(--cyan),var(--purple),var(--orange)); }
+.evo-step { position:relative; margin-bottom:24px; padding-left:20px; }
+.evo-step::before { content:''; position:absolute; left:-25px; top:8px; width:10px; height:10px; border-radius:50%; border:2px solid; }
+.evo-step:nth-child(1)::before { border-color:var(--text-dim); background:var(--bg-deep); }
+.evo-step:nth-child(2)::before { border-color:var(--text-secondary); background:var(--bg-deep); }
+.evo-step:nth-child(3)::before { border-color:var(--cyan-dim); background:var(--bg-deep); }
+.evo-step:nth-child(4)::before { border-color:var(--purple); background:var(--bg-deep); }
+.evo-step:nth-child(5)::before { border-color:var(--cyan); background:var(--cyan); }
+.evo-step:nth-child(6)::before { border-color:var(--green); background:var(--green); }
+.evo-step-title { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; margin-bottom:4px; }
+.evo-step-desc { font-size:13.5px; color:var(--text-secondary); line-height:1.6; }
+.article-footer { max-width:860px; margin:0 auto; padding:40px 32px; border-top:1px solid var(--border); font-size:12px; color:var(--text-dim); }
+.nav-links { display:flex; justify-content:space-between; align-items:center; margin-top:20px; }
+.nav-link { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--cyan); text-decoration:none; padding:8px 16px; border:1px solid var(--border); border-radius:4px; transition:all 0.2s; }
+.nav-link:hover { border-color:var(--cyan); background:var(--cyan-glow); }
+@media (max-width:640px) {
+  .article-title { font-size:24px; }
+  .bookshelf { grid-template-columns:1fr; }
+  .checklist { grid-template-columns:1fr; }
+  .article-meta { flex-direction:column; gap:8px; }
+}
+@media print {
+  :root { --bg-deep:#fff; --bg-surface:#f8f9fa; --bg-card:#f1f3f5; --bg-card-hover:#f1f3f5; --border:#dee2e6; --border-accent:#adb5bd; --text-primary:#212529; --text-secondary:#495057; --text-dim:#868e96; --cyan:#0c8599; --purple:#7048e8; --orange:#e8590c; --green:#099268; --rose:#e03131; --yellow:#e67700; }
+  body { font-size:11pt; line-height:1.5; }
+  .article-header::before { display:none; }
+  .article-header { padding:24px 0; }
+  .diagram-container::before { display:none; }
+  .book-card:hover { transform:none; }
+  .nav-links { display:none; }
+  .code-block { border:1px solid #dee2e6; background:#f8f9fa; }
+  .code-block pre { color:#212529; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header class="article-header">
+  <div class="header-content">
+    <div class="series-badge">Layer 0 · Code Craft · 代码工艺层</div>
+    <h1 class="article-title">AI-Era Refactoring</h1>
+    <div class="article-title-cn">AI时代的重构：机器提议，人类决策</div>
+    <div class="article-meta">
+      <span class="meta-item"><span class="meta-dot" style="background:var(--cyan)"></span> Article 0.2 of 20</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--purple)"></span> ~18 min read</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--orange)"></span> 4 Source Books × 4 AI Angles</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════ BODY ═══════════════ -->
+<main class="article-body">
+
+<!-- ─── §01 CORE INSIGHT ─── -->
+<h2><span class="num">01</span> Core Insight — The Thesis</h2>
+
+<p>
+Refactoring has always been the software engineer's quiet discipline — the daily act of improving code structure without changing its external behavior. Martin Fowler codified the catalog. Michael Feathers taught us how to get legacy code under test. Kent Beck reminded us to tidy first, before adding features. Adam Tornhill showed that git history reveals where the real pain lives. These ideas are battle-tested and foundational.
+</p>
+<p class="cn-note">
+重构一直是软件工程师的静默修行——在不改变外部行为的前提下，日常改善代码结构。Fowler编目了重构手法，Feathers教我们如何让遗留代码进入测试，Beck提醒我们先整理再添加功能，Tornhill证明git历史揭示了真正的痛点所在。
+</p>
+
+<p>
+Here is what changes in the AI era: <strong>refactoring shifts from a human-scheduled activity to a continuously detected, AI-proposed, human-approved workflow.</strong> The bottleneck was never knowing <em>how</em> to refactor — Fowler's catalog covers that. The bottleneck was knowing <em>where</em> to refactor (which files hurt the most?), <em>when</em> to refactor (is now the right time?), and <em>whether it's safe</em> (do we have enough tests?). AI addresses all three bottlenecks simultaneously.
+</p>
+<p class="cn-note">
+AI时代的变化：重构从人工安排的活动转变为持续检测、AI提议、人类批准的工作流。瓶颈从来不是"如何"重构——Fowler的目录已覆盖。瓶颈是"在哪"重构、"何时"重构、以及"是否安全"——AI同时解决这三个瓶颈。
+</p>
+
+<div class="insight-box">
+  <div class="label">The Reframing 核心重构</div>
+  <p style="margin:0; font-size:15px; line-height:1.7">
+    <strong>Machines propose, humans dispose.</strong> AI analyzes git history to find hotspots, generates characterization tests for untested legacy code, and proposes refactoring sequences from Fowler's catalog. The human architect's role shifts from "doing the refactoring" to "approving the refactoring plan, verifying the safety net, and steering the sequence." This is not less skill — it is different skill. The judgment of <em>what matters</em> remains irreducibly human.
+  </p>
+</div>
+<p class="cn-note">
+机器提议，人类决策。AI分析git历史找到热点，为未测试的遗留代码生成特征测试，并从Fowler目录中提议重构序列。架构师的角色从"执行重构"转变为"批准重构计划、验证安全网、引导序列"。这不是更少的技能，而是不同的技能。
+</p>
+
+<!-- HERO DIAGRAM: THE REFACTORING PIPELINE -->
+<div class="diagram-container">
+  <div class="diagram-label">◆ Hero Diagram — The AI-Augmented Refactoring Pipeline</div>
+  <svg viewBox="0 0 800 320" xmlns="http://www.w3.org/2000/svg" style="width:100%; font-family:'JetBrains Mono',monospace;">
+    <defs>
+      <linearGradient id="pipeGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="var(--rose,#f43f5e)"/>
+        <stop offset="33%" stop-color="var(--yellow,#eab308)"/>
+        <stop offset="66%" stop-color="var(--cyan,#22d3ee)"/>
+        <stop offset="100%" stop-color="var(--green,#10b981)"/>
+      </linearGradient>
+    </defs>
+
+    <!-- Title labels -->
+    <text x="200" y="24" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)" font-weight="500" letter-spacing="1">CLASSICAL REFACTORING 经典重构</text>
+    <text x="600" y="24" text-anchor="middle" font-size="9" fill="var(--cyan,#22d3ee)" font-weight="500" letter-spacing="1">AI-AUGMENTED REFACTORING AI增强重构</text>
+    <line x1="400" y1="14" x2="400" y2="300" stroke="var(--text-dim,#64748b)" stroke-width="1" stroke-dasharray="4,4"/>
+
+    <!-- Classical side: 3 boxes -->
+    <rect x="30" y="50" width="160" height="80" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--text-secondary,#94a3b8)" stroke-width="1"/>
+    <text x="110" y="78" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">1. Identify</text>
+    <text x="110" y="93" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Developer intuition</text>
+    <text x="110" y="106" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Code review feedback</text>
+    <text x="110" y="119" text-anchor="middle" font-size="7" fill="var(--rose,#f43f5e)">Slow, subjective</text>
+
+    <rect x="220" y="50" width="160" height="80" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--text-secondary,#94a3b8)" stroke-width="1"/>
+    <text x="300" y="78" text-anchor="middle" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">2. Plan & Execute</text>
+    <text x="300" y="93" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Fowler's catalog</text>
+    <text x="300" y="106" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">IDE refactorings</text>
+    <text x="300" y="119" text-anchor="middle" font-size="7" fill="var(--yellow,#eab308)">Manual, error-prone</text>
+
+    <rect x="30" y="155" width="350" height="40" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--rose,#f43f5e)" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="205" y="178" text-anchor="middle" font-size="9" fill="var(--rose,#f43f5e)">Pain: "We'll refactor when we have time" → never happens</text>
+
+    <!-- Arrow from classical to AI -->
+    <text x="400" y="175" text-anchor="middle" font-size="16" fill="var(--text-dim,#64748b)">→</text>
+
+    <!-- AI-augmented side: 4 boxes in a pipeline -->
+    <rect x="420" y="42" width="170" height="56" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1.2"/>
+    <circle cx="444" cy="62" r="9" fill="none" stroke="var(--cyan,#22d3ee)" stroke-width="1.5"/>
+    <text x="444" y="66" text-anchor="middle" font-size="9" fill="var(--cyan,#22d3ee)" font-weight="700">D</text>
+    <text x="520" y="64" text-anchor="middle" font-size="9.5" fill="var(--text-primary,#e2e8f0)" font-weight="600">Detect</text>
+    <text x="520" y="78" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">AI hotspot analysis</text>
+    <text x="520" y="89" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">git history + complexity</text>
+
+    <rect x="610" y="42" width="170" height="56" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--purple,#a78bfa)" stroke-width="1.2"/>
+    <circle cx="634" cy="62" r="9" fill="none" stroke="var(--purple,#a78bfa)" stroke-width="1.5"/>
+    <text x="634" y="66" text-anchor="middle" font-size="9" fill="var(--purple,#a78bfa)" font-weight="700">P</text>
+    <text x="710" y="64" text-anchor="middle" font-size="9.5" fill="var(--text-primary,#e2e8f0)" font-weight="600">Propose</text>
+    <text x="710" y="78" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Fowler pattern match</text>
+    <text x="710" y="89" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">AI generates plan</text>
+
+    <rect x="420" y="115" width="170" height="56" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--orange,#f97316)" stroke-width="1.2"/>
+    <circle cx="444" cy="135" r="9" fill="none" stroke="var(--orange,#f97316)" stroke-width="1.5"/>
+    <text x="444" y="139" text-anchor="middle" font-size="9" fill="var(--orange,#f97316)" font-weight="700">T</text>
+    <text x="520" y="137" text-anchor="middle" font-size="9.5" fill="var(--text-primary,#e2e8f0)" font-weight="600">Test</text>
+    <text x="520" y="151" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">AI characterization tests</text>
+    <text x="520" y="162" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">safety net before change</text>
+
+    <rect x="610" y="115" width="170" height="56" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="1.2"/>
+    <circle cx="634" cy="135" r="9" fill="none" stroke="var(--green,#10b981)" stroke-width="1.5"/>
+    <text x="634" y="139" text-anchor="middle" font-size="9" fill="var(--green,#10b981)" font-weight="700">E</text>
+    <text x="710" y="137" text-anchor="middle" font-size="9.5" fill="var(--text-primary,#e2e8f0)" font-weight="600">Execute</text>
+    <text x="710" y="151" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">AI applies refactoring</text>
+    <text x="710" y="162" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">human reviews diff</text>
+
+    <!-- Pipeline arrows -->
+    <line x1="590" y1="70" x2="608" y2="70" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#arrowhead)"/>
+    <line x1="505" y1="100" x2="505" y2="113" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#arrowhead)"/>
+    <line x1="590" y1="143" x2="608" y2="143" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#arrowhead)"/>
+
+    <!-- Human-in-the-loop callout -->
+    <rect x="440" y="192" width="340" height="44" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="610" y="211" text-anchor="middle" font-size="9" fill="var(--green,#10b981)" font-weight="600">HUMAN IN THE LOOP AT EVERY STAGE</text>
+    <text x="610" y="226" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Approve priorities · Review plans · Validate tests · Accept diffs</text>
+
+    <!-- Key insight bottom -->
+    <rect x="80" y="256" width="640" height="48" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="400" y="277" text-anchor="middle" font-size="10" fill="var(--cyan,#22d3ee)" font-weight="600">KEY SHIFT: From "refactor when you have time" to "AI continuously detects,</text>
+    <text x="400" y="293" text-anchor="middle" font-size="10" fill="var(--text-secondary,#94a3b8)">proposes, and tests — humans approve and steer the sequence"</text>
+
+    <defs>
+      <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="var(--text-dim,#64748b)"/>
+      </marker>
+    </defs>
+  </svg>
+</div>
+
+
+<!-- ─── §02 CLASSICAL FOUNDATION ─── -->
+<h2><span class="num">02</span> Classical Foundation — Source Books</h2>
+
+<p>
+Four books form the intellectual backbone of modern refactoring practice. Each addresses a different dimension: Fowler gives you the <em>vocabulary</em>, Feathers gives you the <em>safety techniques</em>, Beck gives you the <em>timing philosophy</em>, and Tornhill gives you the <em>forensic evidence</em>. Together, they form a complete refactoring toolkit that AI extends but never replaces.
+</p>
+<p class="cn-note">
+四本书构成现代重构实践的知识骨架。Fowler提供词汇表，Feathers提供安全技术，Beck提供时机哲学，Tornhill提供取证证据。它们共同构成完整的重构工具包——AI扩展但永远不会取代。
+</p>
+
+<div class="bookshelf">
+  <div class="book-card tier1">
+    <div class="book-title">Refactoring, 2nd Edition</div>
+    <div class="book-author">Martin Fowler · 2018</div>
+    <div class="book-desc">The canonical catalog of refactoring patterns. Extract Method, Move Field, Replace Conditional with Polymorphism — each with mechanical steps that are precise enough for an AI agent to execute. Fowler's key insight: refactoring is not rewriting; it's a sequence of behavior-preserving transformations.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · THE CATALOG</span>
+  </div>
+  <div class="book-card tier1">
+    <div class="book-title">Working Effectively with Legacy Code</div>
+    <div class="book-author">Michael Feathers · 2004</div>
+    <div class="book-desc">The survival guide for code without tests. Feathers' "seams" concept — points where you can alter behavior without editing production code — is the key to making untestable code testable. His characterization tests capture current behavior as a safety net before any change.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · LEGACY SAFETY</span>
+  </div>
+  <div class="book-card tier2">
+    <div class="book-title">Tidy First?</div>
+    <div class="book-author">Kent Beck · 2023</div>
+    <div class="book-desc">Beck's answer to "when do I refactor?" is elegantly simple: tidy first, then change behavior. Small structural tidyings — guard clauses, extract helpers, normalize symmetries — before each feature. This micro-refactoring philosophy maps perfectly to AI-proposed pre-change cleanups.</div>
+    <span class="book-tag tag-practice">PRACTICE · TIMING</span>
+  </div>
+  <div class="book-card tier2">
+    <div class="book-title">Your Code as a Crime Scene</div>
+    <div class="book-author">Adam Tornhill · 2015</div>
+    <div class="book-desc">Forensic analysis of codebases using git history. Hotspot detection: files with high change frequency AND high complexity are your top refactoring targets. Temporal coupling analysis reveals hidden dependencies. The data-driven approach turns "I think this file is bad" into "the evidence shows this file costs us."</div>
+    <span class="book-tag tag-practice">PRACTICE · FORENSICS</span>
+  </div>
+</div>
+
+<p>
+What connects these four books is a shared recognition that refactoring is not a luxury — it is an economic decision. Fowler frames it as paying down design debt. Feathers frames it as making change possible. Beck frames it as an investment that pays off immediately (the next feature is cheaper). Tornhill frames it as risk reduction backed by data. The AI era amplifies each of these frames: AI makes identification cheaper (Tornhill), safety cheaper (Feathers), timing clearer (Beck), and execution faster (Fowler). The human role shifts from execution to judgment — deciding <em>which</em> refactoring to approve, <em>how far</em> to go, and <em>when</em> to stop.
+</p>
+<p class="cn-note">
+四本书的共同认知：重构不是奢侈品，而是经济决策。Fowler视其为偿还设计债务，Feathers视其为使变更成为可能，Beck视其为立即回报的投资，Tornhill视其为数据支撑的风险降低。AI时代放大了每一个维度——人类角色从执行转向判断。
+</p>
+
+
+<!-- ─── §03 AI CO-EVOLUTION ─── -->
+<h2><span class="num">03</span> AI Co-Evolution — Four Angles</h2>
+
+<p>
+Each angle below takes one classical refactoring principle and extends it with an AI capability that was not possible five years ago. The pattern is always the same: the classical principle provides the <em>what</em> and <em>why</em>; AI provides the <em>how fast</em> and <em>how safely</em>.
+</p>
+<p class="cn-note">
+以下每个角度取一个经典重构原则，并用五年前不可能的AI能力加以扩展。模式始终相同：经典原则提供"做什么"和"为什么"；AI提供"多快"和"多安全"。
+</p>
+
+<!-- ANGLE A -->
+<h3>Angle A · AI-Powered Hotspot Detection — AI驱动的热点检测</h3>
+
+<p>
+<strong>Classical principle:</strong> Tornhill's behavioral code analysis mines git history to find "hotspots" — files that change frequently AND have high complexity. These are the files where bugs cluster, where onboarding takes longest, and where refactoring has the highest ROI. The key metric is <em>change frequency × cyclomatic complexity</em>.
+</p>
+
+<p>
+<strong>AI extension:</strong> Traditional hotspot detection uses static metrics. AI adds a semantic layer: it can read each commit message, understand the <em>intent</em> of changes, and classify whether changes are bug fixes, features, or refactoring. This means AI can distinguish a file that changes often because it's a healthy extension point from a file that changes often because it's a maintenance nightmare. Furthermore, AI can correlate hotspots with incident reports, on-call pages, and deployment rollbacks — producing a prioritized refactoring backlog ranked by actual business impact, not just code metrics.
+</p>
+
+<p>
+<strong>Concrete example:</strong> A nightly CI job runs <code>git log --numstat</code> over the past 90 days, feeds the output to an AI agent along with complexity metrics from SonarQube, and produces a ranked "Refactoring Backlog" in the project wiki. Each entry includes: file path, hotspot score, classification (bug-magnet / coupling-hub / complexity-trap), suggested Fowler refactoring patterns, and estimated risk. The team reviews this list every sprint planning — turning "we should refactor sometime" into "here's the data-driven priority list."
+</p>
+<p class="cn-note">
+经典原则：Tornhill的行为代码分析挖掘git历史找到"热点"——变更频繁且复杂度高的文件。AI延伸：AI添加语义层——理解提交意图、区分健康扩展点与维护噩梦、关联事故报告产出按业务影响排序的重构待办列表。具体示例：夜间CI作业运行git log + SonarQube，AI生成排序的"重构待办列表"。
+</p>
+
+<!-- ANGLE B -->
+<h3>Angle B · AI-Generated Characterization Tests — AI生成的特征测试</h3>
+
+<p>
+<strong>Classical principle:</strong> Feathers' central insight is that before you can refactor legacy code, you need a safety net. His "characterization tests" capture the <em>current</em> behavior of code — not what it should do, but what it actually does. You write tests, observe the output, and pin it as the expected behavior. Only then is it safe to refactor.
+</p>
+
+<p>
+<strong>AI extension:</strong> Writing characterization tests manually is tedious and time-consuming — which is why it rarely gets done. AI changes this equation dramatically. An AI agent can read a legacy method, trace its dependencies, identify Feathers' "seams" (constructor injection points, interface boundaries, preprocessor seams), and generate a comprehensive characterization test suite in minutes. The AI doesn't need to understand the business intent — it only needs to capture current behavior, which is exactly what LLMs excel at: reading code and producing matching test assertions.
+</p>
+
+<div class="code-block" data-lang="Java — AI-Generated Characterization Test">
+<pre><span class="cm">// Legacy code: untested 300-line method in InvoiceCalculator</span>
+<span class="cm">// AI identifies the "object seam" (Feathers Ch.4): inject TaxService</span>
+
+<span class="cm">// ✓ AI-generated characterization test — pins current behavior</span>
+<span class="ann">@Test</span>
+<span class="kw">void</span> <span class="fn">characterize_calculateTotal_withChileanTax</span>() {
+    <span class="tp">TaxService</span> taxService = <span class="kw">new</span> <span class="tp">ChileanSIITaxService</span>();
+    <span class="tp">InvoiceCalculator</span> calc = <span class="kw">new</span> <span class="tp">InvoiceCalculator</span>(taxService);
+
+    <span class="tp">Invoice</span> invoice = <span class="fn">buildTestInvoice</span>(
+        <span class="fn">lineItem</span>(<span class="str">"Widget"</span>, <span class="str">100</span>, <span class="str">3</span>),   <span class="cm">// qty=3, price=100</span>
+        <span class="fn">lineItem</span>(<span class="str">"Gadget"</span>, <span class="str">250</span>, <span class="str">1</span>)    <span class="cm">// qty=1, price=250</span>
+    );
+
+    <span class="tp">InvoiceResult</span> result = calc.<span class="fn">calculateTotal</span>(invoice);
+
+    <span class="cm">// Pinned from actual execution — NOT from requirements</span>
+    assertThat(result.<span class="fn">getSubtotal</span>()).isEqualTo(<span class="str">550.00</span>);
+    assertThat(result.<span class="fn">getTaxAmount</span>()).isEqualTo(<span class="str">104.50</span>);  <span class="cm">// 19% IVA</span>
+    assertThat(result.<span class="fn">getTotal</span>()).isEqualTo(<span class="str">654.50</span>);
+}
+
+<span class="cm">// AI generates 15-20 such tests covering edge cases:</span>
+<span class="cm">// empty invoice, zero-quantity lines, rounding boundaries,</span>
+<span class="cm">// exempt items, multi-currency — all pinned from actual output</span></pre>
+</div>
+<p class="cn-note">
+经典原则：Feathers的核心洞察——重构前需要安全网，特征测试捕获代码当前行为。AI延伸：AI读取遗留方法、识别"缝隙"（构造函数注入、接口边界）、在几分钟内生成全面的特征测试套件。AI不需要理解业务意图——只需捕获当前行为。
+</p>
+
+<!-- ANGLE C -->
+<h3>Angle C · Strangler Fig Accelerated by AI — AI加速的绞杀者模式</h3>
+
+<p>
+<strong>Classical principle:</strong> Fowler's Strangler Fig pattern (named after the tropical tree that gradually envelops its host) is the safest approach to large-scale legacy migration. Instead of a Big Bang rewrite, you route new functionality through a new system while the old system gradually loses responsibilities. The pattern requires a routing layer (façade) that decides which system handles each request.
+</p>
+
+<p>
+<strong>AI extension:</strong> The Strangler Fig pattern is safe but slow — each migration step requires understanding both the old and new system's behavior. AI accelerates every step: (1) AI reads legacy code and generates a behavioral specification of the module being strangled; (2) AI scaffolds the new implementation from that spec, following the project's current conventions (read from <code>.ai/conventions.md</code>); (3) AI generates comparison tests that verify old and new produce identical output for the same input; (4) AI monitors the routing layer in production to detect behavioral divergence. What used to take a team three months per module can now take three weeks — with higher confidence.
+</p>
+
+<p>
+<strong>Concrete example:</strong> Migrating a legacy invoice formatting module from a monolithic Java service to a new bounded context. AI reads the old <code>InvoiceFormatter.java</code> (2,400 lines), generates a behavioral spec documenting all formatting rules, scaffolds a new <code>InvoiceFormattingService</code> following hexagonal architecture conventions, and produces a shadow-mode comparison test suite that runs both old and new in parallel, asserting byte-for-byte PDF output identity.
+</p>
+<p class="cn-note">
+经典原则：Fowler的绞杀者模式——用新系统逐步替代旧系统，而非大爆炸式重写。AI延伸：AI加速每一步——生成行为规范、按项目约定搭建新实现、生成对比测试、监控路由层检测行为偏差。过去团队三个月/模块的工作现在可以三周完成。
+</p>
+
+<!-- ANGLE D -->
+<h3>Angle D · Continuous Refactoring Signals in CI/CD — CI/CD中的持续重构信号</h3>
+
+<p>
+<strong>Classical principle:</strong> Fowler advocates for "continuous refactoring" — refactoring as part of every development task, not a separate phase. Beck's "tidy first" crystallizes this: before you add a feature, tidy the code you're about to touch. The problem is that without signals, developers forget. The refactoring intention decays under delivery pressure.
+</p>
+
+<p>
+<strong>AI extension:</strong> CI/CD pipelines can now embed AI-powered "refactoring signal" checks. On every PR, an AI agent: (1) runs hotspot analysis on the files touched by the PR; (2) checks if any touched file is on the "refactoring backlog"; (3) if so, suggests a "tidy first" refactoring that should precede the feature change; (4) estimates the cost of <em>not</em> refactoring (increased complexity, coupling, future bug probability). This turns Beck's philosophy into a concrete, automated nudge. The AI doesn't block the PR — it informs the developer and the reviewer, making the refactoring-vs-ship trade-off explicit and data-backed.
+</p>
+
+<div class="evolution-steps">
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--text-dim)">Level 1 — No Refactoring Culture</div>
+    <div class="evo-step-desc">"We'll refactor when we have time." Tech debt accumulates silently. No visibility into what's degrading.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--text-secondary)">Level 2 — Periodic Tech Debt Sprints</div>
+    <div class="evo-step-desc">Quarterly "cleanup sprints." Some improvement, but targets are chosen by gut feel. Gains erode quickly.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--cyan-dim)">Level 3 — SonarQube Gates</div>
+    <div class="evo-step-desc">Static analysis blocks new code smells. Prevents degradation but doesn't improve existing code.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--purple)">Level 4 — Data-Driven Hotspots (Tornhill)</div>
+    <div class="evo-step-desc">Git-history analysis identifies top hotspots. Team tackles highest-ROI files first. Progress is measurable.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--cyan)">Level 5 — AI Refactoring Signals (2025→)</div>
+    <div class="evo-step-desc">Every PR gets an AI "tidy first" suggestion on touched hotspot files. Refactoring cost/benefit is explicit. Developers are nudged, not blocked.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--green)">Level 6 — Autonomous Refactoring PRs (2026→)</div>
+    <div class="evo-step-desc">AI opens refactoring PRs with characterization tests, diff, and impact analysis. Human reviews and merges. Refactoring becomes continuous, not episodic.</div>
+  </div>
+</div>
+<p class="cn-note">
+经典原则：Fowler倡导"持续重构"——Beck的"先整理"将其具体化。问题是没有信号，开发者就会遗忘。AI延伸：CI/CD管道嵌入AI重构信号——每个PR的AI代理分析触及的文件、检查是否在重构待办列表中、建议"先整理"重构、估算不重构的成本。将Beck的哲学变成具体的、自动化的提示。
+</p>
+
+
+<!-- ─── §04 DECISION TABLE ─── -->
+<h2><span class="num">04</span> Decision Table — When to Apply What</h2>
+
+<p>
+For the practicing architect, the question is always: "Given this refactoring scenario, what's the classical approach and how does AI change the equation?" This table maps common refactoring scenarios to both approaches.
+</p>
+<p class="cn-note">
+决策表将常见重构场景映射到经典方法和AI增强方法，展示AI如何改变等式。
+</p>
+
+<table class="decision-table">
+  <thead>
+    <tr>
+      <th class="col-scenario">Scenario 场景</th>
+      <th class="col-classic"><span class="classic-badge">CLASSIC</span> Classical Approach</th>
+      <th class="col-ai"><span class="ai-badge">AI+</span> AI-Augmented Approach</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="col-scenario">Legacy Hotspot<br><small style="color:var(--text-dim)">遗留代码热点</small></td>
+      <td>Tornhill's git-log analysis. Manual complexity scoring. Team votes on priority.</td>
+      <td>AI correlates git churn + complexity + incident data. Produces ranked backlog with business-impact scores. Updated nightly.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Safety Net<br><small style="color:var(--text-dim)">安全网构建</small></td>
+      <td>Feathers' characterization tests. Developer manually writes tests to pin behavior. Time-consuming.</td>
+      <td>AI generates characterization test suite from code analysis. Identifies seams automatically. 15-20 tests in minutes vs. hours.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">God Class<br><small style="color:var(--text-dim)">上帝类分解</small></td>
+      <td>Fowler's Extract Class. Identify responsibility clusters manually. Split over multiple PRs.</td>
+      <td>AI clusters methods by cohesion (semantic + data flow analysis). Proposes Extract Class plan with dependency graph. Generates tests for each extracted class.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Strangler Fig Migration<br><small style="color:var(--text-dim)">绞杀者模式迁移</small></td>
+      <td>Manual behavioral analysis of legacy module. New implementation from scratch. Integration tests compare old/new.</td>
+      <td>AI generates behavioral spec from legacy code. Scaffolds new module from spec + <code>.ai/</code> conventions. Auto-generates shadow comparison tests.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Timing Decision<br><small style="color:var(--text-dim)">重构时机</small></td>
+      <td>Beck's "tidy first" philosophy. Developer judgment on whether to tidy before feature work.</td>
+      <td>AI flags in PR review: "This file is hotspot #3. Suggested tidy-first: extract guard clauses (est. 20 min). Cost of skip: +15% complexity."</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Tech Debt Tracking<br><small style="color:var(--text-dim)">技术债追踪</small></td>
+      <td>SonarQube debt metrics. Manual Jira tickets. Often stale and ignored.</td>
+      <td>AI maintains living debt inventory — auto-linked to hotspot data, incident history, and upcoming feature roadmap. Suggests optimal refactoring windows.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Feature Flag Cleanup<br><small style="color:var(--text-dim)">特性开关清理</small></td>
+      <td>Developer remembers to remove flag after rollout. Often forgotten — "flag debt" accumulates.</td>
+      <td>AI detects flags where all branches resolve to same path (100% rollout). Opens cleanup PR with dead-code removal and test updates.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">API Evolution<br><small style="color:var(--text-dim)">API演进</small></td>
+      <td>Fowler's Parallel Change (Expand-Contract). Manual deprecation and migration guide.</td>
+      <td>AI scans all callers of deprecated endpoint. Generates per-caller migration PR. Tracks adoption rate. Alerts when safe to remove old version.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- ─── §05 PRACTICAL CHECKLIST ─── -->
+<h2><span class="num">05</span> Practical Checklist — Building Your AI-Augmented Refactoring Practice</h2>
+
+<p>
+To move from ad-hoc refactoring to a continuous, AI-augmented practice, follow this staged checklist. Each item builds on the previous — don't skip stages.
+</p>
+<p class="cn-note">
+从临时性重构迈向持续的AI增强实践的分阶段检查清单。每项构建在前一项之上，不要跳过阶段。
+</p>
+
+<div class="checklist">
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Establish refactoring vocabulary — team reads Fowler Ch. 1-4
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Add SonarQube quality gate — block PRs introducing new code smells
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Run first hotspot analysis (git log + complexity) on top 3 repos
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Adopt "tidy first" as team norm — refactor touched files before feature work
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Write characterization tests for top 5 hotspot files (manually)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    Automate nightly hotspot report with AI-powered classification
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    Use AI to generate characterization tests for next 20 hotspot files
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    Document refactoring patterns in <code>.ai/refactoring-playbook.md</code>
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Add AI "tidy first" nudge to PR review pipeline
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Pilot Strangler Fig + AI on one legacy module — full D-P-T-E cycle
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    Enable AI-generated refactoring PRs with auto-tests and impact analysis
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    Track refactoring ROI: hotspot score delta, incident rate, code churn reduction
+  </div>
+</div>
+
+
+<!-- ─── §06 TAKEAWAY ─── -->
+<h2><span class="num">06</span> The Architect's Takeaway</h2>
+
+<p>
+The four books on this article's shelf — Fowler, Feathers, Beck, Tornhill — gave us everything we need to refactor well. What they couldn't give us was the capacity to refactor <em>continuously</em> at scale. AI fills that gap. It detects hotspots before humans notice them, generates safety nets for code that no one dared to touch, accelerates migration patterns that used to take quarters, and embeds refactoring awareness into the daily PR flow.
+</p>
+<p class="cn-note">
+四本书给了我们重构所需的一切。它们无法给予的是大规模持续重构的能力。AI填补了这一空白——在人类注意到之前检测热点、为无人敢碰的代码生成安全网、加速需要数季度的迁移模式、将重构意识嵌入日常PR流程。
+</p>
+
+<p>
+But the architect's judgment remains the irreducible core. AI can tell you that <code>InvoiceCalculator.java</code> is hotspot #1 with 47 commits in 90 days and cyclomatic complexity of 83. It cannot tell you whether now — mid-sprint, pre-launch — is the right moment to refactor it. It cannot weigh the organizational cost of a multi-week migration against the opportunity cost of shipping a new feature. That calculus is human, contextual, and political. The architect who masters both the classical refactoring discipline and the AI-augmented workflow doesn't just write better code — they lead teams that continuously improve their codebase as a strategic asset.
+</p>
+<p class="cn-note">
+但架构师的判断力仍然是不可还原的核心。AI能告诉你某文件是热点#1，它无法告诉你在冲刺中期、发布前夜是否是重构的正确时机。掌握经典重构纪律和AI增强工作流的架构师不仅写出更好的代码——他们带领团队持续改善代码库，使其成为战略资产。
+</p>
+
+<div class="insight-box" style="margin-top:40px;">
+  <div class="label">Next in Series → Article 0.3</div>
+  <p style="margin:0; font-size:14px; line-height:1.6">
+    <strong>Testing Strategies for Human + AI Codebases</strong> — When AI generates code, who tests it? How TDD by Example, Growing Object-Oriented Software, and modern mutation testing converge to build trust in AI-generated code through coverage, invariants, and contract verification.
+    <br><span style="color:var(--text-dim); font-style:italic; font-family:'Noto Serif SC',serif;">下一篇：人机混合代码库的测试策略——当AI生成代码，谁来测试？</span>
+  </p>
+</div>
+
+</main>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="article-footer">
+  <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim)">
+    Software Knowledge Base · Layer 0: Code Craft · Article 0.2 of 20<br>
+    Classical Foundations × AI Co-Evolution · 经典基础 × AI协同进化
+  </div>
+  <div class="nav-links">
+    <a class="nav-link" href="./0.1-craft-spectrum.html">← Prev: 0.1 The Craft Spectrum</a>
+    <a class="nav-link" href="./0.3-testing-strategies.html">Next: 0.3 Testing Strategies →</a>
+  </div>
+</footer>
+
+</body>
+</html>

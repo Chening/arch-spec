@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>0.4 The Developer's New Toolkit — From IDE to AI-Augmented Workbench</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<!--
+  CSS Architecture Note:
+  The canonical design system lives in templates/article-base.css.
+  For single-file distribution, it is inlined here.
+  When editing styles, update article-base.css first, then re-inline.
+-->
+<style>
+/* ═══ INLINED FROM templates/article-base.css ═══ */
+:root {
+  --bg-deep: #0a0e17;
+  --bg-surface: #0f1420;
+  --bg-card: #141b2d;
+  --bg-card-hover: #1a2340;
+  --border: #1e2a45;
+  --border-accent: #2d4a7a;
+  --cyan: #22d3ee;
+  --cyan-dim: #0e7490;
+  --cyan-glow: rgba(34, 211, 238, 0.15);
+  --purple: #a78bfa;
+  --purple-dim: #6d5dbb;
+  --purple-glow: rgba(167, 139, 250, 0.12);
+  --orange: #f97316;
+  --orange-glow: rgba(249, 115, 22, 0.12);
+  --green: #10b981;
+  --green-glow: rgba(16, 185, 129, 0.12);
+  --rose: #f43f5e;
+  --rose-glow: rgba(244, 63, 94, 0.12);
+  --yellow: #eab308;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg-deep); color:var(--text-primary); font-family:'IBM Plex Sans',sans-serif; line-height:1.75; font-size:16px; -webkit-font-smoothing:antialiased; }
+.article-header { position:relative; padding:80px 0 60px; overflow:hidden; border-bottom:1px solid var(--border); }
+.article-header::before { content:''; position:absolute; top:0;left:0;right:0;bottom:0; background:radial-gradient(ellipse 800px 400px at 20% 50%,rgba(34,211,238,0.06),transparent),radial-gradient(ellipse 600px 300px at 80% 30%,rgba(167,139,250,0.04),transparent); }
+.header-content { position:relative; max-width:860px; margin:0 auto; padding:0 32px; }
+.series-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--cyan); border:1px solid var(--cyan-dim); padding:4px 12px; border-radius:3px; margin-bottom:20px; background:var(--cyan-glow); }
+.article-title { font-family:'JetBrains Mono',monospace; font-size:36px; font-weight:700; line-height:1.25; color:var(--text-primary); margin-bottom:8px; }
+.article-title-cn { font-family:'Noto Serif SC',serif; font-size:20px; font-weight:400; color:var(--text-dim); font-style:italic; margin-bottom:24px; }
+.article-meta { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-dim); display:flex; gap:24px; flex-wrap:wrap; }
+.meta-item { display:flex; align-items:center; gap:6px; }
+.meta-dot { width:6px; height:6px; border-radius:50%; }
+.article-body { max-width:860px; margin:0 auto; padding:48px 32px; }
+h2 { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:var(--cyan); margin:56px 0 8px; padding-bottom:12px; border-bottom:1px solid var(--border); letter-spacing:-0.5px; }
+.article-body > h2:first-child { margin-top:0; }
+h2 .num { color:var(--text-dim); font-weight:400; margin-right:8px; }
+h3 { font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; color:var(--purple); margin:36px 0 12px; }
+p { margin-bottom:18px; color:var(--text-primary); font-size:15.5px; }
+.cn-note { font-family:'Noto Serif SC',serif; font-style:italic; color:var(--text-dim); font-size:14px; line-height:1.8; margin:-8px 0 24px; padding-left:16px; border-left:2px solid var(--border); }
+code { font-family:'JetBrains Mono',monospace; font-size:0.88em; background:rgba(34,211,238,0.08); padding:2px 6px; border-radius:3px; color:var(--cyan); }
+.diagram-container { margin:40px -16px; padding:32px 24px; background:var(--bg-surface); border:1px solid var(--border); border-radius:8px; position:relative; overflow-x:auto; }
+.diagram-container::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--cyan),var(--purple),var(--orange)); }
+.diagram-label { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:20px; }
+.diagram-sublabel { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-dim); margin-top:-16px; margin-bottom:16px; font-style:italic; }
+.bookshelf { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin:24px 0; align-items:stretch; }
+.book-card { background:var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:16px; transition:all 0.25s ease; position:relative; overflow:hidden; min-height:190px; display:flex; flex-direction:column; }
+.book-card::before { content:''; position:absolute; left:0;top:0;bottom:0; width:3px; }
+.book-card.tier1::before { background:var(--cyan); }
+.book-card.tier2::before { background:var(--purple); }
+.book-card:hover { border-color:var(--border-accent); background:var(--bg-card-hover); transform:translateY(-2px); }
+.book-title { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:4px; line-height:1.4; }
+.book-author { font-size:11px; color:var(--text-dim); }
+.book-desc { font-size:12px; color:var(--text-secondary); margin-top:8px; line-height:1.5; flex:1; }
+.book-tag { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:2px 6px; border-radius:3px; margin-top:8px; letter-spacing:0.5px; }
+.tag-foundation { background:rgba(34,211,238,0.1); color:var(--cyan); border:1px solid rgba(34,211,238,0.2); }
+.tag-practice { background:rgba(167,139,250,0.1); color:var(--purple); border:1px solid rgba(167,139,250,0.2); }
+.decision-table { width:100%; border-collapse:collapse; margin:24px 0; font-size:13px; }
+.decision-table th { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; text-align:left; padding:12px 16px; border-bottom:2px solid var(--border-accent); color:var(--text-secondary); background:var(--bg-surface); }
+.decision-table td { padding:12px 16px; border-bottom:1px solid var(--border); color:var(--text-primary); vertical-align:top; line-height:1.5; }
+.decision-table tr:hover td { background:rgba(34,211,238,0.03); }
+.decision-table .col-scenario { width:22%; font-weight:500; color:var(--text-secondary); }
+.decision-table .col-classic { width:39%; }
+.decision-table .col-ai { width:39%; }
+.classic-badge,.ai-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:1px 5px; border-radius:2px; margin-right:4px; vertical-align:middle; }
+.classic-badge { background:rgba(148,163,184,0.15); color:var(--text-secondary); }
+.ai-badge { background:rgba(34,211,238,0.12); color:var(--cyan); }
+.checklist { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:24px 0; }
+.check-item { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:5px; font-size:13px; color:var(--text-primary); line-height:1.4; transition:border-color 0.2s; }
+.check-item:hover { border-color:var(--border-accent); }
+.check-stage { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:600; padding:2px 7px; border-radius:3px; white-space:nowrap; flex-shrink:0; }
+.insight-box { margin:32px 0; padding:24px; background:linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04)); border:1px solid var(--border-accent); border-radius:8px; position:relative; }
+.insight-box::before { content:'⚡'; position:absolute; top:-12px; left:20px; background:var(--bg-deep); padding:0 8px; font-size:18px; }
+.insight-box .label { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--cyan); margin-bottom:8px; }
+.code-block { background:#0d1117; border:1px solid var(--border); border-radius:6px; padding:20px; margin:20px 0; overflow-x:auto; position:relative; }
+.code-block::before { content:attr(data-lang); position:absolute; top:8px; right:12px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-dim); letter-spacing:0.5px; }
+.code-block pre { font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.6; color:var(--text-secondary); }
+.code-block .kw { color:var(--purple); }
+.code-block .fn { color:var(--cyan); }
+.code-block .str { color:var(--green); }
+.code-block .cm { color:var(--text-dim); font-style:italic; }
+.code-block .ann { color:var(--orange); }
+.code-block .tp { color:var(--yellow); }
+.evolution-steps { position:relative; padding-left:32px; margin:28px 0; }
+.evolution-steps::before { content:''; position:absolute; left:11px; top:8px; bottom:8px; width:2px; background:linear-gradient(to bottom,var(--cyan),var(--purple),var(--orange)); }
+.evo-step { position:relative; margin-bottom:24px; padding-left:20px; }
+.evo-step::before { content:''; position:absolute; left:-25px; top:8px; width:10px; height:10px; border-radius:50%; border:2px solid; }
+.evo-step:nth-child(1)::before { border-color:var(--text-dim); background:var(--bg-deep); }
+.evo-step:nth-child(2)::before { border-color:var(--text-secondary); background:var(--bg-deep); }
+.evo-step:nth-child(3)::before { border-color:var(--cyan-dim); background:var(--bg-deep); }
+.evo-step:nth-child(4)::before { border-color:var(--purple); background:var(--bg-deep); }
+.evo-step:nth-child(5)::before { border-color:var(--cyan); background:var(--cyan); }
+.evo-step:nth-child(6)::before { border-color:var(--green); background:var(--green); }
+.evo-step-title { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; margin-bottom:4px; }
+.evo-step-desc { font-size:13.5px; color:var(--text-secondary); line-height:1.6; }
+.article-footer { max-width:860px; margin:0 auto; padding:40px 32px; border-top:1px solid var(--border); font-size:12px; color:var(--text-dim); }
+.nav-links { display:flex; justify-content:space-between; align-items:center; margin-top:20px; }
+.nav-link { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--cyan); text-decoration:none; padding:8px 16px; border:1px solid var(--border); border-radius:4px; transition:all 0.2s; }
+.nav-link:hover { border-color:var(--cyan); background:var(--cyan-glow); }
+@media (max-width:640px) {
+  .article-title { font-size:24px; }
+  .bookshelf { grid-template-columns:1fr; }
+  .checklist { grid-template-columns:1fr; }
+  .article-meta { flex-direction:column; gap:8px; }
+}
+@media print {
+  :root { --bg-deep:#fff; --bg-surface:#f8f9fa; --bg-card:#f1f3f5; --bg-card-hover:#f1f3f5; --border:#dee2e6; --border-accent:#adb5bd; --text-primary:#212529; --text-secondary:#495057; --text-dim:#868e96; --cyan:#0c8599; --purple:#7048e8; --orange:#e8590c; --green:#099268; --rose:#e03131; --yellow:#e67700; }
+  body { font-size:11pt; line-height:1.5; }
+  .article-header::before { display:none; }
+  .article-header { padding:24px 0; }
+  .diagram-container::before { display:none; }
+  .book-card:hover { transform:none; }
+  .nav-links { display:none; }
+  .code-block { border:1px solid #dee2e6; background:#f8f9fa; }
+  .code-block pre { color:#212529; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header class="article-header">
+  <div class="header-content">
+    <div class="series-badge">Layer 0 · Code Craft · 代码工艺层</div>
+    <h1 class="article-title">The Developer's New Toolkit</h1>
+    <div class="article-title-cn">开发者新工具箱：从IDE到AI增强工作台</div>
+    <div class="article-meta">
+      <span class="meta-item"><span class="meta-dot" style="background:var(--cyan)"></span> Article 0.4 of 20</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--purple)"></span> ~16 min read</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--orange)"></span> 4 Source Books × 4 AI Angles</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════ BODY ═══════════════ -->
+<main class="article-body">
+
+<!-- ─── §01 CORE INSIGHT ─── -->
+<h2><span class="num">01</span> Core Insight — The Thesis</h2>
+
+<p>
+For fifty years, the developer's primary tool was the text editor — evolved through vi, Emacs, Visual Studio, IntelliJ, and VS Code, but fundamentally unchanged in purpose: a window into source files, augmented by syntax highlighting, autocomplete, and refactoring shortcuts. Hunt and Thomas captured this in <em>The Pragmatic Programmer</em>: "Use a single editor well." The tool was the editor. The workflow was manual. The developer was the sole agent.
+</p>
+<p class="cn-note">
+五十年来，开发者的核心工具始终是文本编辑器——从vi到VS Code不断演化，但本质不变：一个面向源文件的窗口，辅以语法高亮、自动补全和重构快捷键。Hunt和Thomas的忠告是"用好一个编辑器"。工具是编辑器，工作流是手动的，开发者是唯一的智能体。
+</p>
+
+<p>
+That era is ending. The developer's workbench is no longer just an editor — it is an <strong>AI-augmented orchestration surface</strong> where the IDE is one component among many. Model Context Protocol (MCP) connects the AI to databases, APIs, and CI/CD systems. Headless AI pipelines run code audits while developers sleep. GitLab and GitHub integrate AI across four distinct modes. The toolkit has become a system — and the developer's role has shifted from "sole operator" to "orchestrator of human and AI agents."
+</p>
+<p class="cn-note">
+这个时代正在终结。开发者的工作台不再只是编辑器——它是一个AI增强的编排平面，IDE只是其中一个组件。MCP将AI连接到数据库、API和CI/CD系统。无头AI管道在开发者睡觉时运行代码审计。开发者的角色从"独立操作者"转变为"人机智能体编排者"。
+</p>
+
+<div class="insight-box">
+  <div class="label">The Reframing 核心重构</div>
+  <p style="margin:0; font-size:15px; line-height:1.7">
+    <strong>Your IDE is no longer your toolkit — it's one instrument in an orchestra.</strong> The modern developer's workbench spans the IDE (interactive coding), MCP servers (universal tool access), headless AI pipelines (automated quality), and platform integrations (review, generate, audit, migrate). The discipline is no longer "master your editor" — it's "design your workbench architecture." And Brooks' law still applies: adding AI tools without managing the conceptual complexity makes things worse, not better.
+  </p>
+</div>
+<p class="cn-note">
+你的IDE不再是你的工具箱——它是管弦乐团中的一件乐器。现代开发者的工作台横跨IDE、MCP服务器、无头AI管道和平台集成。纪律不再是"精通编辑器"，而是"设计工作台架构"。Brooks定律依然适用：不管理概念复杂度就添加AI工具只会让事情更糟。
+</p>
+
+<!-- HERO DIAGRAM: THE AI-AUGMENTED DEVELOPER WORKBENCH -->
+<div class="diagram-container">
+  <div class="diagram-label">◆ Hero Diagram — The AI-Augmented Developer Workbench</div>
+  <svg viewBox="0 0 800 380" xmlns="http://www.w3.org/2000/svg" style="width:100%; font-family:'JetBrains Mono',monospace;">
+    <defs>
+      <linearGradient id="workbenchGrad" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="var(--text-dim,#64748b)"/>
+        <stop offset="33%" stop-color="var(--cyan-dim,#0e7490)"/>
+        <stop offset="66%" stop-color="var(--purple,#a78bfa)"/>
+        <stop offset="100%" stop-color="var(--cyan,#22d3ee)"/>
+      </linearGradient>
+      <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="var(--text-dim,#64748b)"/>
+      </marker>
+    </defs>
+
+    <!-- Vertical axis label -->
+    <text x="14" y="200" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)" transform="rotate(-90,14,200)" letter-spacing="1.5">ABSTRACTION LEVEL</text>
+    <!-- Vertical gradient bar -->
+    <rect x="26" y="30" width="4" height="320" rx="2" fill="url(#workbenchGrad)" opacity="0.5"/>
+
+    <!-- LAYER 4 — AI AGENT (top) -->
+    <rect x="60" y="20" width="720" height="60" rx="8" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1.5"/>
+    <text x="80" y="46" font-size="10" fill="var(--cyan,#22d3ee)" font-weight="700">LAYER 4</text>
+    <text x="145" y="46" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">AI Agent / Orchestrator</text>
+    <text x="80" y="64" font-size="8" fill="var(--text-dim,#64748b)">Claude Code, Copilot Workspace — reasons about intent, generates plans, coordinates tools</text>
+    <text x="670" y="46" font-size="8" fill="var(--cyan,#22d3ee)" font-weight="500">INTERACTIVE + HEADLESS</text>
+
+    <!-- Arrow down -->
+    <line x1="420" y1="82" x2="420" y2="98" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#arrowhead)"/>
+    <text x="440" y="94" font-size="7" fill="var(--text-dim,#64748b)">MCP Protocol</text>
+
+    <!-- LAYER 3 — MCP / TOOL CONNECTORS -->
+    <rect x="60" y="100" width="720" height="60" rx="8" fill="var(--bg-card,#141b2d)" stroke="var(--purple,#a78bfa)" stroke-width="1.2"/>
+    <text x="80" y="126" font-size="10" fill="var(--purple,#a78bfa)" font-weight="700">LAYER 3</text>
+    <text x="145" y="126" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">MCP Servers — Universal Tool Connectors</text>
+    <text x="80" y="144" font-size="8" fill="var(--text-dim,#64748b)">Standard protocol connecting AI to databases, APIs, file systems, CI/CD, issue trackers</text>
+    <text x="710" y="126" font-size="8" fill="var(--purple,#a78bfa)" font-weight="500">USB FOR AI</text>
+
+    <!-- Tool boxes inside Layer 3 -->
+    <rect x="80" y="108" width="80" height="16" rx="3" fill="var(--bg-card-hover,#1a2340)" stroke="var(--purple,#a78bfa)" stroke-width="0.5"/>
+    <text x="120" y="119" text-anchor="middle" font-size="7" fill="var(--purple,#a78bfa)">PostgreSQL</text>
+    <rect x="170" y="108" width="65" height="16" rx="3" fill="var(--bg-card-hover,#1a2340)" stroke="var(--purple,#a78bfa)" stroke-width="0.5"/>
+    <text x="202" y="119" text-anchor="middle" font-size="7" fill="var(--purple,#a78bfa)">GitLab</text>
+    <rect x="245" y="108" width="50" height="16" rx="3" fill="var(--bg-card-hover,#1a2340)" stroke="var(--purple,#a78bfa)" stroke-width="0.5"/>
+    <text x="270" y="119" text-anchor="middle" font-size="7" fill="var(--purple,#a78bfa)">Jira</text>
+    <rect x="305" y="108" width="65" height="16" rx="3" fill="var(--bg-card-hover,#1a2340)" stroke="var(--purple,#a78bfa)" stroke-width="0.5"/>
+    <text x="337" y="119" text-anchor="middle" font-size="7" fill="var(--purple,#a78bfa)">Grafana</text>
+    <rect x="380" y="108" width="50" height="16" rx="3" fill="var(--bg-card-hover,#1a2340)" stroke="var(--purple,#a78bfa)" stroke-width="0.5"/>
+    <text x="405" y="119" text-anchor="middle" font-size="7" fill="var(--purple,#a78bfa)">S3</text>
+    <rect x="440" y="108" width="80" height="16" rx="3" fill="var(--bg-card-hover,#1a2340)" stroke="var(--purple,#a78bfa)" stroke-width="0.5"/>
+    <text x="480" y="119" text-anchor="middle" font-size="7" fill="var(--purple,#a78bfa)">SonarQube</text>
+
+    <!-- Arrow down -->
+    <line x1="420" y1="162" x2="420" y2="178" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#arrowhead)"/>
+
+    <!-- LAYER 2 — PLATFORM INTEGRATIONS (4 modes) -->
+    <rect x="60" y="180" width="720" height="80" rx="8" fill="var(--bg-card,#141b2d)" stroke="var(--orange,#f97316)" stroke-width="1.2"/>
+    <text x="80" y="202" font-size="10" fill="var(--orange,#f97316)" font-weight="700">LAYER 2</text>
+    <text x="145" y="202" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">Platform Integration — 4 Modes</text>
+
+    <!-- 4 mode boxes -->
+    <rect x="80" y="214" width="155" height="36" rx="4" fill="var(--bg-card-hover,#1a2340)" stroke="var(--cyan,#22d3ee)" stroke-width="0.8"/>
+    <text x="157" y="229" text-anchor="middle" font-size="8.5" fill="var(--cyan,#22d3ee)" font-weight="600">REVIEW</text>
+    <text x="157" y="242" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">AI reviews PRs</text>
+
+    <rect x="248" y="214" width="155" height="36" rx="4" fill="var(--bg-card-hover,#1a2340)" stroke="var(--green,#10b981)" stroke-width="0.8"/>
+    <text x="325" y="229" text-anchor="middle" font-size="8.5" fill="var(--green,#10b981)" font-weight="600">GENERATE</text>
+    <text x="325" y="242" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">AI scaffolds from specs</text>
+
+    <rect x="416" y="214" width="155" height="36" rx="4" fill="var(--bg-card-hover,#1a2340)" stroke="var(--yellow,#eab308)" stroke-width="0.8"/>
+    <text x="493" y="229" text-anchor="middle" font-size="8.5" fill="var(--yellow,#eab308)" font-weight="600">AUDIT</text>
+    <text x="493" y="242" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Nightly quality scans</text>
+
+    <rect x="584" y="214" width="155" height="36" rx="4" fill="var(--bg-card-hover,#1a2340)" stroke="var(--purple,#a78bfa)" stroke-width="0.8"/>
+    <text x="661" y="229" text-anchor="middle" font-size="8.5" fill="var(--purple,#a78bfa)" font-weight="600">MIGRATE</text>
+    <text x="661" y="242" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Large-scale changes</text>
+
+    <!-- Arrow down -->
+    <line x1="420" y1="262" x2="420" y2="278" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#arrowhead)"/>
+
+    <!-- LAYER 1 — IDE (bottom) -->
+    <rect x="60" y="280" width="720" height="56" rx="8" fill="var(--bg-card,#141b2d)" stroke="var(--text-secondary,#94a3b8)" stroke-width="1"/>
+    <text x="80" y="306" font-size="10" fill="var(--text-secondary,#94a3b8)" font-weight="700">LAYER 1</text>
+    <text x="145" y="306" font-size="10" fill="var(--text-primary,#e2e8f0)" font-weight="600">IDE — The Interactive Surface</text>
+    <text x="80" y="324" font-size="8" fill="var(--text-dim,#64748b)">VS Code, IntelliJ, Cursor — syntax, refactoring, inline AI suggestions, terminal</text>
+    <text x="680" y="306" font-size="8" fill="var(--text-secondary,#94a3b8)" font-weight="500">STILL ESSENTIAL</text>
+
+    <!-- Key insight bottom -->
+    <rect x="100" y="348" width="600" height="24" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="400" y="364" text-anchor="middle" font-size="9" fill="var(--cyan,#22d3ee)" font-weight="600">THE WORKBENCH = IDE + MCP + Platform Modes + AI Agent — orchestrated, not ad hoc</text>
+  </svg>
+</div>
+
+
+<!-- ─── §02 CLASSICAL FOUNDATION ─── -->
+<h2><span class="num">02</span> Classical Foundation — Source Books</h2>
+
+<p>
+Four books frame the developer's relationship with tools — from the individual craftsman's workbench to the organizational infrastructure that makes engineering at scale possible. Hunt and Thomas teach us <em>how</em> to think about tools. Winters, Manshreck, and Wright show us <em>what happens</em> when tooling scales to thousands of engineers. Brooks warns us <em>what tools cannot solve</em>. And Forsgren, Humble, and Kim give us the <em>metrics</em> to know if our tools are actually helping.
+</p>
+<p class="cn-note">
+四本书定义了开发者与工具的关系——从个人工匠的工作台到使大规模工程成为可能的组织基础设施。Hunt和Thomas教我们如何思考工具，Winters等人展示工具在千人规模下的效果，Brooks警告工具无法解决的问题，Forsgren等人给出衡量工具是否真正有帮助的指标。
+</p>
+
+<div class="bookshelf">
+  <div class="book-card tier1">
+    <div class="book-title">The Pragmatic Programmer, 20th Anniversary Ed</div>
+    <div class="book-author">Hunt & Thomas · 2019</div>
+    <div class="book-desc">"Care about your craft" and "invest regularly in your knowledge portfolio." Their "tracer bullets" concept — firing a thin, end-to-end implementation to see if you're on target — maps directly to AI-assisted prototyping. The DRY principle applies not just to code, but to developer workflows: repetitive tool-switching is a form of duplication.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · CRAFT MINDSET</span>
+  </div>
+  <div class="book-card tier1">
+    <div class="book-title">Software Engineering at Google</div>
+    <div class="book-author">Winters, Manshreck & Wright · 2020</div>
+    <div class="book-desc">Google-scale engineering practices: code review culture, large-scale changes (LSC), dependency management, testing infrastructure. Their defining equation — "software engineering = programming × time × team" — frames AI as a force multiplier across all three dimensions, not just the programming part.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · SCALE PRACTICES</span>
+  </div>
+  <div class="book-card tier2">
+    <div class="book-title">The Mythical Man-Month</div>
+    <div class="book-author">Frederick Brooks · 1975/1995</div>
+    <div class="book-desc">Brooks' law: adding manpower to a late project makes it later. His "No Silver Bullet" essay argued no single technology would deliver 10x productivity. AI may be the closest thing to a silver bullet — but only when conceptual complexity is managed by humans. His "surgical team" model prefigures today's AI-augmented small teams.</div>
+    <span class="book-tag tag-practice">PRACTICE · COMPLEXITY LIMITS</span>
+  </div>
+  <div class="book-card tier2">
+    <div class="book-title">Accelerate</div>
+    <div class="book-author">Forsgren, Humble & Kim · 2018</div>
+    <div class="book-desc">DORA metrics — deployment frequency, lead time, mean time to recovery, change failure rate — as the empirical framework for measuring developer productivity. AI's impact must be measured through these metrics, not vanity metrics like "lines of code generated" or "suggestions accepted."</div>
+    <span class="book-tag tag-practice">PRACTICE · METRICS</span>
+  </div>
+</div>
+
+<p>
+What connects these four books is the recognition that tools are force multipliers — but multipliers of what already exists. Hunt and Thomas remind us that a sharp tool in unskilled hands is still dangerous. Google's LSC infrastructure works because the underlying codebase is well-structured and heavily tested. Brooks taught us that no tool eliminates conceptual complexity. And Forsgren's DORA metrics prove that the best tools correlate with disciplined practices, not just clever technology. The AI-augmented workbench is the most powerful toolkit developers have ever held — and these books are the user manual for wielding it responsibly.
+</p>
+<p class="cn-note">
+四本书的共同认知：工具是力量倍增器——但倍增的是已有的东西。Hunt和Thomas提醒我们锋利工具在不熟练的手中仍然危险。Google的LSC基础设施奏效是因为底层代码库结构良好且测试充分。Brooks教导我们没有工具能消除概念复杂度。Forsgren的DORA指标证明最好的工具与纪律实践相关，而非仅仅是聪明的技术。AI增强工作台是开发者拥有的最强大工具箱——这些书是负责任使用它的用户手册。
+</p>
+
+
+<!-- ─── §03 AI CO-EVOLUTION ─── -->
+<h2><span class="num">03</span> AI Co-Evolution — Four Angles</h2>
+
+<p>
+Each angle below takes one classical tooling principle and extends it with an AI capability that transforms the developer's workflow. The pattern: one classical principle, one AI-era extension, one concrete example. These are not hypothetical — they are patterns already deployed in production engineering organizations.
+</p>
+<p class="cn-note">
+以下每个角度取一个经典工具原则，并用一个变革开发者工作流的AI能力加以扩展。模式：一个经典原则、一个AI时代延伸、一个具体示例。这些不是假设——它们是已在生产工程组织中部署的模式。
+</p>
+
+<!-- ANGLE A -->
+<h3>Angle A · MCP Protocol — The Universal Tool Connector / MCP协议——通用工具连接器</h3>
+
+<p>
+<strong>Classical principle:</strong> Hunt and Thomas' "use a single editor well" and "achieve editor fluency." The Pragmatic Programmer's core tooling insight is that the tool should serve the developer, not constrain them. A good editor disappears — the developer thinks about the problem, not the keystrokes. But even the best editor is limited by what it can access: local files, maybe a terminal, maybe a few plugins.
+</p>
+
+<p>
+<strong>AI extension:</strong> Model Context Protocol (MCP) is an open standard for connecting AI models to external tools — databases, APIs, file systems, CI/CD pipelines, issue trackers, monitoring dashboards. Think of it as "USB for AI tools": one protocol, any tool. Instead of each AI coding assistant building bespoke integrations with PostgreSQL, or GitLab, or Jira, MCP provides a standard interface that any AI agent can use to read from and write to any tool that exposes an MCP server. This transforms the IDE from "text editor with plugins" to "AI-augmented workbench with universal tool access." The developer no longer switches between fifteen browser tabs — the AI agent accesses all tools through a single conversation surface.
+</p>
+
+<p>
+<strong>Concrete example:</strong> A developer asks Claude Code to investigate a production latency spike. Through MCP servers, the AI queries the PostgreSQL production database for slow queries, reads the last 50 lines of the CI deployment log from GitLab, checks the Grafana dashboard for the p99 latency chart, and finds a related Jira ticket filed by the on-call engineer — all in a single conversation, without the developer leaving their terminal. The AI correlates the evidence: the latency spike started 2 hours after the last deployment, the deployment included a new database migration, and the slow query matches the new index. The fix is proposed, the PR is drafted, the Jira ticket is updated — all from one tool surface.
+</p>
+<p class="cn-note">
+经典原则：Hunt和Thomas的"用好一个编辑器"和"达到编辑器流畅度"——工具应服务于开发者而非约束开发者。AI延伸：MCP是连接AI模型到外部工具的开放标准——"AI工具的USB"，一个协议可连接任何工具。将IDE从"带插件的文本编辑器"转变为"具有通用工具访问的AI增强工作台"。具体示例：开发者通过MCP让AI查询生产数据库慢查询、读取GitLab部署日志、检查Grafana仪表板、查找Jira工单——在单次对话中完成全部操作。
+</p>
+
+<!-- ANGLE B -->
+<h3>Angle B · Claude Code Headless Pipelines — AI in the Pipeline / 无头AI管道</h3>
+
+<p>
+<strong>Classical principle:</strong> Google's Large-Scale Changes (LSC) infrastructure allows a single engineer to modify thousands of files across a monorepo in a single, automated, reviewed change. The principle: repetitive cross-cutting changes should be automated, not manual. Winters et al. describe how Google's Rosie tool splits large changes into shards, runs tests on each, and sends them for review — turning a months-long migration into a days-long automated process.
+</p>
+
+<p>
+<strong>AI extension:</strong> Claude Code's <code>-p</code> (headless/pipe) mode allows AI to be embedded directly in CI/CD pipelines, cron jobs, and automation scripts. This is not "AI in the IDE" — it's "AI in the pipeline." The AI runs without a human at the keyboard, processing tasks at machine speed: nightly code quality audits that scan every file against architecture guidelines, automated migration scripts that update API calls across hundreds of microservices, batch documentation generation from code changes, cross-repo consistency checks. The key insight: headless AI is Google's LSC democratized — any team, not just Google-scale organizations, can now run large-scale automated changes with AI reasoning.
+</p>
+
+<div class="code-block" data-lang="YAML — CI Pipeline with Headless Claude Code">
+<pre><span class="cm"># .gitlab-ci.yml — Nightly architecture conformance audit</span>
+<span class="tp">nightly-ai-audit</span>:
+  <span class="kw">stage</span>: <span class="str">quality</span>
+  <span class="kw">rules</span>:
+    - <span class="kw">if</span>: <span class="str">$CI_PIPELINE_SOURCE == "schedule"</span>
+  <span class="kw">image</span>: <span class="str">anthropic/claude-code:latest</span>
+  <span class="kw">script</span>:
+    - |
+      <span class="fn">claude</span> <span class="ann">-p</span> <span class="str">"Read .ai/architecture.md for project context.
+        Scan all files changed in the last 7 days (git log).
+        For each file, check:
+        1. Layer violations (does a controller import a repository directly?)
+        2. Naming convention compliance (per .ai/conventions.md)
+        3. Missing OpenAPI annotations on public endpoints
+        4. Untested public methods
+        Output a SARIF report to audit-results.sarif
+        and a markdown summary to audit-summary.md"</span>
+  <span class="kw">artifacts</span>:
+    <span class="kw">paths</span>:
+      - <span class="str">audit-results.sarif</span>
+      - <span class="str">audit-summary.md</span>
+    <span class="kw">reports</span>:
+      <span class="tp">sast</span>: <span class="str">audit-results.sarif</span></pre>
+</div>
+<p class="cn-note">
+经典原则：Google的LSC基础设施允许单个工程师在一次自动化、经审查的变更中修改单体仓库中数千个文件。AI延伸：Claude Code的<code>-p</code>（无头/管道）模式允许将AI嵌入CI/CD管道和自动化脚本——"管道中的AI"而非"IDE中的AI"。上方YAML展示了每晚运行AI架构符合性审计的CI管道，输出SARIF报告。
+</p>
+
+<!-- ANGLE C -->
+<h3>Angle C · GitLab + AI Integration — 4 Modes / 平台AI集成四模式</h3>
+
+<p>
+<strong>Classical principle:</strong> Google's code review culture, as documented by Winters et al., mandates that every change is reviewed, with clear review guidelines and automated checks. The principle: quality at the point of change, not after the fact. Google's review process is not just about catching bugs — it's about knowledge sharing, maintaining standards, and building collective code ownership.
+</p>
+
+<p>
+<strong>AI extension:</strong> Modern platform integrations (GitLab, GitHub) support AI across four distinct modes, each with different triggers, inputs, outputs, and human roles. These are not four features of one tool — they are four fundamentally different integration patterns, each requiring its own design decisions. The architect must choose which modes to enable, configure the guardrails for each, and define the human-in-the-loop boundaries.
+</p>
+
+<table class="decision-table">
+  <thead>
+    <tr>
+      <th style="width:14%">Mode</th>
+      <th style="width:18%">Trigger</th>
+      <th style="width:22%">Input</th>
+      <th style="width:24%">Output</th>
+      <th style="width:22%">Human Role</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="font-weight:600; color:var(--cyan)">Review</td>
+      <td>PR opened / updated</td>
+      <td>Diff + <code>.ai/</code> context + architecture guidelines</td>
+      <td>Inline comments, APPROVED / CHANGES_REQUESTED verdict</td>
+      <td>Final approval authority; overrides AI verdict when context demands</td>
+    </tr>
+    <tr>
+      <td style="font-weight:600; color:var(--green)">Generate</td>
+      <td>Issue labeled <code>ai-generate</code></td>
+      <td>Spec document, OpenAPI schema, domain glossary</td>
+      <td>Draft PR with boilerplate code: CRUD endpoints, DTOs, migration scripts</td>
+      <td>Reviews generated code, refines business logic, ensures edge cases</td>
+    </tr>
+    <tr>
+      <td style="font-weight:600; color:var(--yellow)">Audit</td>
+      <td>Nightly cron schedule</td>
+      <td>Full codebase + SonarQube metrics + git history</td>
+      <td>Quality report: architecture drift, dependency vulnerabilities, hotspots</td>
+      <td>Triages findings, prioritizes fixes, updates refactoring backlog</td>
+    </tr>
+    <tr>
+      <td style="font-weight:600; color:var(--purple)">Migrate</td>
+      <td>Manual trigger with migration spec</td>
+      <td>Migration rules + target files + characterization tests</td>
+      <td>Batch PRs: API version migration, framework upgrade, rename across repos</td>
+      <td>Defines migration rules, reviews sample PRs, approves batch execution</td>
+    </tr>
+  </tbody>
+</table>
+<p class="cn-note">
+经典原则：Google的代码审查文化——每个变更都经审查，有清晰的审查指南和自动化检查。AI延伸：现代平台集成支持四种AI模式：Review（PR审查）、Generate（从规范生成样板代码）、Audit（夜间质量扫描）、Migrate（大规模变更）。每种模式有不同的触发器、输入、输出和人类角色——架构师必须为每种模式设计护栏。
+</p>
+
+<!-- ANGLE D -->
+<h3>Angle D · From "Vibe Coding" to Objective-Validation Protocol / 从"感觉编码"到目标验证协议</h3>
+
+<p>
+<strong>Classical principle:</strong> Brooks' "No Silver Bullet" (1986) drew the crucial distinction between <em>essential</em> complexity (the inherent difficulty of the problem domain) and <em>accidental</em> complexity (the difficulty introduced by our tools and processes). His argument: tools can only address accidental complexity. The essential complexity of understanding what to build, defining correct behavior, and managing trade-offs remains irreducibly hard. No technology — not high-level languages, not structured programming, not object-orientation — has ever delivered the 10x productivity gain in essential complexity.
+</p>
+
+<p>
+<strong>AI extension:</strong> "Vibe coding" — letting AI generate whatever feels right, accepting suggestions without rigorous validation — fails for exactly the reason Brooks predicted: it ignores essential complexity. The code compiles, the tests (if any) pass, but the conceptual model is wrong. The Objective-Validation Protocol (OVP) is the disciplined alternative that applies engineering rigor to AI-assisted development:
+</p>
+
+<div class="evolution-steps">
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--text-dim)">Step 1 — Define Objective</div>
+    <div class="evo-step-desc">Write a clear, unambiguous objective in natural language. What does the code need to accomplish? What are the constraints? "Implement a rate limiter for the /api/invoices endpoint: max 100 requests per minute per API key, 429 response with Retry-After header."</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--text-secondary)">Step 2 — Define Validation Criteria</div>
+    <div class="evo-step-desc">Before any code is generated, write the acceptance criteria, test cases, and metrics. This is the "what done looks like" contract. Include edge cases, performance requirements, and failure modes.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--cyan-dim)">Step 3 — AI Generation</div>
+    <div class="evo-step-desc">Let the AI generate code with full project context (via <code>.ai/</code> directory and MCP). The AI has the objective AND the validation criteria — it generates toward a target, not into a void.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--purple)">Step 4 — Automated Validation</div>
+    <div class="evo-step-desc">Run the generated code against the pre-defined criteria: unit tests pass, integration tests pass, performance benchmark meets threshold, static analysis clean. Binary: pass or fail.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--cyan)">Step 5 — Human Review</div>
+    <div class="evo-step-desc">The architect reviews what automated validation cannot catch: Is the conceptual model correct? Does this align with domain semantics? Are there subtle trade-offs the AI missed? This is where Brooks' essential complexity lives.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--green)">Step 6 — Ship or Iterate</div>
+    <div class="evo-step-desc">If validation passes and human review approves: ship. If not: iterate with feedback to the AI. Each iteration tightens the objective or clarifies the validation criteria. Convergence, not vibes.</div>
+  </div>
+</div>
+
+<p>
+OVP is the engineering discipline that makes AI code generation reliable instead of random. It doesn't slow development down — it prevents the rework, debugging, and architectural drift that "vibe coding" inevitably produces. Teams that adopt OVP report that the up-front investment in defining objectives and validation criteria (typically 15-20 minutes) saves hours of post-generation debugging and refactoring.
+</p>
+<p class="cn-note">
+经典原则：Brooks的"没有银弹"区分了本质复杂度和偶然复杂度——工具只能解决偶然复杂度。AI延伸："感觉编码"失败正因它忽视本质复杂度。目标验证协议（OVP）是将工程严谨性应用于AI辅助开发的纪律化替代方案：定义目标→定义验证标准→AI生成→自动化验证→人类审查→发布或迭代。OVP使AI代码生成可靠而非随机。前期投入15-20分钟定义目标和验证标准，可节省数小时的后期调试和重构。
+</p>
+
+
+<!-- ─── §04 DECISION TABLE ─── -->
+<h2><span class="num">04</span> Decision Table — When to Apply What</h2>
+
+<p>
+The AI-augmented workbench introduces new decisions that the classical developer never faced. This table maps common tooling scenarios to both the classical and AI-augmented approach, showing how the new toolkit changes the trade-offs.
+</p>
+<p class="cn-note">
+AI增强工作台带来经典开发者从未面对的新决策。此表将常见工具场景映射到经典方法和AI增强方法，展示新工具箱如何改变权衡。
+</p>
+
+<table class="decision-table">
+  <thead>
+    <tr>
+      <th class="col-scenario">Scenario 场景</th>
+      <th class="col-classic"><span class="classic-badge">CLASSIC</span> Classical Approach</th>
+      <th class="col-ai"><span class="ai-badge">AI+</span> AI-Augmented Approach</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="col-scenario">Choosing an AI Coding Tool<br><small style="color:var(--text-dim)">选择AI编码工具</small></td>
+      <td>Evaluate IDE features: refactoring support, debugger, language coverage. Standardize across team.</td>
+      <td>Evaluate AI capabilities: MCP support, headless mode, context window size, <code>.ai/</code> directory awareness. Standardize the <em>workbench</em>, not just the editor.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Integrating AI into CI/CD<br><small style="color:var(--text-dim)">AI集成到CI/CD</small></td>
+      <td>Static analysis (SonarQube, ESLint) + unit test gates. Rules-based, deterministic.</td>
+      <td>Static analysis + AI review gate (headless mode). AI reads <code>.ai/architecture.md</code> for context. Non-deterministic — requires confidence thresholds and human override.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Measuring AI Productivity<br><small style="color:var(--text-dim)">衡量AI生产力</small></td>
+      <td>Lines of code, story points, velocity. Often gameable and misleading.</td>
+      <td>DORA metrics (Forsgren): deployment frequency, lead time, MTTR, change failure rate. Measure outcomes, not output. Track cost-per-inference alongside.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">AI-Generated Code Ownership<br><small style="color:var(--text-dim)">AI生成代码的归属</small></td>
+      <td>Developer who writes it owns it. Clear accountability.</td>
+      <td>Developer who <em>approves</em> it owns it. OVP makes this explicit: the human defined the objective, validated the output, and approved the merge. The AI is a tool, not an author.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Managing AI Tool Costs<br><small style="color:var(--text-dim)">管理AI工具成本</small></td>
+      <td>IDE licenses are fixed cost. SonarQube: per-server pricing.</td>
+      <td>AI is usage-based: cost-per-token, cost-per-inference. Track by team, by mode (interactive vs headless), by task type. Set budget alerts. Nightly audits are high-volume — optimize prompts.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Onboarding Team to AI Workflow<br><small style="color:var(--text-dim)">团队AI工作流入职</small></td>
+      <td>Pair programming, documentation, wiki. Senior mentors junior.</td>
+      <td>Start with OVP training — teach the discipline before the tools. Pilot on one repo. Measure DORA before/after. Share wins. Avoid "vibe coding" habits from day one.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Headless vs Interactive AI<br><small style="color:var(--text-dim)">无头模式 vs 交互模式</small></td>
+      <td>N/A — all development was interactive.</td>
+      <td>Interactive for exploratory work (debugging, design spikes, code generation). Headless for repetitive tasks (audits, migrations, batch updates). Never use headless for decisions requiring human judgment.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">AI Hallucinations in Pipeline<br><small style="color:var(--text-dim)">管道中的AI幻觉</small></td>
+      <td>N/A — static tools don't hallucinate.</td>
+      <td>Defense in depth: (1) constrain AI output with schemas/templates, (2) validate all generated code with existing test suites, (3) SARIF output for structured parsing — never trust free-text, (4) human review gate before any auto-merge.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- ─── §05 PRACTICAL CHECKLIST ─── -->
+<h2><span class="num">05</span> Practical Checklist — Building Your AI-Augmented Workbench</h2>
+
+<p>
+To transition from a traditional IDE-centric workflow to an AI-augmented workbench, follow this staged checklist. Each stage builds on the previous — tools without discipline produce chaos, not productivity.
+</p>
+<p class="cn-note">
+从传统IDE工作流过渡到AI增强工作台的分阶段检查清单。每个阶段构建在前一阶段之上——没有纪律的工具产生混乱而非生产力。
+</p>
+
+<div class="checklist">
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Standardize IDE + extensions across team (same formatter, same linter config)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Establish code review SLA: all PRs reviewed within 4 hours
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Deploy SonarQube + DORA metrics dashboard (Forsgren's four key metrics)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Team reads Pragmatic Programmer Ch. 3 (Basic Tools) — internalize the craft mindset
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    Set up MCP servers for primary data sources (database, CI/CD, issue tracker)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    Pilot AI code review (Review mode) on one repository — tune confidence thresholds
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Enable Claude Code headless mode for nightly architecture conformance audit
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Deploy all 4 GitLab/GitHub integration modes with documented guardrails per mode
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Adopt OVP as team standard — objective + validation criteria before AI generation
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    Full AI-augmented development lifecycle across all repositories
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    Cost-per-inference tracking by team, mode, and task — budget alerts in place
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    AI productivity metrics integrated into DORA dashboard — measure AI's actual impact
+  </div>
+</div>
+
+
+<!-- ─── §06 TAKEAWAY ─── -->
+<h2><span class="num">06</span> The Architect's Takeaway</h2>
+
+<p>
+Tools don't replace craft — they amplify it. An AI-augmented workbench in the hands of a disciplined engineer who understands MCP architecture, who defines OVP objectives before generating code, who measures impact through DORA metrics, and who designs guardrails for each integration mode — that engineer is transformatively more productive. The same workbench in the hands of a "vibe coder" who accepts every AI suggestion without validation, who never defines objectives, who measures success by lines generated — that developer is shipping technical debt at machine speed.
+</p>
+<p class="cn-note">
+工具不替代手艺——它们放大手艺。AI增强工作台在纪律化工程师手中是变革性的生产力提升——理解MCP架构、定义OVP目标、通过DORA指标衡量影响、为每种集成模式设计护栏。同样的工作台在"感觉编码者"手中，只会以机器速度运输技术债。
+</p>
+
+<p>
+Brooks was right in 1986: there is no silver bullet for essential complexity. But he also wrote about the "surgical team" — a small, elite team where each member's capabilities are amplified by specialized tools and support. The AI-augmented workbench is the realization of that vision: not a silver bullet, but a force multiplier that makes a disciplined small team as productive as a large undisciplined one. Hunt and Thomas' "invest in your toolbox" has never been more relevant — but the toolbox now includes MCP servers, headless pipelines, platform integration modes, and a protocol for turning AI generation from gambling into engineering.
+</p>
+<p class="cn-note">
+Brooks在1986年的判断是对的：本质复杂度没有银弹。但他也写了"外科手术团队"——一个小而精的团队，每个成员的能力被专业工具放大。AI增强工作台是那个愿景的实现：不是银弹，而是力量倍增器，使一个纪律化的小团队与一个松散的大团队一样高产。Hunt和Thomas的"投资你的工具箱"从未如此切题——但工具箱现在包含MCP服务器、无头管道、平台集成模式，以及一个将AI生成从赌博变为工程的协议。
+</p>
+
+<p>
+This is the final article in Layer 0 — Code Craft. Across four articles, we've traveled from the craft spectrum (0.1), through AI-era refactoring (0.2), testing strategies for human + AI codebases (0.3), and now the developer's new toolkit (0.4). The through-line: classical foundations are not obsolete — they are the prerequisite for effective AI augmentation. Clean code, disciplined refactoring, rigorous testing, and well-designed tooling are the bedrock on which the AI era is built.
+</p>
+<p class="cn-note">
+这是Layer 0（代码工艺层）的最后一篇文章。四篇文章贯穿了从工艺光谱（0.1）到AI时代重构（0.2）、人机混合代码库测试策略（0.3）、再到开发者新工具箱（0.4）的完整旅程。贯穿线索：经典基础没有过时——它们是有效AI增强的前提条件。
+</p>
+
+<div class="insight-box" style="margin-top:40px;">
+  <div class="label">Next in Series → Article 1.1 · Layer 1: Design Thinking</div>
+  <p style="margin:0; font-size:14px; line-height:1.6">
+    <strong>Design Patterns Revisited — Classical Patterns in AI-Augmented Systems</strong> — With code craft as our foundation, we now zoom out to design — where patterns, domain models, and API contracts become the unit of architectural decision. How do the Gang of Four patterns, domain-driven design, and API-first thinking evolve when AI agents are both consumers and producers of your interfaces?
+    <br><span style="color:var(--text-dim); font-style:italic; font-family:'Noto Serif SC',serif;">下一篇：设计模式再审视——当AI代理既是接口的消费者也是生产者时，经典模式如何进化？进入L1设计思维层。</span>
+  </p>
+</div>
+
+</main>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="article-footer">
+  <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim)">
+    Software Knowledge Base · Layer 0: Code Craft · Article 0.4 of 20 · Final article in L0<br>
+    Classical Foundations × AI Co-Evolution · 经典基础 × AI协同进化
+  </div>
+  <div class="nav-links">
+    <a class="nav-link" href="./0.3-testing-strategies.html">← Prev: 0.3 Testing Strategies</a>
+    <a class="nav-link" href="../L1-design-thinking/1.1-design-patterns-revisited.html">Next: 1.1 Design Patterns Revisited →</a>
+  </div>
+</footer>
+
+</body>
+</html>

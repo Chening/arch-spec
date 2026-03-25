@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>0.3 Testing Strategies — For Human + AI Codebases</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<!--
+  CSS Architecture Note:
+  The canonical design system lives in templates/article-base.css.
+  For single-file distribution, it is inlined here.
+  When editing styles, update article-base.css first, then re-inline.
+-->
+<style>
+/* ═══ INLINED FROM templates/article-base.css ═══ */
+:root {
+  --bg-deep: #0a0e17;
+  --bg-surface: #0f1420;
+  --bg-card: #141b2d;
+  --bg-card-hover: #1a2340;
+  --border: #1e2a45;
+  --border-accent: #2d4a7a;
+  --cyan: #22d3ee;
+  --cyan-dim: #0e7490;
+  --cyan-glow: rgba(34, 211, 238, 0.15);
+  --purple: #a78bfa;
+  --purple-dim: #6d5dbb;
+  --purple-glow: rgba(167, 139, 250, 0.12);
+  --orange: #f97316;
+  --orange-glow: rgba(249, 115, 22, 0.12);
+  --green: #10b981;
+  --green-glow: rgba(16, 185, 129, 0.12);
+  --rose: #f43f5e;
+  --rose-glow: rgba(244, 63, 94, 0.12);
+  --yellow: #eab308;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg-deep); color:var(--text-primary); font-family:'IBM Plex Sans',sans-serif; line-height:1.75; font-size:16px; -webkit-font-smoothing:antialiased; }
+.article-header { position:relative; padding:80px 0 60px; overflow:hidden; border-bottom:1px solid var(--border); }
+.article-header::before { content:''; position:absolute; top:0;left:0;right:0;bottom:0; background:radial-gradient(ellipse 800px 400px at 20% 50%,rgba(34,211,238,0.06),transparent),radial-gradient(ellipse 600px 300px at 80% 30%,rgba(167,139,250,0.04),transparent); }
+.header-content { position:relative; max-width:860px; margin:0 auto; padding:0 32px; }
+.series-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--cyan); border:1px solid var(--cyan-dim); padding:4px 12px; border-radius:3px; margin-bottom:20px; background:var(--cyan-glow); }
+.article-title { font-family:'JetBrains Mono',monospace; font-size:36px; font-weight:700; line-height:1.25; color:var(--text-primary); margin-bottom:8px; }
+.article-title-cn { font-family:'Noto Serif SC',serif; font-size:20px; font-weight:400; color:var(--text-dim); font-style:italic; margin-bottom:24px; }
+.article-meta { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-dim); display:flex; gap:24px; flex-wrap:wrap; }
+.meta-item { display:flex; align-items:center; gap:6px; }
+.meta-dot { width:6px; height:6px; border-radius:50%; }
+.article-body { max-width:860px; margin:0 auto; padding:48px 32px; }
+h2 { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:var(--cyan); margin:56px 0 8px; padding-bottom:12px; border-bottom:1px solid var(--border); letter-spacing:-0.5px; }
+.article-body > h2:first-child { margin-top:0; }
+h2 .num { color:var(--text-dim); font-weight:400; margin-right:8px; }
+h3 { font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; color:var(--purple); margin:36px 0 12px; }
+p { margin-bottom:18px; color:var(--text-primary); font-size:15.5px; }
+.cn-note { font-family:'Noto Serif SC',serif; font-style:italic; color:var(--text-dim); font-size:14px; line-height:1.8; margin:-8px 0 24px; padding-left:16px; border-left:2px solid var(--border); }
+code { font-family:'JetBrains Mono',monospace; font-size:0.88em; background:rgba(34,211,238,0.08); padding:2px 6px; border-radius:3px; color:var(--cyan); }
+.diagram-container { margin:40px -16px; padding:32px 24px; background:var(--bg-surface); border:1px solid var(--border); border-radius:8px; position:relative; overflow-x:auto; }
+.diagram-container::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--cyan),var(--purple),var(--orange)); }
+.diagram-label { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:20px; }
+.diagram-sublabel { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-dim); margin-top:-16px; margin-bottom:16px; font-style:italic; }
+.bookshelf { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin:24px 0; align-items:stretch; }
+.book-card { background:var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:16px; transition:all 0.25s ease; position:relative; overflow:hidden; min-height:190px; display:flex; flex-direction:column; }
+.book-card::before { content:''; position:absolute; left:0;top:0;bottom:0; width:3px; }
+.book-card.tier1::before { background:var(--cyan); }
+.book-card.tier2::before { background:var(--purple); }
+.book-card:hover { border-color:var(--border-accent); background:var(--bg-card-hover); transform:translateY(-2px); }
+.book-title { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:4px; line-height:1.4; }
+.book-author { font-size:11px; color:var(--text-dim); }
+.book-desc { font-size:12px; color:var(--text-secondary); margin-top:8px; line-height:1.5; flex:1; }
+.book-tag { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:2px 6px; border-radius:3px; margin-top:8px; letter-spacing:0.5px; }
+.tag-foundation { background:rgba(34,211,238,0.1); color:var(--cyan); border:1px solid rgba(34,211,238,0.2); }
+.tag-practice { background:rgba(167,139,250,0.1); color:var(--purple); border:1px solid rgba(167,139,250,0.2); }
+.decision-table { width:100%; border-collapse:collapse; margin:24px 0; font-size:13px; }
+.decision-table th { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; text-align:left; padding:12px 16px; border-bottom:2px solid var(--border-accent); color:var(--text-secondary); background:var(--bg-surface); }
+.decision-table td { padding:12px 16px; border-bottom:1px solid var(--border); color:var(--text-primary); vertical-align:top; line-height:1.5; }
+.decision-table tr:hover td { background:rgba(34,211,238,0.03); }
+.decision-table .col-scenario { width:22%; font-weight:500; color:var(--text-secondary); }
+.decision-table .col-classic { width:39%; }
+.decision-table .col-ai { width:39%; }
+.classic-badge,.ai-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:1px 5px; border-radius:2px; margin-right:4px; vertical-align:middle; }
+.classic-badge { background:rgba(148,163,184,0.15); color:var(--text-secondary); }
+.ai-badge { background:rgba(34,211,238,0.12); color:var(--cyan); }
+.checklist { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:24px 0; }
+.check-item { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:5px; font-size:13px; color:var(--text-primary); line-height:1.4; transition:border-color 0.2s; }
+.check-item:hover { border-color:var(--border-accent); }
+.check-stage { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:600; padding:2px 7px; border-radius:3px; white-space:nowrap; flex-shrink:0; }
+.insight-box { margin:32px 0; padding:24px; background:linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04)); border:1px solid var(--border-accent); border-radius:8px; position:relative; }
+.insight-box::before { content:'⚡'; position:absolute; top:-12px; left:20px; background:var(--bg-deep); padding:0 8px; font-size:18px; }
+.insight-box .label { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--cyan); margin-bottom:8px; }
+.code-block { background:#0d1117; border:1px solid var(--border); border-radius:6px; padding:20px; margin:20px 0; overflow-x:auto; position:relative; }
+.code-block::before { content:attr(data-lang); position:absolute; top:8px; right:12px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-dim); letter-spacing:0.5px; }
+.code-block pre { font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.6; color:var(--text-secondary); }
+.code-block .kw { color:var(--purple); }
+.code-block .fn { color:var(--cyan); }
+.code-block .str { color:var(--green); }
+.code-block .cm { color:var(--text-dim); font-style:italic; }
+.code-block .ann { color:var(--orange); }
+.code-block .tp { color:var(--yellow); }
+.evolution-steps { position:relative; padding-left:32px; margin:28px 0; }
+.evolution-steps::before { content:''; position:absolute; left:11px; top:8px; bottom:8px; width:2px; background:linear-gradient(to bottom,var(--cyan),var(--purple),var(--orange)); }
+.evo-step { position:relative; margin-bottom:24px; padding-left:20px; }
+.evo-step::before { content:''; position:absolute; left:-25px; top:8px; width:10px; height:10px; border-radius:50%; border:2px solid; }
+.evo-step:nth-child(1)::before { border-color:var(--text-dim); background:var(--bg-deep); }
+.evo-step:nth-child(2)::before { border-color:var(--text-secondary); background:var(--bg-deep); }
+.evo-step:nth-child(3)::before { border-color:var(--cyan-dim); background:var(--bg-deep); }
+.evo-step:nth-child(4)::before { border-color:var(--purple); background:var(--bg-deep); }
+.evo-step:nth-child(5)::before { border-color:var(--cyan); background:var(--cyan); }
+.evo-step:nth-child(6)::before { border-color:var(--green); background:var(--green); }
+.evo-step-title { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; margin-bottom:4px; }
+.evo-step-desc { font-size:13.5px; color:var(--text-secondary); line-height:1.6; }
+.article-footer { max-width:860px; margin:0 auto; padding:40px 32px; border-top:1px solid var(--border); font-size:12px; color:var(--text-dim); }
+.nav-links { display:flex; justify-content:space-between; align-items:center; margin-top:20px; }
+.nav-link { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--cyan); text-decoration:none; padding:8px 16px; border:1px solid var(--border); border-radius:4px; transition:all 0.2s; }
+.nav-link:hover { border-color:var(--cyan); background:var(--cyan-glow); }
+@media (max-width:640px) {
+  .article-title { font-size:24px; }
+  .bookshelf { grid-template-columns:1fr; }
+  .checklist { grid-template-columns:1fr; }
+  .article-meta { flex-direction:column; gap:8px; }
+}
+@media print {
+  :root { --bg-deep:#fff; --bg-surface:#f8f9fa; --bg-card:#f1f3f5; --bg-card-hover:#f1f3f5; --border:#dee2e6; --border-accent:#adb5bd; --text-primary:#212529; --text-secondary:#495057; --text-dim:#868e96; --cyan:#0c8599; --purple:#7048e8; --orange:#e8590c; --green:#099268; --rose:#e03131; --yellow:#e67700; }
+  body { font-size:11pt; line-height:1.5; }
+  .article-header::before { display:none; }
+  .article-header { padding:24px 0; }
+  .diagram-container::before { display:none; }
+  .book-card:hover { transform:none; }
+  .nav-links { display:none; }
+  .code-block { border:1px solid #dee2e6; background:#f8f9fa; }
+  .code-block pre { color:#212529; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header class="article-header">
+  <div class="header-content">
+    <div class="series-badge">Layer 0 · Code Craft · 代码工艺层</div>
+    <h1 class="article-title">Testing Strategies</h1>
+    <div class="article-title-cn">人机混合代码库的测试策略</div>
+    <div class="article-meta">
+      <span class="meta-item"><span class="meta-dot" style="background:var(--cyan)"></span> Article 0.3 of 20</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--purple)"></span> ~17 min read</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--orange)"></span> 3 Source Books × 4 AI Angles</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════ BODY ═══════════════ -->
+<main class="article-body">
+
+<!-- ─── §01 CORE INSIGHT ─── -->
+<h2><span class="num">01</span> Core Insight — The Thesis</h2>
+
+<p>
+Testing has always been the discipline that turns code from "it seems to work" into "we can prove it works." Kent Beck's red-green-refactor cycle, Freeman and Pryce's outside-in acceptance testing, and Khorikov's emphasis on testing observable behavior over implementation details — these ideas built the trust infrastructure that makes professional software possible. Without tests, every change is a gamble.
+</p>
+<p class="cn-note">
+测试一直是将代码从"似乎能工作"转变为"我们能证明它工作"的学科。Beck的红-绿-重构循环、Freeman和Pryce的由外而内验收测试、Khorikov对测试可观察行为（而非实现细节）的强调——这些理念构建了专业软件赖以存在的信任基础设施。
+</p>
+
+<p>
+Here is what the AI era makes urgent: <strong>when a significant portion of your code is generated by AI, testing is no longer optional or secondary — it becomes the primary trust mechanism.</strong> AI can produce hundreds of lines of plausible-looking code in seconds. Without rigorous testing, that speed is not productivity — it is faster bug production. The classical testing books anticipated this moment without knowing it: Beck's insight that "the test is the specification" becomes literal when the test is the prompt that tells the AI what to build. Khorikov's rule — test behavior, not implementation — becomes essential when the implementation was written by a machine whose internal reasoning you cannot inspect.
+</p>
+<p class="cn-note">
+AI时代使之紧迫：当代码库的相当部分由AI生成时，测试不再是可选的或次要的——它成为首要的信任机制。AI能在几秒内生成数百行看似合理的代码。没有严格测试，这种速度不是生产力，而是更快的缺陷生产。Beck的洞察"测试即规约"在AI时代变成了字面意义。
+</p>
+
+<div class="insight-box">
+  <div class="label">The Reframing 核心重构</div>
+  <p style="margin:0; font-size:15px; line-height:1.7">
+    <strong>Tests are the new code review.</strong> In a human-only codebase, you trust code because a human wrote it and another human reviewed it. In a human+AI codebase, you trust code because tests prove it works. The test suite becomes the primary artifact that humans review — it is easier to verify that a test correctly specifies behavior than to verify that an AI-generated implementation is correct line by line. TDD's "write the test first" was always good practice. Now it is the essential workflow: human writes the test (specification), AI generates the implementation, tests verify correctness.
+  </p>
+</div>
+<p class="cn-note">
+测试是新的代码审查。在纯人类代码库中，你信任代码因为人写的、人审查的。在人机混合代码库中，你信任代码因为测试证明它有效。测试套件成为人类审查的首要工件——验证测试是否正确指定了行为，比逐行验证AI生成的实现要容易得多。TDD的"先写测试"从良好实践变为核心工作流。
+</p>
+
+<!-- HERO DIAGRAM: AI TRUST PIPELINE -->
+<div class="diagram-container">
+  <div class="diagram-label">◆ Hero Diagram — The AI Trust Pipeline for Code</div>
+  <svg viewBox="0 0 800 340" xmlns="http://www.w3.org/2000/svg" style="width:100%; font-family:'JetBrains Mono',monospace;">
+    <defs>
+      <linearGradient id="trustGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="var(--yellow,#eab308)"/>
+        <stop offset="33%" stop-color="var(--cyan,#22d3ee)"/>
+        <stop offset="66%" stop-color="var(--purple,#a78bfa)"/>
+        <stop offset="100%" stop-color="var(--green,#10b981)"/>
+      </linearGradient>
+      <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="var(--text-dim,#64748b)"/>
+      </marker>
+    </defs>
+
+    <!-- Title -->
+    <text x="400" y="24" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)" font-weight="500" letter-spacing="1">THE FOUR-LAYER TRUST PIPELINE 四层信任管线</text>
+
+    <!-- Trust bar -->
+    <rect x="60" y="36" width="680" height="6" rx="3" fill="url(#trustGrad)" opacity="0.6"/>
+    <text x="60" y="58" font-size="7.5" fill="var(--text-dim,#64748b)">LOW TRUST</text>
+    <text x="740" y="58" text-anchor="end" font-size="7.5" fill="var(--green,#10b981)">HIGH TRUST</text>
+
+    <!-- Layer 1: Human writes spec/test -->
+    <rect x="40" y="74" width="160" height="100" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--yellow,#eab308)" stroke-width="1.2"/>
+    <circle cx="72" cy="96" r="11" fill="none" stroke="var(--yellow,#eab308)" stroke-width="1.5"/>
+    <text x="72" y="100" text-anchor="middle" font-size="11" fill="var(--yellow,#eab308)" font-weight="700">1</text>
+    <text x="128" y="96" text-anchor="middle" font-size="9.5" fill="var(--text-primary,#e2e8f0)" font-weight="600">Human Spec</text>
+    <text x="120" y="114" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Write failing test first</text>
+    <text x="120" y="127" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Define expected behavior</text>
+    <text x="120" y="140" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Test = specification</text>
+    <text x="120" y="160" text-anchor="middle" font-size="7" fill="var(--yellow,#eab308)">Beck's RED phase</text>
+
+    <!-- Arrow 1→2 -->
+    <line x1="202" y1="124" x2="228" y2="124" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#arrowhead)"/>
+
+    <!-- Layer 2: AI generates implementation -->
+    <rect x="230" y="74" width="160" height="100" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1.2"/>
+    <circle cx="262" cy="96" r="11" fill="none" stroke="var(--cyan,#22d3ee)" stroke-width="1.5"/>
+    <text x="262" y="100" text-anchor="middle" font-size="11" fill="var(--cyan,#22d3ee)" font-weight="700">2</text>
+    <text x="318" y="96" text-anchor="middle" font-size="9.5" fill="var(--text-primary,#e2e8f0)" font-weight="600">AI Implements</text>
+    <text x="310" y="114" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">AI generates code to</text>
+    <text x="310" y="127" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">pass the failing test</text>
+    <text x="310" y="140" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">+ edge-case tests</text>
+    <text x="310" y="160" text-anchor="middle" font-size="7" fill="var(--cyan,#22d3ee)">Beck's GREEN phase</text>
+
+    <!-- Arrow 2→3 -->
+    <line x1="392" y1="124" x2="418" y2="124" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#arrowhead)"/>
+
+    <!-- Layer 3: Human reviews tests -->
+    <rect x="420" y="74" width="160" height="100" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--purple,#a78bfa)" stroke-width="1.2"/>
+    <circle cx="452" cy="96" r="11" fill="none" stroke="var(--purple,#a78bfa)" stroke-width="1.5"/>
+    <text x="452" y="100" text-anchor="middle" font-size="11" fill="var(--purple,#a78bfa)" font-weight="700">3</text>
+    <text x="508" y="96" text-anchor="middle" font-size="9.5" fill="var(--text-primary,#e2e8f0)" font-weight="600">Human Reviews</text>
+    <text x="500" y="114" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Review tests first</text>
+    <text x="500" y="127" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">(easier than reviewing</text>
+    <text x="500" y="140" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">implementation code)</text>
+    <text x="500" y="160" text-anchor="middle" font-size="7" fill="var(--purple,#a78bfa)">Tests as review artifact</text>
+
+    <!-- Arrow 3→4 -->
+    <line x1="582" y1="124" x2="608" y2="124" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#arrowhead)"/>
+
+    <!-- Layer 4: Mutation testing validates -->
+    <rect x="610" y="74" width="160" height="100" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="1.2"/>
+    <circle cx="642" cy="96" r="11" fill="none" stroke="var(--green,#10b981)" stroke-width="1.5"/>
+    <text x="642" y="100" text-anchor="middle" font-size="11" fill="var(--green,#10b981)" font-weight="700">4</text>
+    <text x="698" y="96" text-anchor="middle" font-size="9.5" fill="var(--text-primary,#e2e8f0)" font-weight="600">Mutate & Verify</text>
+    <text x="690" y="114" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">AI generates semantic</text>
+    <text x="690" y="127" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">mutations in code</text>
+    <text x="690" y="140" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Tests must catch them</text>
+    <text x="690" y="160" text-anchor="middle" font-size="7" fill="var(--green,#10b981)">Mutation score = trust</text>
+
+    <!-- Classical vs AI-Augmented zones -->
+    <rect x="40" y="192" width="160" height="36" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--text-secondary,#94a3b8)" stroke-width="1" stroke-dasharray="3,3"/>
+    <text x="120" y="214" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">HUMAN-DRIVEN</text>
+
+    <rect x="230" y="192" width="540" height="36" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1" stroke-dasharray="3,3"/>
+    <text x="500" y="214" text-anchor="middle" font-size="8" fill="var(--cyan,#22d3ee)">AI-AUGMENTED (human approves at each gate)</text>
+
+    <!-- Key Insight Box -->
+    <rect x="80" y="248" width="640" height="48" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="400" y="269" text-anchor="middle" font-size="10" fill="var(--cyan,#22d3ee)" font-weight="600">KEY INSIGHT: Reviewing tests is easier than reviewing implementation.</text>
+    <text x="400" y="285" text-anchor="middle" font-size="10" fill="var(--text-secondary,#94a3b8)">Tests become the primary review artifact in human+AI codebases.</text>
+
+    <!-- Source attribution -->
+    <text x="400" y="326" text-anchor="middle" font-size="7.5" fill="var(--text-dim,#64748b)">Sources: Beck (TDD), Freeman &amp; Pryce (GOOS), Khorikov (Unit Testing) + AI Trust Extension</text>
+  </svg>
+</div>
+
+
+<!-- ─── §02 CLASSICAL FOUNDATION ─── -->
+<h2><span class="num">02</span> Classical Foundation — Source Books</h2>
+
+<p>
+Three books define the modern testing canon. Beck gave us the discipline of test-first development. Freeman and Pryce showed how tests can drive architecture from the outside in. Khorikov provided the modern synthesis that resolves decades of debate about what to mock, what to test, and where the boundaries should be. Together, they form a complete framework for building trust through testing — a framework that the AI era demands we apply with even greater rigor.
+</p>
+<p class="cn-note">
+三本书定义了现代测试经典。Beck赋予我们测试先行的纪律，Freeman和Pryce展示了测试如何由外而内驱动架构，Khorikov提供了现代综合方案——解决了关于mock什么、测试什么、边界在哪的数十年争论。它们共同构成通过测试建立信任的完整框架。
+</p>
+
+<div class="bookshelf">
+  <div class="book-card tier1">
+    <div class="book-title">Test-Driven Development: By Example</div>
+    <div class="book-author">Kent Beck · 2002</div>
+    <div class="book-desc">The red-green-refactor cycle that changed how professionals write software. Tests are not verification after the fact — they are a design tool. Writing the test first forces you to think about the interface before the implementation. In the AI era, this becomes: the test is the specification that tells the AI what to build.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · TDD DISCIPLINE</span>
+  </div>
+  <div class="book-card tier1">
+    <div class="book-title">Growing Object-Oriented Software, Guided by Tests</div>
+    <div class="book-author">Freeman & Pryce · 2009</div>
+    <div class="book-desc">Outside-in TDD: start with a failing acceptance test that describes the feature from the user's perspective, then drive down through unit tests. The "walking skeleton" — a thin slice through the entire architecture — proves the system hangs together before fleshing out details. Mock-based testing defines collaboration contracts at boundaries.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · OUTSIDE-IN TDD</span>
+  </div>
+  <div class="book-card tier2">
+    <div class="book-title">Unit Testing: Principles, Practices, and Patterns</div>
+    <div class="book-author">Vladimir Khorikov · 2020</div>
+    <div class="book-desc">The modern synthesis. Distinguishes output-based, state-based, and communication-based testing. His central argument: test observable behavior, not implementation details. Resist over-mocking. This principle is critical for AI-generated code — you cannot review the AI's implementation line by line, but you can verify its observable behavior through well-designed tests.</div>
+    <span class="book-tag tag-practice">PRACTICE · MODERN SYNTHESIS</span>
+  </div>
+</div>
+
+<p>
+What connects these three books is a shared understanding that tests serve dual purpose: they verify correctness <em>and</em> they document intent. Beck's failing test says "this is what I want." Freeman and Pryce's acceptance test says "this is what the user needs." Khorikov's behavior-focused test says "this is what the system promises." When AI enters the picture, this dual purpose becomes triple: tests verify, document, <em>and specify</em>. The test suite becomes the contract between human intent and machine implementation — the source of truth that both sides must agree on.
+</p>
+<p class="cn-note">
+三本书的共同认知：测试具有双重目的——验证正确性并记录意图。当AI加入时，双重目的变为三重：测试验证、记录、并规约。测试套件成为人类意图与机器实现之间的契约——双方必须达成一致的真相来源。
+</p>
+
+
+<!-- ─── §03 AI CO-EVOLUTION ─── -->
+<h2><span class="num">03</span> AI Co-Evolution — Four Angles</h2>
+
+<p>
+Each angle below takes one classical testing principle and extends it with an AI capability that transforms the testing workflow. The pattern: classical principle provides the <em>what</em> and <em>why</em>; AI provides the <em>how much</em> and <em>how fast</em>. The human remains the arbiter of <em>what matters</em>.
+</p>
+<p class="cn-note">
+以下每个角度取一个经典测试原则，用AI能力加以扩展。经典原则提供"做什么"和"为什么"；AI提供"多少"和"多快"。人类仍然是"什么重要"的仲裁者。
+</p>
+
+<!-- ANGLE A -->
+<h3>Angle A · AI-Generated Test Suites — Who Tests the AI's Code? · AI生成的测试套件</h3>
+
+<p>
+<strong>Classical principle:</strong> Beck's TDD — write the test first, then the code. The failing test is the specification. The discipline of red-green-refactor ensures that every line of production code exists to satisfy a test. The test is not an afterthought; it is the driving force.
+</p>
+
+<p>
+<strong>AI extension:</strong> When AI generates code, TDD's "test first" becomes the essential workflow rather than a nice-to-have discipline. The human writes a failing test that precisely specifies the desired behavior — this test is, in effect, the prompt. The AI generates an implementation to make it pass (green). Then the AI proposes additional edge-case tests that the human may not have considered: boundary values, null inputs, concurrency scenarios, error paths. The human reviews these AI-proposed tests (much easier to review than implementation code), approves or adjusts them, and now has a comprehensive test suite that the human+AI pair authored together. This is TDD's ultimate form — tests as specification, elevated from practice to necessity.
+</p>
+
+<div class="code-block" data-lang="Python — Human+AI TDD Workflow">
+<pre><span class="cm"># STEP 1: Human writes the failing test (RED) — this IS the spec</span>
+<span class="kw">def</span> <span class="fn">test_discount_calculator_applies_bulk_discount</span>():
+    calc = <span class="tp">DiscountCalculator</span>(rules=<span class="fn">load_rules</span>(<span class="str">"standard-2024"</span>))
+
+    result = calc.<span class="fn">calculate</span>(
+        items=[<span class="tp">Item</span>(<span class="str">"widget"</span>, price=<span class="str">100</span>, qty=<span class="str">25</span>)],
+        customer_tier=<span class="str">"gold"</span>
+    )
+
+    <span class="kw">assert</span> result.subtotal == <span class="str">2500</span>
+    <span class="kw">assert</span> result.discount_pct == <span class="str">15</span>       <span class="cm"># bulk ≥20 units = 15%</span>
+    <span class="kw">assert</span> result.final_total == <span class="str">2125</span>
+
+<span class="cm"># STEP 2: AI generates implementation to pass this test (GREEN)</span>
+<span class="cm"># STEP 3: AI proposes additional edge-case tests:</span>
+
+<span class="cm"># ✓ AI-proposed: boundary at exactly 20 units</span>
+<span class="kw">def</span> <span class="fn">test_bulk_discount_boundary_at_20_units</span>():
+    calc = <span class="tp">DiscountCalculator</span>(rules=<span class="fn">load_rules</span>(<span class="str">"standard-2024"</span>))
+    result = calc.<span class="fn">calculate</span>(
+        items=[<span class="tp">Item</span>(<span class="str">"widget"</span>, price=<span class="str">100</span>, qty=<span class="str">20</span>)],
+        customer_tier=<span class="str">"gold"</span>
+    )
+    <span class="kw">assert</span> result.discount_pct == <span class="str">15</span>      <span class="cm"># boundary: exactly 20</span>
+
+<span class="cm"># ✓ AI-proposed: just below threshold</span>
+<span class="kw">def</span> <span class="fn">test_no_bulk_discount_at_19_units</span>():
+    calc = <span class="tp">DiscountCalculator</span>(rules=<span class="fn">load_rules</span>(<span class="str">"standard-2024"</span>))
+    result = calc.<span class="fn">calculate</span>(
+        items=[<span class="tp">Item</span>(<span class="str">"widget"</span>, price=<span class="str">100</span>, qty=<span class="str">19</span>)],
+        customer_tier=<span class="str">"gold"</span>
+    )
+    <span class="kw">assert</span> result.discount_pct == <span class="str">0</span>       <span class="cm"># below threshold</span>
+
+<span class="cm"># ✓ AI-proposed: empty items list</span>
+<span class="cm"># ✓ AI-proposed: zero-quantity item</span>
+<span class="cm"># ✓ AI-proposed: negative price guard</span>
+<span class="cm"># STEP 4: Human reviews AI-proposed tests, approves/adjusts</span></pre>
+</div>
+<p class="cn-note">
+经典原则：Beck的TDD——先写测试，再写代码。AI延伸：人类写失败的测试（即规约），AI生成实现使之通过，然后AI提出额外的边界测试——人类审查这些测试（比审查实现代码容易得多），批准或调整。这是TDD的终极形态——测试即规约，从实践升级为必需。
+</p>
+
+<!-- ANGLE B -->
+<h3>Angle B · Mutation Testing Renaissance · 变异测试的复兴</h3>
+
+<p>
+<strong>Classical principle:</strong> Code coverage metrics (line coverage, branch coverage) are notoriously misleading. A test suite with 80% line coverage might still miss critical bugs because the tests execute the code without meaningfully asserting on its behavior. You can achieve 100% coverage with tests that assert nothing. The real question is not "how much code do the tests execute?" but "how many bugs would the tests catch?"
+</p>
+
+<p>
+<strong>AI extension:</strong> Mutation testing answers that question directly. It works by injecting small faults ("mutations") into the production code — changing a <code>&gt;</code> to <code>&gt;=</code>, replacing a return value, removing a null check — and then running the test suite. If a test fails, the mutant is "killed" (good). If all tests pass despite the mutation, the mutant "survives" (bad — it means the test suite has a gap). Mutation testing has always been the gold standard for test quality, but it was prohibitively expensive: generating all possible mutations and running the full test suite for each one could take hours. AI makes mutation testing practical by generating <em>targeted semantic mutations</em> — not random syntactic changes, but meaningful fault injections based on understanding the code's logic. AI also analyzes surviving mutants and suggests exactly which test to add to kill them.
+</p>
+
+<div class="evolution-steps">
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--text-dim)">Level 1 — No Coverage Metrics</div>
+    <div class="evo-step-desc">"It works on my machine." No test discipline. Bugs found in production. Each deployment is an act of faith.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--text-secondary)">Level 2 — Line Coverage Gate (e.g. 80%)</div>
+    <div class="evo-step-desc">CI blocks PRs below coverage threshold. Better than nothing, but teams learn to game it — tests that execute code without meaningful assertions.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--cyan-dim)">Level 3 — Branch Coverage + Assertion Density</div>
+    <div class="evo-step-desc">Deeper metrics: branch coverage, assertions-per-test, mutation score for critical modules. Manual mutation testing tools (PIT, mutmut) run nightly.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--purple)">Level 4 — AI-Targeted Mutation Testing</div>
+    <div class="evo-step-desc">AI generates semantic mutations based on code intent, not random syntax changes. Mutation space shrinks 10x. Practical for every PR, not just nightly runs.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--cyan)">Level 5 — AI Mutation + Auto-Fix (2025→)</div>
+    <div class="evo-step-desc">Surviving mutants auto-analyzed. AI suggests the exact test to add to kill each mutant. Developer reviews and approves. Test gaps close continuously.</div>
+  </div>
+  <div class="evo-step">
+    <div class="evo-step-title" style="color:var(--green)">Level 6 — Continuous Mutation Score (2026→)</div>
+    <div class="evo-step-desc">Mutation score tracked per module, per sprint. AI maintains a living test-quality dashboard. "Mutation score dropped below 85% in payments module" triggers auto-generated test PRs.</div>
+  </div>
+</div>
+<p class="cn-note">
+经典原则：代码覆盖率指标具有误导性——80%行覆盖率不意味着能捕获80%的缺陷。变异测试是测试质量的金标准，但过于昂贵。AI延伸：AI生成有针对性的语义变异（非随机语法变更），变异空间缩小10倍，使变异测试在每个PR上都可行。AI分析存活的变异体并建议添加哪些测试来消灭它们。
+</p>
+
+<!-- ANGLE C -->
+<h3>Angle C · Contract-First Testing + AI Verification · 契约优先测试</h3>
+
+<p>
+<strong>Classical principle:</strong> Freeman and Pryce's outside-in approach starts with an acceptance test that describes the feature from the outside — what the user sees, what the API returns. This acceptance test drives the internal design. Khorikov reinforces this: test observable behavior at system boundaries, not internal implementation details. The boundary is the contract.
+</p>
+
+<p>
+<strong>AI extension:</strong> Modern API-first development already produces machine-readable contracts — OpenAPI specs for REST, AsyncAPI specs for event-driven systems, GraphQL schemas, Protobuf definitions. These contracts are the "acceptance test specifications" that Freeman and Pryce envisioned, but in a format that AI can consume directly. AI can generate comprehensive conformance test suites from API specs — testing every endpoint, every parameter combination, every error code documented in the spec. More critically, AI can detect <em>contract drift</em>: cases where the implementation has diverged from the spec (a field was added without updating the OpenAPI doc, a status code changed, a required field became optional). This turns the spec from a static document into a living, continuously verified contract.
+</p>
+
+<p>
+<strong>Concrete example:</strong> A team maintains an OpenAPI 3.1 spec as the source of truth for their payment service API. In CI, an AI agent reads the spec, generates contract tests for every documented endpoint (including error scenarios, rate limits, and pagination edge cases), runs them against the actual service, and flags any discrepancies. When a developer changes the API without updating the spec, the drift detection surfaces it within minutes — not weeks later when a downstream consumer breaks.
+</p>
+<p class="cn-note">
+经典原则：Freeman和Pryce的由外而内方法从描述功能的验收测试开始。Khorikov强化：在系统边界测试可观察行为。AI延伸：OpenAPI/AsyncAPI/GraphQL契约是机器可读的"验收测试规约"。AI从API规约生成全面的一致性测试套件，更关键的是，AI检测契约漂移——实现偏离规约的情况。将规约从静态文档变为持续验证的活契约。
+</p>
+
+<!-- ANGLE D -->
+<h3>Angle D · Building Trust in AI-Generated Code · 构建对AI生成代码的信任</h3>
+
+<p>
+<strong>Classical principle:</strong> Trust in code has always rested on two pillars: code review (a human reads it and says "this looks right") and testing (automated verification that it does what it should). Khorikov's "test observable behavior, not implementation details" is the most practical formulation of the testing pillar — you don't need to understand <em>how</em> the code works internally, only that it produces the correct outputs for given inputs.
+</p>
+
+<p>
+<strong>AI extension:</strong> AI-generated code needs a higher trust bar than human-written code, because the author (the AI) cannot explain its reasoning the way a human colleague can. The four-layer trust framework addresses this systematically. Layer 1: the human writes the test first — this is the specification, the non-negotiable contract. Layer 2: AI generates the implementation to pass the test, plus proposes additional tests. Layer 3: the human reviews the <em>tests</em> first (not the implementation) — reviewing tests is cognitively easier because tests describe <em>what</em> the code should do, not <em>how</em> it does it. Layer 4: mutation testing validates test quality — if the tests can survive code mutations, the test suite itself has gaps. Only after all four layers pass does the code earn full trust. The key insight: the test suite is the primary artifact that humans review, because tests are a more efficient compression of the code's intended behavior than the implementation itself.
+</p>
+
+<p>
+<strong>Concrete example:</strong> A team adopts the trust pipeline for a new payment processing module. Developer writes 12 failing tests specifying all discount rules, tax calculations, and error handling. AI generates the implementation (340 lines). Instead of reviewing 340 lines of implementation, the tech lead reviews 12 test specifications (80 lines) — confirming they capture all business rules. Then AI mutation testing runs 45 targeted mutations against the implementation; 43 are killed, 2 survive. AI suggests two additional assertions to cover the gaps. After adding them, the mutation score hits 100%. The team ships with confidence — not because they reviewed every line, but because every behavior is tested and every test is validated by mutation analysis.
+</p>
+<p class="cn-note">
+经典原则：代码信任建立在代码审查和测试两个支柱上。Khorikov的"测试可观察行为"是测试支柱的最实用表述。AI延伸：AI生成的代码需要更高的信任门槛。四层信任框架：(1)人类先写测试，(2)AI生成实现+额外测试，(3)人类先审查测试（比审查实现容易），(4)变异测试验证测试质量。关键洞察：测试套件是人类审查的首要工件。
+</p>
+
+
+<!-- ─── §04 DECISION TABLE ─── -->
+<h2><span class="num">04</span> Decision Table — When to Apply What</h2>
+
+<p>
+For the practicing architect, the question is always: "Given this testing scenario, what's the classical approach and how does AI change the equation?" This table maps common testing challenges to both approaches.
+</p>
+<p class="cn-note">
+决策表将常见测试挑战映射到经典方法和AI增强方法，回答"AI如何改变测试等式"。
+</p>
+
+<table class="decision-table">
+  <thead>
+    <tr>
+      <th class="col-scenario">Scenario 场景</th>
+      <th class="col-classic"><span class="classic-badge">CLASSIC</span> Classical Approach</th>
+      <th class="col-ai"><span class="ai-badge">AI+</span> AI-Augmented Approach</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="col-scenario">Unit Testing AI-Generated Code<br><small style="color:var(--text-dim)">AI生成代码的单元测试</small></td>
+      <td>Beck's TDD: write test first, implement second. Manual red-green-refactor cycle. Developer writes both test and implementation.</td>
+      <td>Human writes failing test (spec). AI generates implementation + proposes boundary tests. Human reviews tests. Trust pipeline: spec → implement → review tests → mutate.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Integration Test Strategy<br><small style="color:var(--text-dim)">集成测试策略</small></td>
+      <td>GOOS walking skeleton: thin slice through whole architecture. Manual setup of test doubles at service boundaries. Slow to write, slow to maintain.</td>
+      <td>AI generates integration test scaffolding from architecture diagrams or <code>.ai/</code> context. Auto-provisions test containers. AI maintains test doubles when APIs change.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Test Data Management<br><small style="color:var(--text-dim)">测试数据管理</small></td>
+      <td>Hand-crafted fixtures. Factory patterns (FactoryBot, Faker). Often stale — test data drifts from production reality.</td>
+      <td>AI generates realistic test data from production schema analysis (anonymized). Detects fixture drift. Proposes data scenarios matching recent production incidents.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Flaky Test Triage<br><small style="color:var(--text-dim)">不稳定测试分诊</small></td>
+      <td>Manual investigation. Retry loops. Quarantine flaky tests. Often ignored until CI trust erodes completely.</td>
+      <td>AI analyzes flaky test patterns (timing, ordering, state leaks). Classifies root cause. Proposes fix or quarantine with auto-generated issue ticket.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Test Coverage Targets<br><small style="color:var(--text-dim)">测试覆盖率目标</small></td>
+      <td>Line/branch coverage gates (70-80%). Teams game the metric — tests that execute without asserting. Coverage ≠ confidence.</td>
+      <td>Mutation score as primary metric. AI-targeted mutations on every PR for changed files. Surviving mutants = actionable test gaps, not abstract percentages.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Legacy Code Test Gaps<br><small style="color:var(--text-dim)">遗留代码测试缺口</small></td>
+      <td>Feathers' characterization tests. Manual effort to pin current behavior. Time-consuming, so it rarely happens for the full codebase.</td>
+      <td>AI generates characterization tests for legacy modules by tracing execution paths. Pins current behavior in minutes. Prioritized by hotspot analysis from 0.2.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">API Contract Testing<br><small style="color:var(--text-dim)">API契约测试</small></td>
+      <td>Pact or Spring Cloud Contract. Manual consumer-driven contract definitions. Requires coordination between teams.</td>
+      <td>AI generates conformance tests from OpenAPI/AsyncAPI specs. Detects contract drift automatically. Notifies downstream consumers of breaking changes before merge.</td>
+    </tr>
+    <tr>
+      <td class="col-scenario">Performance Regression Testing<br><small style="color:var(--text-dim)">性能回归测试</small></td>
+      <td>Manual benchmarks. Periodic load tests. Regressions caught late — often after deployment. Baseline management is tedious.</td>
+      <td>AI establishes performance baselines from historical CI data. Detects statistically significant regressions per PR. Distinguishes noise from signal using trend analysis.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- ─── §05 PRACTICAL CHECKLIST ─── -->
+<h2><span class="num">05</span> Practical Checklist — Building Your AI-Augmented Testing Practice</h2>
+
+<p>
+To move from ad-hoc testing to a rigorous, AI-augmented trust pipeline, follow this staged checklist. Each stage builds on the previous — the AI-powered stages only work if the classical foundations are solid.
+</p>
+<p class="cn-note">
+从临时测试迈向严格的AI增强信任管线的分阶段检查清单。每个阶段建立在前一阶段之上——AI驱动的阶段只有在经典基础扎实时才有效。
+</p>
+
+<div class="checklist">
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Establish minimum test coverage gate in CI (line + branch)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(249,115,22,0.15); color:var(--orange); border:1px solid rgba(249,115,22,0.3)">S2</span>
+    Standardize test framework and naming conventions across repos
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Adopt TDD for all new code — team reads Beck Ch. 1-8
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Write integration tests for critical paths (walking skeleton)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3)">S3</span>
+    Triage and fix flaky tests — zero-flake CI as team policy
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    AI generates edge-case tests for every new PR on changed files
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(34,211,238,0.15); color:var(--cyan); border:1px solid rgba(34,211,238,0.3)">S4</span>
+    Enable mutation testing in CI for critical modules (payments, auth)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    Contract-first testing from OpenAPI/AsyncAPI specs in CI pipeline
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(167,139,250,0.15); color:var(--purple); border:1px solid rgba(167,139,250,0.3)">S5</span>
+    AI contract drift detection — alert on spec/implementation divergence
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    Full AI trust pipeline: human spec → AI implement → review tests → mutate
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    AI-maintained test suite health dashboard (mutation score, flake rate, drift)
+  </div>
+  <div class="check-item">
+    <span class="check-stage" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.3)">S6</span>
+    AI auto-generates test PRs when mutation score drops below threshold
+  </div>
+</div>
+
+
+<!-- ─── §06 TAKEAWAY ─── -->
+<h2><span class="num">06</span> The Architect's Takeaway</h2>
+
+<p>
+The three books on this article's shelf — Beck, Freeman and Pryce, Khorikov — gave us everything we need to test well. What they couldn't anticipate was the scenario where a significant fraction of production code is written by a machine. In that scenario, testing transforms from a quality practice into the <em>primary trust infrastructure</em>. Without testing discipline, AI code generation is just faster bug production — plausible-looking code that nobody has verified, shipped at a pace that outstrips any team's review capacity.
+</p>
+<p class="cn-note">
+三本书给了我们测试所需的一切。它们无法预见的是生产代码大量由机器编写的场景。在该场景下，测试从质量实践变为首要的信任基础设施。没有测试纪律，AI代码生成不过是更快的缺陷生产。
+</p>
+
+<p>
+The trust pipeline this article proposes — human specification, AI implementation, human test review, mutation validation — is not a theoretical framework. It is a concrete workflow that teams can adopt incrementally, starting with "human writes the test, AI generates the code" (Stage 4) and building toward full mutation-validated trust (Stage 6). The architect's role in this pipeline is to design the test strategy, set the quality gates, and decide which modules deserve which level of rigor. Not every CRUD endpoint needs mutation testing. But your payment processing, your authentication flow, your data pipeline transformations — those need the full trust pipeline. The judgment of <em>where to invest testing rigor</em> is irreducibly human, and it is the architect's most consequential decision in the AI era.
+</p>
+<p class="cn-note">
+本文提出的信任管线——人类规约、AI实现、人类审查测试、变异验证——不是理论框架，而是团队可以渐进采纳的具体工作流。架构师的角色是设计测试策略、设置质量门禁、决定哪些模块值得哪种严格程度。"在哪里投入测试严格性"的判断是不可还原的人类决策，也是架构师在AI时代最重要的决定。
+</p>
+
+<div class="insight-box" style="margin-top:40px;">
+  <div class="label">Next in Series → Article 0.4</div>
+  <p style="margin:0; font-size:14px; line-height:1.6">
+    <strong>The Developer's New Toolkit</strong> — The modern developer's workbench is being rebuilt from scratch. From IDE plugins to AI pair programmers, from terminal workflows to agent-based development — how the tools shape the craft, and how classical craftsmanship principles guide tool selection.
+    <br><span style="color:var(--text-dim); font-style:italic; font-family:'Noto Serif SC',serif;">下一篇：开发者的新工具箱——现代开发者工作台正在从零重建。</span>
+  </p>
+</div>
+
+</main>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="article-footer">
+  <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim)">
+    Software Knowledge Base · Layer 0: Code Craft · Article 0.3 of 20<br>
+    Classical Foundations × AI Co-Evolution · 经典基础 × AI协同进化
+  </div>
+  <div class="nav-links">
+    <a class="nav-link" href="./0.2-ai-era-refactoring.html">← Prev: 0.2 AI-Era Refactoring</a>
+    <a class="nav-link" href="./0.4-developers-toolkit.html">Next: 0.4 The Developer's New Toolkit →</a>
+  </div>
+</footer>
+
+</body>
+</html>
