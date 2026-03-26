@@ -1,0 +1,61 @@
+<svg viewBox="0 0 820 320" xmlns="http://www.w3.org/2000/svg" style="font-family:'JetBrains Mono',monospace;">
+  <title>L2 — Architecture Decision Engineering: From Pattern Matching to Quantified Trade-offs</title>
+  <desc>Shows the transformation from experience-based architecture selection to data-driven decision engineering with AI-assisted analysis, fitness functions, and continuous evaluation.</desc>
+
+  <rect width="820" height="320" rx="8" fill="#0a0e17"/>
+
+  <text x="410" y="24" text-anchor="middle" font-size="11" fill="#f97316" font-weight="700" letter-spacing="1">L2 ARCHITECTURE — FROM PATTERN MATCHING TO DECISION ENGINEERING</text>
+
+  <!-- Before -->
+  <rect x="40" y="50" width="340" height="120" rx="6" fill="#141b2d" stroke="#f43f5e" stroke-width="1.2"/>
+  <text x="210" y="72" text-anchor="middle" font-size="10" fill="#f43f5e" font-weight="700">BEFORE 之前</text>
+  <text x="210" y="88" text-anchor="middle" font-size="8" fill="#94a3b8">"I pick an architecture based on experience"</text>
+  <text x="80" y="110" font-size="8" fill="#64748b">• Pattern matching from past projects</text>
+  <text x="80" y="126" font-size="8" fill="#64748b">• Defend choice with authority</text>
+  <text x="80" y="142" font-size="8" fill="#64748b">• No fitness functions</text>
+  <text x="80" y="158" font-size="8" fill="#64748b">• Gut-feel trade-off analysis</text>
+
+  <!-- Arrow -->
+  <text x="410" y="110" text-anchor="middle" font-size="24" fill="#f97316">→</text>
+
+  <!-- After -->
+  <rect x="440" y="50" width="340" height="120" rx="6" fill="#141b2d" stroke="#10b981" stroke-width="1.2"/>
+  <text x="610" y="72" text-anchor="middle" font-size="10" fill="#10b981" font-weight="700">AFTER 之后</text>
+  <text x="610" y="88" text-anchor="middle" font-size="8" fill="#94a3b8">"I quantify trade-offs and design for evolution"</text>
+  <text x="480" y="110" font-size="8" fill="#22d3ee">• Trade-off ADRs with fitness functions</text>
+  <text x="480" y="126" font-size="8" fill="#22d3ee">• AI-fed analysis (metrics, deps, history)</text>
+  <text x="480" y="142" font-size="8" fill="#22d3ee">• Continuous architectural evaluation</text>
+  <text x="480" y="158" font-size="8" fill="#22d3ee">• Business-language translation</text>
+
+  <!-- 5 Architecture Dimensions -->
+  <text x="410" y="200" text-anchor="middle" font-size="9" fill="#f97316" font-weight="600">5 ARCHITECTURE DIMENSIONS COVERED</text>
+
+  <rect x="40" y="215" width="140" height="50" rx="4" fill="#141b2d" stroke="#f97316" stroke-width="0.8"/>
+  <text x="110" y="235" text-anchor="middle" font-size="8" fill="#f97316" font-weight="600">Styles</text>
+  <text x="110" y="250" text-anchor="middle" font-size="7" fill="#64748b">Mono · Micro · Cell</text>
+  <text x="110" y="260" text-anchor="middle" font-size="6" fill="#64748b">Art. 2.1</text>
+
+  <rect x="195" y="215" width="140" height="50" rx="4" fill="#141b2d" stroke="#f97316" stroke-width="0.8"/>
+  <text x="265" y="235" text-anchor="middle" font-size="8" fill="#f97316" font-weight="600">Data</text>
+  <text x="265" y="250" text-anchor="middle" font-size="7" fill="#64748b">Replication · DR · CAP</text>
+  <text x="265" y="260" text-anchor="middle" font-size="6" fill="#64748b">Art. 2.2</text>
+
+  <rect x="350" y="215" width="140" height="50" rx="4" fill="#141b2d" stroke="#f97316" stroke-width="0.8"/>
+  <text x="420" y="235" text-anchor="middle" font-size="8" fill="#f97316" font-weight="600">Integration</text>
+  <text x="420" y="250" text-anchor="middle" font-size="7" fill="#64748b">Events · Sagas · EIP</text>
+  <text x="420" y="260" text-anchor="middle" font-size="6" fill="#64748b">Art. 2.3</text>
+
+  <rect x="505" y="215" width="140" height="50" rx="4" fill="#141b2d" stroke="#f97316" stroke-width="0.8"/>
+  <text x="575" y="235" text-anchor="middle" font-size="8" fill="#f97316" font-weight="600">Security</text>
+  <text x="575" y="250" text-anchor="middle" font-size="7" fill="#64748b">OAuth · Threat Model</text>
+  <text x="575" y="260" text-anchor="middle" font-size="6" fill="#64748b">Art. 2.4</text>
+
+  <rect x="660" y="215" width="140" height="50" rx="4" fill="#141b2d" stroke="#f97316" stroke-width="0.8"/>
+  <text x="730" y="235" text-anchor="middle" font-size="8" fill="#f97316" font-weight="600">Data Arch</text>
+  <text x="730" y="250" text-anchor="middle" font-size="7" fill="#64748b">Lakehouse · Vector DB</text>
+  <text x="730" y="260" text-anchor="middle" font-size="6" fill="#64748b">Art. 2.5</text>
+
+  <!-- Bottom -->
+  <rect x="150" y="282" width="520" height="28" rx="5" fill="#141b2d" stroke="#f97316" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="410" y="300" text-anchor="middle" font-size="9" fill="#f97316" font-weight="600">Source: Fundamentals of SA · DDIA · Hard Parts · EIP · Clean Architecture</text>
+</svg>
