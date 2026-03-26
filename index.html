@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Software Knowledge Base — Classical Foundations × AI Co-Evolution</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #0a0e17; --bg-surface: #0f1420; --bg-card: #141b2d; --bg-card-hover: #1a2340;
+  --border: #1e2a45; --border-accent: #2d4a7a;
+  --cyan: #22d3ee; --cyan-dim: #0e7490; --cyan-glow: rgba(34,211,238,0.15);
+  --purple: #a78bfa; --orange: #f97316; --green: #10b981; --rose: #f43f5e; --yellow: #eab308;
+  --text-primary: #e2e8f0; --text-secondary: #94a3b8; --text-dim: #64748b;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg-deep); color:var(--text-primary); font-family:'IBM Plex Sans',sans-serif; line-height:1.7; font-size:16px; -webkit-font-smoothing:antialiased; }
+a { color:var(--cyan); text-decoration:none; transition:color 0.2s; }
+a:hover { color:#fff; }
+
+.hero { position:relative; padding:80px 0 60px; overflow:hidden; border-bottom:1px solid var(--border); }
+.hero::before { content:''; position:absolute; top:0;left:0;right:0;bottom:0; background:radial-gradient(ellipse 800px 400px at 20% 50%,rgba(34,211,238,0.06),transparent),radial-gradient(ellipse 600px 300px at 80% 30%,rgba(167,139,250,0.04),transparent); }
+.hero-inner { position:relative; max-width:900px; margin:0 auto; padding:0 32px; }
+.badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--cyan); border:1px solid var(--cyan-dim); padding:3px 10px; border-radius:3px; background:var(--cyan-glow); margin-bottom:16px; }
+.hero h1 { font-family:'JetBrains Mono',monospace; font-size:34px; font-weight:700; line-height:1.2; margin-bottom:6px; }
+.hero .cn { font-family:'Noto Serif SC',serif; font-size:18px; color:var(--text-dim); font-style:italic; margin-bottom:20px; }
+.hero p { font-size:15px; color:var(--text-secondary); max-width:680px; margin-bottom:16px; }
+.stats { display:flex; gap:24px; flex-wrap:wrap; margin-top:20px; }
+.stat { text-align:center; padding:12px 20px; background:var(--bg-card); border:1px solid var(--border); border-radius:6px; min-width:100px; }
+.stat-num { font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:700; display:block; }
+.stat-label { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-top:2px; }
+
+.container { max-width:900px; margin:0 auto; padding:0 32px; }
+
+.layer { padding:40px 0; border-bottom:1px solid var(--border); }
+.layer:last-child { border-bottom:none; }
+.layer-header { display:flex; align-items:center; gap:14px; margin-bottom:6px; }
+.layer-badge { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; letter-spacing:1px; padding:3px 10px; border-radius:3px; }
+.layer-title { font-family:'JetBrains Mono',monospace; font-size:18px; font-weight:700; }
+.layer-sub { font-family:'Noto Serif SC',serif; font-size:13px; color:var(--text-dim); font-style:italic; margin-bottom:20px; }
+
+.article-list { display:flex; flex-direction:column; gap:8px; }
+.article-link { display:grid; grid-template-columns:48px 1fr auto; gap:0; background:var(--bg-card); border:1px solid var(--border); border-radius:6px; overflow:hidden; transition:all 0.2s; }
+.article-link:hover { border-color:var(--border-accent); background:var(--bg-card-hover); transform:translateY(-1px); }
+.article-num { display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; background:var(--bg-surface); border-right:1px solid var(--border); }
+.article-info { padding:12px 16px; }
+.article-title { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:3px; }
+.article-title-cn { font-family:'Noto Serif SC',serif; font-size:11px; color:var(--text-dim); font-style:italic; }
+.article-books { padding:12px 16px; font-size:11px; color:var(--text-dim); display:flex; align-items:center; }
+
+.section-title { font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:700; color:var(--cyan); margin:48px 0 8px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+.section-desc { font-size:14px; color:var(--text-secondary); margin-bottom:16px; }
+
+.diagram-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px,1fr)); gap:10px; margin:16px 0; }
+.diagram-card { background:var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:14px; transition:all 0.2s; }
+.diagram-card:hover { border-color:var(--border-accent); transform:translateY(-1px); }
+.diagram-card .name { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; margin-bottom:4px; }
+.diagram-card .desc { font-size:11px; color:var(--text-dim); }
+
+footer { padding:32px 0; text-align:center; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim); border-top:1px solid var(--border); margin-top:20px; }
+
+@media (max-width:640px) {
+  .hero h1 { font-size:24px; }
+  .stats { gap:12px; }
+  .stat { min-width:80px; padding:8px 12px; }
+  .stat-num { font-size:20px; }
+  .article-link { grid-template-columns:42px 1fr; }
+  .article-books { display:none; }
+  .diagram-grid { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HERO ═══ -->
+<header class="hero">
+  <div class="hero-inner">
+    <div class="badge">Software Knowledge Base · 软件知识库</div>
+    <h1>Classical Foundations × AI Co-Evolution</h1>
+    <div class="cn">经典基础 × AI协同进化 — 面向软件架构师的图文知识库</div>
+    <p>A 20-article illustrated series connecting classical software engineering wisdom to AI-era practice. Every article is grounded in established book knowledge and extended through the lens of AI co-evolution.</p>
+    <div class="stats">
+      <div class="stat"><span class="stat-num" style="color:var(--cyan)">20</span><span class="stat-label">Articles</span></div>
+      <div class="stat"><span class="stat-num" style="color:var(--purple)">5</span><span class="stat-label">Layers</span></div>
+      <div class="stat"><span class="stat-num" style="color:var(--orange)">30+</span><span class="stat-label">Books</span></div>
+      <div class="stat"><span class="stat-num" style="color:var(--green)">80+</span><span class="stat-label">Diagrams</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ═══ L0 ═══ -->
+<section class="layer">
+  <div class="layer-header">
+    <span class="layer-badge" style="background:rgba(34,211,238,0.12);color:var(--cyan);border:1px solid rgba(34,211,238,0.25)">L0</span>
+    <span class="layer-title" style="color:var(--cyan)">Code Craft</span>
+  </div>
+  <div class="layer-sub">代码工艺层 · The engineer who sees code as infrastructure</div>
+  <div class="article-list">
+    <a class="article-link" href="articles/L0-code-craft/0.1-craft-spectrum.html">
+      <div class="article-num" style="color:var(--cyan)">0.1</div>
+      <div class="article-info">
+        <div class="article-title">The Craft Spectrum — From Clean Code to AI-Readable Code</div>
+        <div class="article-title-cn">从整洁代码到AI可读代码：工艺的进化光谱</div>
+      </div>
+      <div class="article-books">Clean Code · Code Complete · Philosophy of SW Design</div>
+    </a>
+    <a class="article-link" href="articles/L0-code-craft/0.2-ai-era-refactoring.html">
+      <div class="article-num" style="color:var(--cyan)">0.2</div>
+      <div class="article-info">
+        <div class="article-title">AI-Era Refactoring — Machines Propose, Humans Dispose</div>
+        <div class="article-title-cn">AI时代的重构：机器提议，人类决策</div>
+      </div>
+      <div class="article-books">Refactoring · Working with Legacy Code · Tidy First?</div>
+    </a>
+    <a class="article-link" href="articles/L0-code-craft/0.3-testing-strategies.html">
+      <div class="article-num" style="color:var(--cyan)">0.3</div>
+      <div class="article-info">
+        <div class="article-title">Testing Strategies for Human + AI Codebases</div>
+        <div class="article-title-cn">人机混合代码库的测试策略</div>
+      </div>
+      <div class="article-books">TDD By Example · GOOS · Unit Testing</div>
+    </a>
+    <a class="article-link" href="articles/L0-code-craft/0.4-developers-toolkit.html">
+      <div class="article-num" style="color:var(--cyan)">0.4</div>
+      <div class="article-info">
+        <div class="article-title">The Developer's New Toolkit — From IDE to AI-Augmented Workbench</div>
+        <div class="article-title-cn">开发者新工具箱：从IDE到AI增强工作台</div>
+      </div>
+      <div class="article-books">Pragmatic Programmer · SW Engineering at Google</div>
+    </a>
+  </div>
+</section>
+
+<!-- ═══ L1 ═══ -->
+<section class="layer">
+  <div class="layer-header">
+    <span class="layer-badge" style="background:rgba(167,139,250,0.12);color:var(--purple);border:1px solid rgba(167,139,250,0.25)">L1</span>
+    <span class="layer-title" style="color:var(--purple)">Design Thinking</span>
+  </div>
+  <div class="layer-sub">设计思维层 · The engineer who designs for two audiences</div>
+  <div class="article-list">
+    <a class="article-link" href="articles/L1-design-thinking/1.1-design-patterns-revisited.html">
+      <div class="article-num" style="color:var(--purple)">1.1</div>
+      <div class="article-info">
+        <div class="article-title">Design Patterns Revisited — Which Survive the AI Transition?</div>
+        <div class="article-title-cn">设计模式再审视：哪些在AI时代存活？</div>
+      </div>
+      <div class="article-books">Design Patterns (GoF) · Head First · PoEAA</div>
+    </a>
+    <a class="article-link" href="articles/L1-design-thinking/1.2-ddd-meets-ai.html">
+      <div class="article-num" style="color:var(--purple)">1.2</div>
+      <div class="article-info">
+        <div class="article-title">DDD Meets AI — Bounded Contexts as AI Service Boundaries</div>
+        <div class="article-title-cn">DDD遇见AI：限界上下文作为AI服务边界</div>
+      </div>
+      <div class="article-books">Domain-Driven Design · Implementing DDD</div>
+    </a>
+    <a class="article-link" href="articles/L1-design-thinking/1.3-api-design.html">
+      <div class="article-num" style="color:var(--purple)">1.3</div>
+      <div class="article-info">
+        <div class="article-title">API Design as a First-Class Architectural Decision</div>
+        <div class="article-title-cn">API设计作为一等架构决策</div>
+      </div>
+      <div class="article-books">API Design Patterns · RESTful Web APIs</div>
+    </a>
+    <a class="article-link" href="articles/L1-design-thinking/1.4-error-handling-observability.html">
+      <div class="article-num" style="color:var(--purple)">1.4</div>
+      <div class="article-info">
+        <div class="article-title">Error Handling &amp; Observability — The Signal Architecture</div>
+        <div class="article-title-cn">错误处理与可观测性：信号架构</div>
+      </div>
+      <div class="article-books">Release It! · Observability Engineering · SRE</div>
+    </a>
+  </div>
+</section>
+
+<!-- ═══ L2 ═══ -->
+<section class="layer">
+  <div class="layer-header">
+    <span class="layer-badge" style="background:rgba(249,115,22,0.12);color:var(--orange);border:1px solid rgba(249,115,22,0.25)">L2</span>
+    <span class="layer-title" style="color:var(--orange)">Architecture</span>
+  </div>
+  <div class="layer-sub">架构决策层 · The engineer who quantifies trade-offs</div>
+  <div class="article-list">
+    <a class="article-link" href="articles/L2-architecture/2.1-architecture-styles.html">
+      <div class="article-num" style="color:var(--orange)">2.1</div>
+      <div class="article-info">
+        <div class="article-title">Architecture Styles Landscape — Choosing in a World of AI Services</div>
+        <div class="article-title-cn">架构风格全景：在AI服务世界中做选择</div>
+      </div>
+      <div class="article-books">Fundamentals of SA · Hard Parts · Clean Arch</div>
+    </a>
+    <a class="article-link" href="articles/L2-architecture/2.2-microservices-distributed.html">
+      <div class="article-num" style="color:var(--orange)">2.2</div>
+      <div class="article-info">
+        <div class="article-title">Distributed Data — Replication, Consistency, and the DR Architecture</div>
+        <div class="article-title-cn">分布式数据：复制、一致性与灾备架构</div>
+      </div>
+      <div class="article-books">DDIA · Database Internals · Hard Parts</div>
+    </a>
+    <a class="article-link" href="articles/L2-architecture/2.3-event-driven-reactive.html">
+      <div class="article-num" style="color:var(--orange)">2.3</div>
+      <div class="article-info">
+        <div class="article-title">Integration Patterns for a Multi-Country Platform</div>
+        <div class="article-title-cn">多国平台的集成模式</div>
+      </div>
+      <div class="article-books">EIP · Microservices Patterns</div>
+    </a>
+    <a class="article-link" href="articles/L2-architecture/2.4-security-ai-attack-surface.html">
+      <div class="article-num" style="color:var(--orange)">2.4</div>
+      <div class="article-info">
+        <div class="article-title">Security Architecture for API Platforms</div>
+        <div class="article-title-cn">API平台的安全架构</div>
+      </div>
+      <div class="article-books">OAuth 2 in Action · API Security · Threat Modeling</div>
+    </a>
+    <a class="article-link" href="articles/L2-architecture/2.5-data-architecture-lakehouse.html">
+      <div class="article-num" style="color:var(--orange)">2.5</div>
+      <div class="article-info">
+        <div class="article-title">Data Architecture &amp; the Lakehouse Convergence</div>
+        <div class="article-title-cn">数据架构与湖仓融合</div>
+      </div>
+      <div class="article-books">DDIA · Fundamentals of Data Engineering</div>
+    </a>
+  </div>
+</section>
+
+<!-- ═══ L3 ═══ -->
+<section class="layer">
+  <div class="layer-header">
+    <span class="layer-badge" style="background:rgba(16,185,129,0.12);color:var(--green);border:1px solid rgba(16,185,129,0.25)">L3</span>
+    <span class="layer-title" style="color:var(--green)">Infrastructure</span>
+  </div>
+  <div class="layer-sub">基础设施层 · The engineer who builds the machine that watches the machine</div>
+  <div class="article-list">
+    <a class="article-link" href="articles/L3-infrastructure/3.1-cicd-as-architecture.html">
+      <div class="article-num" style="color:var(--green)">3.1</div>
+      <div class="article-info">
+        <div class="article-title">CI/CD as Architecture — Pipeline Design for AI-Augmented Teams</div>
+        <div class="article-title-cn">CI/CD即架构：AI增强团队的流水线设计</div>
+      </div>
+      <div class="article-books">Continuous Delivery · Accelerate</div>
+    </a>
+    <a class="article-link" href="articles/L3-infrastructure/3.2-dns-load-balancing.html">
+      <div class="article-num" style="color:var(--green)">3.2</div>
+      <div class="article-info">
+        <div class="article-title">DNS, Load Balancing &amp; Network Architecture for Multi-DC</div>
+        <div class="article-title-cn">DNS、负载均衡与多数据中心网络架构</div>
+      </div>
+      <div class="article-books">SRE Book · SRE Workbook · Release It!</div>
+    </a>
+    <a class="article-link" href="articles/L3-infrastructure/3.3-infrastructure-as-code.html">
+      <div class="article-num" style="color:var(--green)">3.3</div>
+      <div class="article-info">
+        <div class="article-title">Infrastructure as Code — From Scripts to AI-Managed Infrastructure</div>
+        <div class="article-title-cn">基础设施即代码：从脚本到AI管理的声明式基础设施</div>
+      </div>
+      <div class="article-books">IaC · Terraform Up &amp; Running · K8s in Action</div>
+    </a>
+    <a class="article-link" href="articles/L3-infrastructure/3.4-observability-stack.html">
+      <div class="article-num" style="color:var(--green)">3.4</div>
+      <div class="article-info">
+        <div class="article-title">Observability Stack — Metrics, Logs, Traces, and AI-Powered Analysis</div>
+        <div class="article-title-cn">可观测性栈：指标、日志、链路追踪与AI驱动分析</div>
+      </div>
+      <div class="article-books">Observability Engineering · SRE</div>
+    </a>
+  </div>
+</section>
+
+<!-- ═══ L4 ═══ -->
+<section class="layer">
+  <div class="layer-header">
+    <span class="layer-badge" style="background:rgba(244,63,94,0.12);color:var(--rose);border:1px solid rgba(244,63,94,0.25)">L4</span>
+    <span class="layer-title" style="color:var(--rose)">Engineering Culture</span>
+  </div>
+  <div class="layer-sub">工程文化层 · The engineer who leads the transition</div>
+  <div class="article-list">
+    <a class="article-link" href="articles/L4-engineering-culture/4.1-lean-engineering-manifesto.html">
+      <div class="article-num" style="color:var(--rose)">4.1</div>
+      <div class="article-info">
+        <div class="article-title">The Lean Engineering Manifesto — Let Machines Repeat, Let Humans Evolve</div>
+        <div class="article-title-cn">精益工程宣言：让机器重复，让人类进化</div>
+      </div>
+      <div class="article-books">Accelerate · Toyota Way · Phoenix Project</div>
+    </a>
+    <a class="article-link" href="articles/L4-engineering-culture/4.2-team-topologies.html">
+      <div class="article-num" style="color:var(--rose)">4.2</div>
+      <div class="article-info">
+        <div class="article-title">Team Topologies for AI-Augmented Organizations</div>
+        <div class="article-title-cn">AI增强组织的团队拓扑</div>
+      </div>
+      <div class="article-books">Team Topologies · Manager's Path</div>
+    </a>
+    <a class="article-link" href="articles/L4-engineering-culture/4.3-personal-knowledge-system.html">
+      <div class="article-num" style="color:var(--rose)">4.3</div>
+      <div class="article-info">
+        <div class="article-title">Building Your Personal Knowledge System as a Software Architect</div>
+        <div class="article-title-cn">构建你作为软件架构师的个人知识体系</div>
+      </div>
+      <div class="article-books">Pragmatic Programmer · Staff Engineer</div>
+    </a>
+  </div>
+</section>
+
+<!-- ═══ DIAGRAMS ═══ -->
+<div class="section-title">Panorama Diagrams</div>
+<div class="section-desc">Standalone SVG diagrams — click to view full size</div>
+<div class="diagram-grid">
+  <a class="diagram-card" href="diagrams/series-panorama.svg">
+    <div class="name" style="color:var(--cyan)">Series Panorama</div>
+    <div class="desc">Complete 20-article × 5-layer series map</div>
+  </a>
+  <a class="diagram-card" href="diagrams/L0-craft-spectrum.svg">
+    <div class="name" style="color:var(--cyan)">L0 Craft Spectrum</div>
+    <div class="desc">Six-stage code maturity model</div>
+  </a>
+  <a class="diagram-card" href="diagrams/L1-design-dual-audience.svg">
+    <div class="name" style="color:var(--purple)">L1 Dual Audience</div>
+    <div class="desc">Designing for humans AND AI agents</div>
+  </a>
+  <a class="diagram-card" href="diagrams/L2-architecture-trade-offs.svg">
+    <div class="name" style="color:var(--orange)">L2 Trade-offs</div>
+    <div class="desc">From pattern matching to decision engineering</div>
+  </a>
+  <a class="diagram-card" href="diagrams/L3-infrastructure-stack.svg">
+    <div class="name" style="color:var(--green)">L3 Infra Stack</div>
+    <div class="desc">Four-layer infrastructure with AI layer</div>
+  </a>
+  <a class="diagram-card" href="diagrams/L4-culture-transformation.svg">
+    <div class="name" style="color:var(--rose)">L4 Culture</div>
+    <div class="desc">Three-pillar culture transformation</div>
+  </a>
+</div>
+
+</div>
+
+<footer>
+  <div class="container">
+    Software Knowledge Base · Classical Foundations × AI Co-Evolution<br>
+    经典基础 × AI协同进化 · 20 Articles · 30+ Source Books · 80+ Diagrams<br>
+    <span style="margin-top:8px;display:inline-block">Content &copy; Chening. All rights reserved.</span>
+  </div>
+</footer>
+
+</body>
+</html>
