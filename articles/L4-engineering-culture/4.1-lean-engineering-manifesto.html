@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4.1 The Lean Engineering Manifesto — Let Machines Repeat, Let Humans Evolve</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<!--
+  CSS Architecture Note:
+  The canonical design system lives in templates/article-base.css.
+  For single-file distribution, it is inlined here.
+  When editing styles, update article-base.css first, then re-inline.
+-->
+<style>
+/* ═══ INLINED FROM templates/article-base.css ═══ */
+:root {
+  --bg-deep: #0a0e17; --bg-surface: #0f1420; --bg-card: #141b2d; --bg-card-hover: #1a2340;
+  --border: #1e2a45; --border-accent: #2d4a7a;
+  --cyan: #22d3ee; --cyan-dim: #0e7490; --cyan-glow: rgba(34, 211, 238, 0.15);
+  --purple: #a78bfa; --purple-dim: #6d5dbb; --purple-glow: rgba(167, 139, 250, 0.12);
+  --orange: #f97316; --orange-glow: rgba(249, 115, 22, 0.12);
+  --green: #10b981; --green-glow: rgba(16, 185, 129, 0.12);
+  --rose: #f43f5e; --rose-glow: rgba(244, 63, 94, 0.12);
+  --yellow: #eab308;
+  --text-primary: #e2e8f0; --text-secondary: #94a3b8; --text-dim: #64748b;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg-deep); color:var(--text-primary); font-family:'IBM Plex Sans',sans-serif; line-height:1.75; font-size:16px; -webkit-font-smoothing:antialiased; }
+.article-header { position:relative; padding:80px 0 60px; overflow:hidden; border-bottom:1px solid var(--border); }
+.article-header::before { content:''; position:absolute; top:0;left:0;right:0;bottom:0; background:radial-gradient(ellipse 800px 400px at 20% 50%,rgba(34,211,238,0.06),transparent),radial-gradient(ellipse 600px 300px at 80% 30%,rgba(167,139,250,0.04),transparent); }
+.header-content { position:relative; max-width:860px; margin:0 auto; padding:0 32px; }
+.series-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--cyan); border:1px solid var(--cyan-dim); padding:4px 12px; border-radius:3px; margin-bottom:20px; background:var(--cyan-glow); }
+.article-title { font-family:'JetBrains Mono',monospace; font-size:36px; font-weight:700; line-height:1.25; color:var(--text-primary); margin-bottom:8px; }
+.article-title-cn { font-family:'Noto Serif SC',serif; font-size:20px; font-weight:400; color:var(--text-dim); font-style:italic; margin-bottom:24px; }
+.article-meta { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-dim); display:flex; gap:24px; flex-wrap:wrap; }
+.meta-item { display:flex; align-items:center; gap:6px; }
+.meta-dot { width:6px; height:6px; border-radius:50%; }
+.article-body { max-width:860px; margin:0 auto; padding:48px 32px; }
+h2 { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:var(--cyan); margin:56px 0 8px; padding-bottom:12px; border-bottom:1px solid var(--border); letter-spacing:-0.5px; }
+.article-body > h2:first-child { margin-top:0; }
+h2 .num { color:var(--text-dim); font-weight:400; margin-right:8px; }
+h3 { font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; color:var(--purple); margin:36px 0 12px; }
+p { margin-bottom:18px; color:var(--text-primary); font-size:15.5px; }
+.cn-note { font-family:'Noto Serif SC',serif; font-style:italic; color:var(--text-dim); font-size:14px; line-height:1.8; margin:-8px 0 24px; padding-left:16px; border-left:2px solid var(--border); }
+code { font-family:'JetBrains Mono',monospace; font-size:0.88em; background:rgba(34,211,238,0.08); padding:2px 6px; border-radius:3px; color:var(--cyan); }
+.diagram-container { margin:40px -16px; padding:32px 24px; background:var(--bg-surface); border:1px solid var(--border); border-radius:8px; position:relative; overflow-x:auto; }
+.diagram-container::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--cyan),var(--purple),var(--orange)); }
+.diagram-label { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:20px; }
+.bookshelf { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin:24px 0; align-items:stretch; }
+.book-card { background:var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:16px; transition:all 0.25s ease; position:relative; overflow:hidden; min-height:190px; display:flex; flex-direction:column; }
+.book-card::before { content:''; position:absolute; left:0;top:0;bottom:0; width:3px; }
+.book-card.tier1::before { background:var(--cyan); }
+.book-card.tier2::before { background:var(--purple); }
+.book-card:hover { border-color:var(--border-accent); background:var(--bg-card-hover); transform:translateY(-2px); }
+.book-title { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:4px; line-height:1.4; }
+.book-author { font-size:11px; color:var(--text-dim); }
+.book-desc { font-size:12px; color:var(--text-secondary); margin-top:8px; line-height:1.5; flex:1; }
+.book-tag { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:2px 6px; border-radius:3px; margin-top:8px; letter-spacing:0.5px; }
+.tag-foundation { background:rgba(34,211,238,0.1); color:var(--cyan); border:1px solid rgba(34,211,238,0.2); }
+.tag-practice { background:rgba(167,139,250,0.1); color:var(--purple); border:1px solid rgba(167,139,250,0.2); }
+.decision-table { width:100%; border-collapse:collapse; margin:24px 0; font-size:13px; }
+.decision-table th { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; text-align:left; padding:12px 16px; border-bottom:2px solid var(--border-accent); color:var(--text-secondary); background:var(--bg-surface); }
+.decision-table td { padding:12px 16px; border-bottom:1px solid var(--border); color:var(--text-primary); vertical-align:top; line-height:1.5; }
+.decision-table tr:hover td { background:rgba(34,211,238,0.03); }
+.decision-table .col-scenario { width:22%; font-weight:500; color:var(--text-secondary); }
+.decision-table .col-classic { width:39%; }
+.decision-table .col-ai { width:39%; }
+.classic-badge,.ai-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:1px 5px; border-radius:2px; margin-right:4px; vertical-align:middle; }
+.classic-badge { background:rgba(148,163,184,0.15); color:var(--text-secondary); }
+.ai-badge { background:rgba(34,211,238,0.12); color:var(--cyan); }
+.checklist { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:24px 0; }
+.check-item { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:5px; font-size:13px; color:var(--text-primary); line-height:1.4; transition:border-color 0.2s; }
+.check-item:hover { border-color:var(--border-accent); }
+.check-stage { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:600; padding:2px 7px; border-radius:3px; white-space:nowrap; flex-shrink:0; }
+.stage-1 { background:rgba(244,63,94,0.12); color:var(--rose); border:1px solid rgba(244,63,94,0.2); }
+.stage-2 { background:rgba(249,115,22,0.12); color:var(--orange); border:1px solid rgba(249,115,22,0.2); }
+.stage-3 { background:rgba(234,179,8,0.12); color:var(--yellow); border:1px solid rgba(234,179,8,0.2); }
+.stage-4 { background:rgba(34,211,238,0.12); color:var(--cyan); border:1px solid rgba(34,211,238,0.2); }
+.stage-5 { background:rgba(167,139,250,0.12); color:var(--purple); border:1px solid rgba(167,139,250,0.2); }
+.stage-6 { background:rgba(16,185,129,0.12); color:var(--green); border:1px solid rgba(16,185,129,0.2); }
+.checklist-note { grid-column: 1 / -1; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim); text-align:center; padding:8px; margin-top:4px; }
+.insight-box { margin:32px 0; padding:24px; background:linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04)); border:1px solid var(--border-accent); border-radius:8px; position:relative; }
+.insight-box::before { content:'⚡'; position:absolute; top:-12px; left:20px; background:var(--bg-deep); padding:0 8px; font-size:18px; }
+.insight-box .label { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--cyan); margin-bottom:8px; }
+.code-block { background:#0d1117; border:1px solid var(--border); border-radius:6px; padding:20px; margin:20px 0; overflow-x:auto; position:relative; }
+.code-block::before { content:attr(data-lang); position:absolute; top:8px; right:12px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-dim); letter-spacing:0.5px; }
+.code-block pre { font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.6; color:var(--text-secondary); }
+.code-block .kw { color:var(--purple); } .code-block .fn { color:var(--cyan); } .code-block .str { color:var(--green); }
+.code-block .cm { color:var(--text-dim); font-style:italic; } .code-block .ann { color:var(--orange); } .code-block .tp { color:var(--yellow); }
+.article-footer { max-width:860px; margin:0 auto; padding:40px 32px; border-top:1px solid var(--border); font-size:12px; color:var(--text-dim); }
+.nav-links { display:flex; justify-content:space-between; align-items:center; margin-top:20px; }
+.nav-link { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--cyan); text-decoration:none; padding:8px 16px; border:1px solid var(--border); border-radius:4px; transition:all 0.2s; }
+.nav-link:hover { border-color:var(--cyan); background:var(--cyan-glow); }
+@media (max-width:640px) { .article-title { font-size:24px; } .bookshelf { grid-template-columns:1fr; } .checklist { grid-template-columns:1fr; } .article-meta { flex-direction:column; gap:8px; } }
+@media print { :root { --bg-deep:#fff; --bg-surface:#f8f9fa; --bg-card:#f1f3f5; --bg-card-hover:#f1f3f5; --border:#dee2e6; --border-accent:#adb5bd; --text-primary:#212529; --text-secondary:#495057; --text-dim:#868e96; --cyan:#0c8599; --purple:#7048e8; --orange:#e8590c; --green:#099268; --rose:#e03131; --yellow:#e67700; } body { font-size:11pt; line-height:1.5; } .article-header::before { display:none; } .article-header { padding:24px 0; } .diagram-container::before { display:none; } .book-card:hover { transform:none; } .nav-links { display:none; } .code-block { border:1px solid #dee2e6; background:#f8f9fa; } .code-block pre { color:#212529; } }
+</style>
+</head>
+<body>
+
+<header class="article-header">
+  <div class="header-content">
+    <div class="series-badge">Layer 4 · Engineering Culture · 工程文化层</div>
+    <h1 class="article-title">The Lean Engineering Manifesto</h1>
+    <div class="article-title-cn">精益工程宣言：让机器重复，让人类进化</div>
+    <div class="article-meta">
+      <span class="meta-item"><span class="meta-dot" style="background:var(--rose)"></span> Article 4.1 of 20</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--purple)"></span> ~18 min read</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--orange)"></span> 4 Source Books × 4 AI Angles</span>
+    </div>
+  </div>
+</header>
+
+<main class="article-body">
+
+<h2><span class="num">01</span> Core Insight — The Thesis</h2>
+
+<p>
+The Toyota Production System taught manufacturing a profound truth: eliminate waste by distinguishing between work that creates value and work that merely keeps the machine running. Taiichi Ohno's seven wastes — overproduction, waiting, transport, overprocessing, inventory, motion, defects — became the foundation of lean thinking. <em>The Phoenix Project</em> translated this to software: the "three ways" of flow, feedback, and continuous learning.
+</p>
+<p class="cn-note">
+丰田生产系统教会制造业一个深刻真理：通过区分创造价值的工作和仅仅维持机器运转的工作来消除浪费。大野耐一的七种浪费成为精益思维的基础。《凤凰项目》将此转译到软件领域。
+</p>
+
+<p>
+<em>Accelerate</em> proved it with data: the practices of continuous delivery, lean management, and a generative culture don't just make engineering faster — they make the entire organization more competitive. High-performing teams deploy 973x more frequently, have 6,570x faster lead times, and have 3x lower change failure rates.
+</p>
+<p class="cn-note">
+<em>Accelerate</em>用数据证明：持续交付、精益管理和生成性文化不仅使工程更快——它们使整个组织更具竞争力。高绩效团队部署频率高973倍，前置时间快6570倍。
+</p>
+
+<p>
+Here is the AI-era manifesto: <strong>Let machines repeat, let humans evolve.</strong> AI is the most powerful tool in history for separating repetitive work from creative work. Every task that can be described as "do what we did last time, but for this new case" is a candidate for AI execution. Every task that requires "judgment about a situation we haven't seen before" remains fundamentally human. The architect's new job is to draw this line correctly — and to continuously redraw it as AI capabilities improve.
+</p>
+<p class="cn-note">
+AI时代的宣言：让机器重复，让人类进化。AI是历史上最强大的工具，用于分离重复性工作和创造性工作。每个可描述为"做我们上次做的事，但针对新情况"的任务都是AI执行的候选。需要"对从未见过的情况做判断"的任务仍然是根本性的人类工作。
+</p>
+
+<div class="insight-box">
+  <div class="label">The Reframing 核心重构</div>
+  <p style="margin:0; font-size:15px; line-height:1.7">
+    <strong>The "10x developer" is dead. Long live the "10x amplified team."</strong> The AI era doesn't create superhuman individual contributors — it creates superhuman teams. A team of 5 engineers with excellent AI collaboration skills will outperform a team of 20 without them. The multiplier is not individual talent but <em>organizational capability</em>: how well does the team shape context for AI, evaluate AI output, and maintain the architectural judgment that AI cannot replace?
+  </p>
+</div>
+<p class="cn-note">
+"10x开发者"已死。"10x增强团队"万岁。AI时代不创造超人个人——而是创造超人团队。5人团队如果拥有出色的AI协作技能，将超越20人没有这些技能的团队。乘数不是个人才能而是组织能力。
+</p>
+
+<!-- HERO DIAGRAM -->
+<div class="diagram-container">
+  <div class="diagram-label">◆ Hero Diagram — The Human × Machine Capability Matrix</div>
+  <svg viewBox="0 0 800 350" xmlns="http://www.w3.org/2000/svg" style="width:100%; font-family:'JetBrains Mono',monospace;">
+    <!-- Axes -->
+    <line x1="100" y1="300" x2="750" y2="300" stroke="var(--text-dim,#64748b)" stroke-width="1.5"/>
+    <line x1="100" y1="300" x2="100" y2="30" stroke="var(--text-dim,#64748b)" stroke-width="1.5"/>
+    <text x="425" y="340" text-anchor="middle" font-size="10" fill="var(--text-dim,#64748b)" font-weight="600">CREATIVITY / JUDGMENT REQUIRED 创造力/判断力需求 →</text>
+    <text x="50" y="165" text-anchor="middle" font-size="10" fill="var(--text-dim,#64748b)" font-weight="600" transform="rotate(-90,50,165)">REPETITION / PATTERN MATCHING 重复/模式匹配 →</text>
+
+    <!-- Quadrant labels -->
+    <text x="230" y="70" text-anchor="middle" font-size="11" fill="var(--cyan,#22d3ee)" font-weight="700">AI EXECUTES</text>
+    <text x="230" y="85" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">机器执行</text>
+
+    <text x="600" y="70" text-anchor="middle" font-size="11" fill="var(--green,#10b981)" font-weight="700">HUMAN + AI COLLABORATE</text>
+    <text x="600" y="85" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">人机协作</text>
+
+    <text x="230" y="260" text-anchor="middle" font-size="11" fill="var(--rose,#f43f5e)" font-weight="700">AUTOMATE AWAY</text>
+    <text x="230" y="275" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">自动化消除</text>
+
+    <text x="600" y="260" text-anchor="middle" font-size="11" fill="var(--purple,#a78bfa)" font-weight="700">HUMAN LEADS</text>
+    <text x="600" y="275" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">人类主导</text>
+
+    <!-- Dividing lines -->
+    <line x1="425" y1="40" x2="425" y2="295" stroke="var(--border,#1e2a45)" stroke-width="1" stroke-dasharray="6,4"/>
+    <line x1="105" y1="170" x2="745" y2="170" stroke="var(--border,#1e2a45)" stroke-width="1" stroke-dasharray="6,4"/>
+
+    <!-- Task examples -->
+    <rect x="140" y="100" width="160" height="55" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="0.8"/>
+    <text x="220" y="118" text-anchor="middle" font-size="8" fill="var(--cyan,#22d3ee)" font-weight="600">AI CODE REVIEW</text>
+    <text x="220" y="132" text-anchor="middle" font-size="7" fill="var(--text-secondary,#94a3b8)">Pattern-based quality checks</text>
+    <text x="220" y="146" text-anchor="middle" font-size="7" fill="var(--text-secondary,#94a3b8)">SOLID/DRY compliance scoring</text>
+
+    <rect x="500" y="100" width="170" height="55" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="0.8"/>
+    <text x="585" y="118" text-anchor="middle" font-size="8" fill="var(--green,#10b981)" font-weight="600">ARCHITECTURE DESIGN</text>
+    <text x="585" y="132" text-anchor="middle" font-size="7" fill="var(--text-secondary,#94a3b8)">AI generates options</text>
+    <text x="585" y="146" text-anchor="middle" font-size="7" fill="var(--text-secondary,#94a3b8)">Human selects + validates</text>
+
+    <rect x="140" y="195" width="160" height="45" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--rose,#f43f5e)" stroke-width="0.8"/>
+    <text x="220" y="213" text-anchor="middle" font-size="8" fill="var(--rose,#f43f5e)" font-weight="600">BOILERPLATE CODE</text>
+    <text x="220" y="228" text-anchor="middle" font-size="7" fill="var(--text-secondary,#94a3b8)">CRUD, config files, tests</text>
+
+    <rect x="500" y="195" width="170" height="45" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--purple,#a78bfa)" stroke-width="0.8"/>
+    <text x="585" y="213" text-anchor="middle" font-size="8" fill="var(--purple,#a78bfa)" font-weight="600">STAKEHOLDER DECISIONS</text>
+    <text x="585" y="228" text-anchor="middle" font-size="7" fill="var(--text-secondary,#94a3b8)">Trade-offs, business alignment</text>
+
+    <!-- Key insight -->
+    <rect x="200" y="305" width="400" height="30" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="400" y="324" text-anchor="middle" font-size="9" fill="var(--cyan,#22d3ee)" font-weight="600">The architect's job: draw and continuously redraw this boundary</text>
+  </svg>
+</div>
+
+
+<h2><span class="num">02</span> Classical Foundation — Source Books</h2>
+
+<p>
+Four books provide the classical framework for understanding lean engineering, organizational performance, and the cultural conditions that enable sustained delivery excellence.
+</p>
+<p class="cn-note">
+四本书提供了理解精益工程、组织绩效和支撑持续交付卓越的文化条件的经典框架。
+</p>
+
+<div class="bookshelf">
+  <div class="book-card tier1">
+    <div class="book-title">Accelerate</div>
+    <div class="book-author">Forsgren, Humble, Kim · 2018</div>
+    <div class="book-desc">The scientific proof that technical practices drive organizational performance. Four years of State of DevOps research distilled into 24 capabilities. Key finding: culture is not a soft, unmeasurable thing — it's a predictor of delivery performance that can be measured, improved, and correlated with business outcomes.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · MEASUREMENT</span>
+  </div>
+  <div class="book-card tier1">
+    <div class="book-title">The Toyota Way, 2nd Ed</div>
+    <div class="book-author">Jeffrey Liker · 2021</div>
+    <div class="book-desc">The original lean management bible. 14 principles organized around the "4P" model: Philosophy, Process, People, Problem Solving. Principle 8 — "Use only reliable, thoroughly tested technology" — is surprisingly relevant to AI adoption: don't adopt AI because it's trendy; adopt it because it solves a validated problem better than alternatives.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · LEAN PRINCIPLES</span>
+  </div>
+  <div class="book-card tier2">
+    <div class="book-title">The Phoenix Project</div>
+    <div class="book-author">Kim, Behr, Spafford · 2013</div>
+    <div class="book-desc">DevOps as a novel. The "three ways" — flow, feedback, continuous learning — translated Toyota's production principles into software delivery. The character of Brent (the brilliant bottleneck everyone depends on) is the anti-pattern AI helps solve: no single person should be a bus factor for any critical process.</div>
+    <span class="book-tag tag-practice">PRACTICE · THREE WAYS</span>
+  </div>
+  <div class="book-card tier2">
+    <div class="book-title">Software Engineering at Google</div>
+    <div class="book-author">Winters, Manshreck, Wright · 2020</div>
+    <div class="book-desc">How Google operationalized engineering culture at scale. Three key insights for the AI era: (1) code review is a cultural norm, not a bottleneck; (2) testing is a shared responsibility, not a separate phase; (3) infrastructure is a product that serves engineering teams. Each of these principles transforms when AI enters the picture.</div>
+    <span class="book-tag tag-practice">PRACTICE · CULTURE AT SCALE</span>
+  </div>
+</div>
+
+<p>
+What unites these books is the conviction that engineering excellence is not about individual heroics — it's about systems and culture. Toyota's assembly line, Google's code review culture, and the three ways of DevOps all share the same insight: sustainable high performance comes from designing the <em>system</em> humans work within, not from pushing individual humans harder. AI is the most powerful lever ever created for redesigning that system.
+</p>
+<p class="cn-note">
+这些书的共同信念：工程卓越不是关于个人英雄主义——而是关于系统和文化。丰田的生产线、Google的代码审查文化、DevOps的三种方式共享同一洞见：可持续的高绩效来自设计人类工作的系统，而非推动个人更努力。AI是重新设计这一系统的最强杠杆。
+</p>
+
+
+<h2><span class="num">03</span> AI Co-Evolution — Four Angles</h2>
+
+<h3>Angle A · The Human × Machine Capability Matrix — 人机能力矩阵</h3>
+
+<p>
+<strong>Classical principle:</strong> Lean thinking categorizes work into value-adding and non-value-adding (waste). The Toyota Way's Principle 3 — "Use pull systems to avoid overproduction" — focuses teams on work that customers actually need. Applied to software, this means eliminating work that doesn't directly contribute to user value.
+</p>
+
+<p>
+<strong>AI extension:</strong> AI creates a new dimension in work classification. Instead of just "value-add vs. waste," work is now classified on two axes: <em>creativity/judgment required</em> and <em>repetition/pattern-matching involved</em>. High-repetition, low-judgment work (code formatting, boilerplate generation, routine log analysis) should be fully automated by AI. High-repetition, high-judgment work (code review, incident triage) becomes human-AI collaboration. Low-repetition, high-judgment work (architecture decisions, stakeholder alignment) remains human-led but AI-informed.
+</p>
+
+<p>
+<strong>Concrete example:</strong> A team audit reveals that senior engineers spend 35% of their time on code review — a high-repetition, high-judgment task. Introducing AI first-pass review (Article 3.1) reduces the human review burden by 60%, freeing senior engineers to spend that time on architecture decisions and mentoring — tasks that are high-judgment, low-repetition, and much higher leverage.
+</p>
+<p class="cn-note">
+经典原则：精益思维将工作分为增值和非增值。AI延伸：AI创建新的工作分类维度——创造力/判断力需求与重复/模式匹配程度。高重复低判断工作由AI自动化，高重复高判断工作成为人机协作，高判断低重复工作由人类主导但AI辅助。
+</p>
+
+<h3>Angle B · The Architect's Evolving Role — 架构师角色的进化</h3>
+
+<p>
+<strong>Classical principle:</strong> The architect's traditional responsibilities include technology selection, system design, quality standards, and cross-team coordination. Martin Fowler described the architect as "the person who makes sure the big decisions are right" — but also emphasized that architects should "write code regularly to stay grounded."
+</p>
+
+<p>
+<strong>AI extension:</strong> The architect's role shifts from "making decisions" to "designing decision frameworks." Instead of personally reviewing every significant PR, the architect designs the AI review criteria, fitness functions, and quality gates that enforce architectural standards continuously. Instead of manually evaluating technology options, the architect defines the evaluation criteria and lets AI generate comparison analyses. The architect becomes a <em>policy designer</em> — setting the rules that AI enforces — rather than an <em>execution bottleneck</em>.
+</p>
+<p class="cn-note">
+经典原则：架构师的传统职责包括技术选型、系统设计、质量标准。AI延伸：架构师的角色从"做决策"转向"设计决策框架"。不再亲自审查每个重要PR，而是设计AI审查标准和质量门控。架构师成为策略设计者而非执行瓶颈。
+</p>
+
+<h3>Angle C · The Objective-Validation Protocol — 目标验证协议</h3>
+
+<p>
+<strong>Classical principle:</strong> Agile methodologies introduced "Definition of Done" as a quality contract between the team and stakeholders. Acceptance criteria translate business requirements into verifiable conditions. The problem: these criteria are often vague, inconsistent, and verified manually.
+</p>
+
+<p>
+<strong>AI extension:</strong> The Objective-Validation Protocol (OVP) replaces informal "Definition of Done" with a machine-verifiable quality contract. For every task, the architect/PM defines: (1) <strong>Objective</strong>: what business outcome does this achieve? (2) <strong>Validation criteria</strong>: machine-verifiable conditions (API response under 200ms, test coverage above 80%, no new security vulnerabilities). (3) <strong>AI verification</strong>: which criteria can AI verify automatically in CI? (4) <strong>Human verification</strong>: which criteria require human judgment (UX review, business logic correctness)?
+</p>
+
+<div class="code-block" data-lang="YAML">
+<pre><span class="cm"># Objective-Validation Protocol</span>
+<span class="kw">task</span>: <span class="str">INVOICE-342: Add batch export API</span>
+<span class="kw">objective</span>: <span class="str">Enable clients to export up to 10K invoices as CSV</span>
+<span class="kw">validation</span>:
+  <span class="fn">ai_verified</span>:  <span class="cm"># automated in CI</span>
+    - <span class="str">API response &lt; 5s for 10K invoices</span>
+    - <span class="str">Test coverage &gt; 85% for new code</span>
+    - <span class="str">No new OWASP vulnerabilities</span>
+    - <span class="str">OpenAPI spec updated and valid</span>
+    - <span class="str">Architecture conformance: no layer violations</span>
+  <span class="fn">human_verified</span>:  <span class="cm"># requires judgment</span>
+    - <span class="str">CSV format matches client specification</span>
+    - <span class="str">Error messages are actionable for end users</span>
+    - <span class="str">Documentation updated for API consumers</span></pre>
+</div>
+<p class="cn-note">
+经典原则：敏捷引入"完成定义"作为质量契约。AI延伸：目标验证协议(OVP)用机器可验证的质量契约取代非正式的"完成定义"——每个任务定义目标、AI可自动验证的条件和需要人类判断的条件。
+</p>
+
+<h3>Angle D · Measuring AI-Augmented Productivity — 衡量AI增强生产力</h3>
+
+<p>
+<strong>Classical principle:</strong> DORA metrics measure delivery performance: deployment frequency, lead time, MTTR, change failure rate (Accelerate, Ch. 2). These metrics work because they measure <em>outcomes</em> (how fast and safely do we deliver?) rather than <em>outputs</em> (how many lines of code did we write?).
+</p>
+
+<p>
+<strong>AI extension:</strong> AI-augmented teams need additional metrics that capture the human-AI collaboration quality. New metrics include: <strong>AI suggestion acceptance rate</strong> (are developers using AI effectively, or ignoring/blindly accepting?), <strong>AI-generated defect rate</strong> (does AI-written code have higher or lower defect rates?), <strong>cost per AI inference</strong> (is the ROI positive?), <strong>time-to-context</strong> (how quickly can a new team member become productive with AI tools?), and <strong>judgment ratio</strong> (what percentage of decisions require human override of AI recommendations?).
+</p>
+<p class="cn-note">
+经典原则：DORA指标衡量交付绩效。AI延伸：AI增强团队需要额外指标——AI建议接受率、AI生成代码缺陷率、每次推理成本、上下文获取时间、判断比率（多大比例的决策需要人类推翻AI建议）。
+</p>
+
+
+<h2><span class="num">04</span> Decision Table</h2>
+
+<table class="decision-table">
+<thead>
+<tr>
+  <th class="col-scenario">Scenario</th>
+  <th class="col-classic">Classical Approach</th>
+  <th class="col-ai">AI-Augmented Approach</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td class="col-scenario">Team Sizing</td>
+  <td><span class="classic-badge">HEADCOUNT</span> Teams of 7-9, sized by work volume. More work = more people. Two-pizza rule</td>
+  <td><span class="ai-badge">AI AMPLIFY</span> Smaller teams (4-6) with AI multiplier. Same output, fewer coordination costs. Team sized by judgment-work volume</td>
+</tr>
+<tr>
+  <td class="col-scenario">Code Review</td>
+  <td><span class="classic-badge">HUMAN</span> Every PR reviewed by senior engineer. Bottleneck on 2-3 people. Quality varies by time of day</td>
+  <td><span class="ai-badge">AI + HUMAN</span> AI first-pass handles 60% of reviews. Humans focus on design decisions and knowledge transfer</td>
+</tr>
+<tr>
+  <td class="col-scenario">Onboarding</td>
+  <td><span class="classic-badge">MENTORING</span> 3-6 months to full productivity. Shadow sessions, documentation reading, tribal knowledge transfer</td>
+  <td><span class="ai-badge">AI CONTEXT</span> AI provides instant codebase answers. .ai/ directory as structured onboarding. 4-8 weeks to productivity</td>
+</tr>
+<tr>
+  <td class="col-scenario">Quality Standards</td>
+  <td><span class="classic-badge">MANUAL</span> Style guides, manual review enforcement. Inconsistent application across reviewers</td>
+  <td><span class="ai-badge">AI ENFORCE</span> AI quality gates enforce standards at every commit. Consistent, 24/7, never fatigued</td>
+</tr>
+<tr>
+  <td class="col-scenario">Incident Response</td>
+  <td><span class="classic-badge">RUNBOOK</span> On-call reads wiki runbook, follows steps. Speed depends on individual experience</td>
+  <td><span class="ai-badge">AI TRIAGE</span> AI pre-analyzes, suggests root cause, presents relevant runbook steps. Human makes recovery decisions</td>
+</tr>
+<tr>
+  <td class="col-scenario">Productivity Metrics</td>
+  <td><span class="classic-badge">DORA</span> Four DORA metrics measured monthly. Lagging indicators of delivery performance</td>
+  <td><span class="ai-badge">AI METRICS</span> DORA + AI-specific metrics (acceptance rate, defect rate, cost/inference, judgment ratio)</td>
+</tr>
+<tr>
+  <td class="col-scenario">Knowledge Management</td>
+  <td><span class="classic-badge">WIKI</span> Confluence/Notion pages. Quickly become stale. Search quality poor</td>
+  <td><span class="ai-badge">AI KB</span> .ai/ directory + RAG-ready knowledge base. AI answers questions from living documentation</td>
+</tr>
+<tr>
+  <td class="col-scenario">Architecture Governance</td>
+  <td><span class="classic-badge">REVIEW BOARD</span> Architecture review board meets weekly. Bottleneck on architect availability</td>
+  <td><span class="ai-badge">AI FITNESS</span> Fitness functions enforce standards in CI. Board focuses on novel decisions only</td>
+</tr>
+</tbody>
+</table>
+
+
+<h2><span class="num">05</span> Practical Checklist</h2>
+
+<div class="checklist">
+  <div class="check-item"><span class="check-stage stage-1">STAGE 1</span> Audit team time allocation: classify all work into the Human × Machine matrix (4 quadrants)</div>
+  <div class="check-item"><span class="check-stage stage-1">STAGE 1</span> Identify the top 3 highest-repetition tasks consuming senior engineer time — these are AI automation targets</div>
+  <div class="check-item"><span class="check-stage stage-2">STAGE 2</span> Implement DORA metrics tracking if not already in place — you can't improve what you don't measure</div>
+  <div class="check-item"><span class="check-stage stage-2">STAGE 2</span> Establish the Objective-Validation Protocol for all new features — split criteria into AI-verified and human-verified</div>
+  <div class="check-item"><span class="check-stage stage-3">STAGE 3</span> Deploy AI code review as first-pass gate. Measure: review time saved, defect escape rate, developer satisfaction</div>
+  <div class="check-item"><span class="check-stage stage-3">STAGE 3</span> Create .ai/ context directory as a strategic asset — CLAUDE.md, ADRs, glossaries, style guides</div>
+  <div class="check-item"><span class="check-stage stage-4">STAGE 4</span> Add AI-specific metrics to your dashboard: suggestion acceptance rate, AI-generated defect rate, cost/inference</div>
+  <div class="check-item"><span class="check-stage stage-4">STAGE 4</span> Redesign architect role: shift from execution bottleneck to policy designer (fitness functions, quality gates, OVP)</div>
+  <div class="check-item"><span class="check-stage stage-5">STAGE 5</span> Right-size teams for AI era: reduce team sizes while maintaining output, reinvest savings in capability building</div>
+  <div class="check-item"><span class="check-stage stage-5">STAGE 5</span> Build "AI collaboration skill" training program — context shaping, output evaluation, prompt engineering</div>
+  <div class="check-item"><span class="check-stage stage-6">STAGE 6</span> Implement continuous capability rebalancing: quarterly re-audit of the Human × Machine matrix as AI improves</div>
+  <div class="check-item"><span class="check-stage stage-6">STAGE 6</span> Prepare "The Leadership Talk": explain your AI strategy to executives in business language (ROI, risk, governance)</div>
+</div>
+<div class="checklist-note">Stages 1-3 = adoption · Stages 4-6 = transformation · The manifesto is a journey, not a destination</div>
+
+
+<h2><span class="num">06</span> The Architect's Takeaway</h2>
+
+<p>
+The books that built lean engineering — <em>The Toyota Way</em>, <em>Accelerate</em>, <em>The Phoenix Project</em>, Google's engineering playbook — all converge on one truth: sustainable performance comes from systems, not heroes. AI is the most powerful systems-level intervention since the deployment pipeline. It doesn't replace human judgment — it liberates humans to exercise judgment more often, on higher-stakes decisions, with better information.
+</p>
+<p class="cn-note">
+构建精益工程的书籍汇聚于一个真理：可持续绩效来自系统，而非英雄。AI是自部署流水线以来最强大的系统级干预。它不替代人类判断——而是解放人类更频繁地在更高风险决策上运用判断力。
+</p>
+
+<p>
+The manifesto — "let machines repeat, let humans evolve" — is not a slogan. It's an engineering principle with concrete implications: audit your team's work, classify it on the capability matrix, automate the repetitive, collaborate on the complex, and lead on the novel. Measure the results with DORA + AI-specific metrics. Redesign the architect's role from bottleneck to policy designer. And never forget: the goal is not to use AI — the goal is to build better software, faster, with higher quality, for users who don't care whether a human or an AI wrote the code.
+</p>
+<p class="cn-note">
+"让机器重复，让人类进化"不是口号，而是有具体含义的工程原则：审计团队工作，在能力矩阵上分类，自动化重复性工作，在复杂工作上协作，在新颖工作上领导。目标不是使用AI——目标是更快、更高质量地构建更好的软件。
+</p>
+
+<div class="insight-box" style="margin-top:40px;">
+  <div class="label">Next in Series → Article 4.2</div>
+  <p style="margin:0; font-size:14px; line-height:1.6">
+    <strong>Team Topologies for AI-Augmented Organizations</strong> — How the four fundamental team types (stream-aligned, platform, enabling, complicated-subsystem) evolve when AI enters the picture. The "AI Platform Team" as a new team type. Conway's Law in the AI era. Cognitive load reduction through AI. Smaller teams, bigger impact.
+    <br><span style="color:var(--text-dim); font-style:italic; font-family:'Noto Serif SC',serif;">下一篇：AI增强组织的团队拓扑。</span>
+  </p>
+</div>
+
+</main>
+
+<footer class="article-footer">
+  <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim)">
+    Software Knowledge Base · Layer 4: Engineering Culture · Article 4.1 of 20<br>
+    Classical Foundations × AI Co-Evolution · 经典基础 × AI协同进化
+  </div>
+  <div class="nav-links">
+    <a class="nav-link" href="../L3-infrastructure/3.4-observability-stack.html">← 3.4 Observability Stack</a>
+    <a class="nav-link" href="./4.2-team-topologies.html">Next: 4.2 Team Topologies →</a>
+  </div>
+</footer>
+
+</body>
+</html>

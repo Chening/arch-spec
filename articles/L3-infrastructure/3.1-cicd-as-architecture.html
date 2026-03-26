@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3.1 CI/CD as Architecture — Pipeline Design for AI-Augmented Teams</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<!--
+  CSS Architecture Note:
+  The canonical design system lives in templates/article-base.css.
+  For single-file distribution, it is inlined here.
+  When editing styles, update article-base.css first, then re-inline.
+-->
+<style>
+/* ═══ INLINED FROM templates/article-base.css ═══ */
+:root {
+  --bg-deep: #0a0e17; --bg-surface: #0f1420; --bg-card: #141b2d; --bg-card-hover: #1a2340;
+  --border: #1e2a45; --border-accent: #2d4a7a;
+  --cyan: #22d3ee; --cyan-dim: #0e7490; --cyan-glow: rgba(34, 211, 238, 0.15);
+  --purple: #a78bfa; --purple-dim: #6d5dbb; --purple-glow: rgba(167, 139, 250, 0.12);
+  --orange: #f97316; --orange-glow: rgba(249, 115, 22, 0.12);
+  --green: #10b981; --green-glow: rgba(16, 185, 129, 0.12);
+  --rose: #f43f5e; --rose-glow: rgba(244, 63, 94, 0.12);
+  --yellow: #eab308;
+  --text-primary: #e2e8f0; --text-secondary: #94a3b8; --text-dim: #64748b;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg-deep); color:var(--text-primary); font-family:'IBM Plex Sans',sans-serif; line-height:1.75; font-size:16px; -webkit-font-smoothing:antialiased; }
+.article-header { position:relative; padding:80px 0 60px; overflow:hidden; border-bottom:1px solid var(--border); }
+.article-header::before { content:''; position:absolute; top:0;left:0;right:0;bottom:0; background:radial-gradient(ellipse 800px 400px at 20% 50%,rgba(34,211,238,0.06),transparent),radial-gradient(ellipse 600px 300px at 80% 30%,rgba(167,139,250,0.04),transparent); }
+.header-content { position:relative; max-width:860px; margin:0 auto; padding:0 32px; }
+.series-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--cyan); border:1px solid var(--cyan-dim); padding:4px 12px; border-radius:3px; margin-bottom:20px; background:var(--cyan-glow); }
+.article-title { font-family:'JetBrains Mono',monospace; font-size:36px; font-weight:700; line-height:1.25; color:var(--text-primary); margin-bottom:8px; }
+.article-title-cn { font-family:'Noto Serif SC',serif; font-size:20px; font-weight:400; color:var(--text-dim); font-style:italic; margin-bottom:24px; }
+.article-meta { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-dim); display:flex; gap:24px; flex-wrap:wrap; }
+.meta-item { display:flex; align-items:center; gap:6px; }
+.meta-dot { width:6px; height:6px; border-radius:50%; }
+.article-body { max-width:860px; margin:0 auto; padding:48px 32px; }
+h2 { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:var(--cyan); margin:56px 0 8px; padding-bottom:12px; border-bottom:1px solid var(--border); letter-spacing:-0.5px; }
+.article-body > h2:first-child { margin-top:0; }
+h2 .num { color:var(--text-dim); font-weight:400; margin-right:8px; }
+h3 { font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; color:var(--purple); margin:36px 0 12px; }
+p { margin-bottom:18px; color:var(--text-primary); font-size:15.5px; }
+.cn-note { font-family:'Noto Serif SC',serif; font-style:italic; color:var(--text-dim); font-size:14px; line-height:1.8; margin:-8px 0 24px; padding-left:16px; border-left:2px solid var(--border); }
+code { font-family:'JetBrains Mono',monospace; font-size:0.88em; background:rgba(34,211,238,0.08); padding:2px 6px; border-radius:3px; color:var(--cyan); }
+.diagram-container { margin:40px -16px; padding:32px 24px; background:var(--bg-surface); border:1px solid var(--border); border-radius:8px; position:relative; overflow-x:auto; }
+.diagram-container::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--cyan),var(--purple),var(--orange)); }
+.diagram-label { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:20px; }
+.bookshelf { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin:24px 0; align-items:stretch; }
+.book-card { background:var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:16px; transition:all 0.25s ease; position:relative; overflow:hidden; min-height:190px; display:flex; flex-direction:column; }
+.book-card::before { content:''; position:absolute; left:0;top:0;bottom:0; width:3px; }
+.book-card.tier1::before { background:var(--cyan); }
+.book-card.tier2::before { background:var(--purple); }
+.book-card:hover { border-color:var(--border-accent); background:var(--bg-card-hover); transform:translateY(-2px); }
+.book-title { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:4px; line-height:1.4; }
+.book-author { font-size:11px; color:var(--text-dim); }
+.book-desc { font-size:12px; color:var(--text-secondary); margin-top:8px; line-height:1.5; flex:1; }
+.book-tag { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:2px 6px; border-radius:3px; margin-top:8px; letter-spacing:0.5px; }
+.tag-foundation { background:rgba(34,211,238,0.1); color:var(--cyan); border:1px solid rgba(34,211,238,0.2); }
+.tag-practice { background:rgba(167,139,250,0.1); color:var(--purple); border:1px solid rgba(167,139,250,0.2); }
+.decision-table { width:100%; border-collapse:collapse; margin:24px 0; font-size:13px; }
+.decision-table th { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; text-align:left; padding:12px 16px; border-bottom:2px solid var(--border-accent); color:var(--text-secondary); background:var(--bg-surface); }
+.decision-table td { padding:12px 16px; border-bottom:1px solid var(--border); color:var(--text-primary); vertical-align:top; line-height:1.5; }
+.decision-table tr:hover td { background:rgba(34,211,238,0.03); }
+.decision-table .col-scenario { width:22%; font-weight:500; color:var(--text-secondary); }
+.decision-table .col-classic { width:39%; }
+.decision-table .col-ai { width:39%; }
+.classic-badge,.ai-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:1px 5px; border-radius:2px; margin-right:4px; vertical-align:middle; }
+.classic-badge { background:rgba(148,163,184,0.15); color:var(--text-secondary); }
+.ai-badge { background:rgba(34,211,238,0.12); color:var(--cyan); }
+.checklist { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:24px 0; }
+.check-item { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:5px; font-size:13px; color:var(--text-primary); line-height:1.4; transition:border-color 0.2s; }
+.check-item:hover { border-color:var(--border-accent); }
+.check-stage { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:600; padding:2px 7px; border-radius:3px; white-space:nowrap; flex-shrink:0; }
+.stage-1 { background:rgba(244,63,94,0.12); color:var(--rose); border:1px solid rgba(244,63,94,0.2); }
+.stage-2 { background:rgba(249,115,22,0.12); color:var(--orange); border:1px solid rgba(249,115,22,0.2); }
+.stage-3 { background:rgba(234,179,8,0.12); color:var(--yellow); border:1px solid rgba(234,179,8,0.2); }
+.stage-4 { background:rgba(34,211,238,0.12); color:var(--cyan); border:1px solid rgba(34,211,238,0.2); }
+.stage-5 { background:rgba(167,139,250,0.12); color:var(--purple); border:1px solid rgba(167,139,250,0.2); }
+.stage-6 { background:rgba(16,185,129,0.12); color:var(--green); border:1px solid rgba(16,185,129,0.2); }
+.checklist-note { grid-column: 1 / -1; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim); text-align:center; padding:8px; margin-top:4px; }
+.insight-box { margin:32px 0; padding:24px; background:linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04)); border:1px solid var(--border-accent); border-radius:8px; position:relative; }
+.insight-box::before { content:'⚡'; position:absolute; top:-12px; left:20px; background:var(--bg-deep); padding:0 8px; font-size:18px; }
+.insight-box .label { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--cyan); margin-bottom:8px; }
+.code-block { background:#0d1117; border:1px solid var(--border); border-radius:6px; padding:20px; margin:20px 0; overflow-x:auto; position:relative; }
+.code-block::before { content:attr(data-lang); position:absolute; top:8px; right:12px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-dim); letter-spacing:0.5px; }
+.code-block pre { font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.6; color:var(--text-secondary); }
+.code-block .kw { color:var(--purple); } .code-block .fn { color:var(--cyan); } .code-block .str { color:var(--green); }
+.code-block .cm { color:var(--text-dim); font-style:italic; } .code-block .ann { color:var(--orange); } .code-block .tp { color:var(--yellow); }
+.article-footer { max-width:860px; margin:0 auto; padding:40px 32px; border-top:1px solid var(--border); font-size:12px; color:var(--text-dim); }
+.nav-links { display:flex; justify-content:space-between; align-items:center; margin-top:20px; }
+.nav-link { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--cyan); text-decoration:none; padding:8px 16px; border:1px solid var(--border); border-radius:4px; transition:all 0.2s; }
+.nav-link:hover { border-color:var(--cyan); background:var(--cyan-glow); }
+@media (max-width:640px) { .article-title { font-size:24px; } .bookshelf { grid-template-columns:1fr; } .checklist { grid-template-columns:1fr; } .article-meta { flex-direction:column; gap:8px; } }
+@media print { :root { --bg-deep:#fff; --bg-surface:#f8f9fa; --bg-card:#f1f3f5; --bg-card-hover:#f1f3f5; --border:#dee2e6; --border-accent:#adb5bd; --text-primary:#212529; --text-secondary:#495057; --text-dim:#868e96; --cyan:#0c8599; --purple:#7048e8; --orange:#e8590c; --green:#099268; --rose:#e03131; --yellow:#e67700; } body { font-size:11pt; line-height:1.5; } .article-header::before { display:none; } .article-header { padding:24px 0; } .diagram-container::before { display:none; } .book-card:hover { transform:none; } .nav-links { display:none; } .code-block { border:1px solid #dee2e6; background:#f8f9fa; } .code-block pre { color:#212529; } }
+</style>
+</head>
+<body>
+
+<header class="article-header">
+  <div class="header-content">
+    <div class="series-badge">Layer 3 · Infrastructure · 基础设施层</div>
+    <h1 class="article-title">CI/CD as Architecture</h1>
+    <div class="article-title-cn">CI/CD即架构：AI增强团队的流水线设计</div>
+    <div class="article-meta">
+      <span class="meta-item"><span class="meta-dot" style="background:var(--green)"></span> Article 3.1 of 20</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--purple)"></span> ~18 min read</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--orange)"></span> 3 Source Books × 4 AI Angles</span>
+    </div>
+  </div>
+</header>
+
+<main class="article-body">
+
+<h2><span class="num">01</span> Core Insight — The Thesis</h2>
+
+<p>
+Most teams treat their CI/CD pipeline as plumbing — build, test, deploy, done. But Jez Humble and David Farley argued in <em>Continuous Delivery</em> that the deployment pipeline is the <strong>central nervous system</strong> of your software delivery process. Every commit is a release candidate. The pipeline's job is not just to build software — it's to provide rapid, reliable feedback about whether that commit is safe to release.
+</p>
+<p class="cn-note">
+多数团队将CI/CD流水线视为管道工程。但Humble和Farley认为部署流水线是软件交付过程的中枢神经系统。每次提交都是发布候选。流水线的职责不仅是构建软件——而是提供关于提交是否可安全发布的快速可靠反馈。
+</p>
+
+<p>
+The <em>Accelerate</em> research confirmed this with data: teams that excel at the four DORA metrics — deployment frequency, lead time for changes, mean time to recovery, and change failure rate — consistently outperform their peers in business outcomes. The pipeline is not a cost center; it is a competitive advantage that directly correlates with organizational performance.
+</p>
+<p class="cn-note">
+<em>Accelerate</em>的研究用数据证实：在四项DORA指标上表现卓越的团队在业务成果上持续超越同行。流水线不是成本中心，而是与组织绩效直接关联的竞争优势。
+</p>
+
+<p>
+Here is the AI-era evolution: <strong>your CI/CD pipeline is your architecture's runtime immune system.</strong> In the AI era, pipelines evolve from "lint → build → test → deploy" to intelligent quality enforcement systems where AI gates verify not just correctness but architectural fitness, requirements traceability, and code quality across multiple dimensions. The pipeline doesn't just check if the code compiles — it asks whether the code makes the system <em>better</em>.
+</p>
+<p class="cn-note">
+AI时代的进化：你的CI/CD流水线是架构的运行时免疫系统。流水线从"检查代码是否编译"进化为"询问代码是否让系统变得更好"——验证架构适应性、需求可追溯性和多维度代码质量。
+</p>
+
+<div class="insight-box">
+  <div class="label">The Reframing 核心重构</div>
+  <p style="margin:0; font-size:15px; line-height:1.7">
+    <strong>Your pipeline is a prompt for quality.</strong> Just as clean code functions as a prompt for AI coding assistants, a well-designed CI/CD pipeline with AI quality gates functions as a prompt for continuous improvement. Each stage asks a question about your code — static analysis asks "is it correct?", AI review asks "is it well-designed?", architecture conformance asks "does it fit?" — and the pipeline's collective verdict determines whether the code moves forward.
+  </p>
+</div>
+<p class="cn-note">
+你的流水线是质量的提示词。每个阶段向代码提出一个问题——静态分析问"正确吗？"，AI审查问"设计好吗？"，架构一致性问"适合吗？"——流水线的集体判定决定代码是否前进。
+</p>
+
+<!-- HERO DIAGRAM -->
+<div class="diagram-container">
+  <div class="diagram-label">◆ Hero Diagram — Pipeline Evolution: Classical → AI-Augmented</div>
+  <svg viewBox="0 0 800 320" xmlns="http://www.w3.org/2000/svg" style="width:100%; font-family:'JetBrains Mono',monospace;">
+    <defs>
+      <marker id="arrowCi" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L8,3 L0,6" fill="var(--cyan,#22d3ee)"/>
+      </marker>
+    </defs>
+
+    <!-- Classical Pipeline -->
+    <text x="400" y="20" text-anchor="middle" font-size="9" fill="var(--text-dim,#64748b)" letter-spacing="2">CLASSICAL PIPELINE 经典流水线</text>
+    <rect x="30" y="35" width="120" height="45" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+    <text x="90" y="55" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)" font-weight="600">Lint</text>
+    <text x="90" y="70" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">ESLint / Pylint</text>
+    <line x1="150" y1="57" x2="175" y2="57" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#arrowCi)"/>
+
+    <rect x="180" y="35" width="120" height="45" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+    <text x="240" y="55" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)" font-weight="600">Build</text>
+    <text x="240" y="70" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Compile / Bundle</text>
+    <line x1="300" y1="57" x2="325" y2="57" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#arrowCi)"/>
+
+    <rect x="330" y="35" width="120" height="45" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+    <text x="390" y="55" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)" font-weight="600">Test</text>
+    <text x="390" y="70" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Unit + Integration</text>
+    <line x1="450" y1="57" x2="475" y2="57" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#arrowCi)"/>
+
+    <rect x="480" y="35" width="120" height="45" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+    <text x="540" y="55" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)" font-weight="600">Deploy</text>
+    <text x="540" y="70" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Staging → Prod</text>
+    <line x1="600" y1="57" x2="625" y2="57" stroke="var(--text-dim,#64748b)" stroke-width="1" marker-end="url(#arrowCi)"/>
+
+    <rect x="630" y="35" width="140" height="45" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="1.2"/>
+    <text x="700" y="55" text-anchor="middle" font-size="9" fill="var(--green,#10b981)" font-weight="700">RELEASE</text>
+    <text x="700" y="70" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Ship it</text>
+
+    <!-- Divider -->
+    <line x1="30" y1="105" x2="770" y2="105" stroke="var(--border,#1e2a45)" stroke-width="1" stroke-dasharray="6,4"/>
+    <text x="400" y="125" text-anchor="middle" font-size="9" fill="var(--cyan,#22d3ee)" letter-spacing="2">AI-AUGMENTED PIPELINE AI增强流水线</text>
+
+    <!-- AI Pipeline -->
+    <rect x="30" y="140" width="120" height="55" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+    <text x="90" y="158" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)" font-weight="600">Lint + SAST</text>
+    <text x="90" y="172" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">SonarQube / Semgrep</text>
+    <text x="90" y="185" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Known patterns</text>
+
+    <rect x="165" y="140" width="130" height="55" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1.5"/>
+    <text x="230" y="155" text-anchor="middle" font-size="9" fill="var(--cyan,#22d3ee)" font-weight="700">AI REVIEW GATE</text>
+    <text x="230" y="170" text-anchor="middle" font-size="7" fill="var(--text-secondary,#94a3b8)">Requirements traceability</text>
+    <text x="230" y="183" text-anchor="middle" font-size="7" fill="var(--text-secondary,#94a3b8)">SOLID/DRY/KISS audit</text>
+
+    <rect x="310" y="140" width="120" height="55" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+    <text x="370" y="158" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)" font-weight="600">Build + Test</text>
+    <text x="370" y="172" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Unit + Integration</text>
+    <text x="370" y="185" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">+ AI-gen test cases</text>
+
+    <rect x="445" y="140" width="130" height="55" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--purple,#a78bfa)" stroke-width="1.5"/>
+    <text x="510" y="155" text-anchor="middle" font-size="9" fill="var(--purple,#a78bfa)" font-weight="700">ARCH CONFORMANCE</text>
+    <text x="510" y="170" text-anchor="middle" font-size="7" fill="var(--text-secondary,#94a3b8)">Fitness functions</text>
+    <text x="510" y="183" text-anchor="middle" font-size="7" fill="var(--text-secondary,#94a3b8)">Dependency analysis</text>
+
+    <rect x="590" y="140" width="80" height="55" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--text-dim,#64748b)" stroke-width="1"/>
+    <text x="630" y="162" text-anchor="middle" font-size="9" fill="var(--text-secondary,#94a3b8)" font-weight="600">Deploy</text>
+    <text x="630" y="178" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Canary + AI</text>
+
+    <rect x="685" y="140" width="85" height="55" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="1.5"/>
+    <text x="727" y="162" text-anchor="middle" font-size="9" fill="var(--green,#10b981)" font-weight="700">RELEASE</text>
+    <text x="727" y="178" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">AI-scored</text>
+
+    <!-- Nightly audit -->
+    <rect x="100" y="220" width="600" height="50" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--orange,#f97316)" stroke-width="1.2" stroke-dasharray="4,3"/>
+    <text x="400" y="242" text-anchor="middle" font-size="10" fill="var(--orange,#f97316)" font-weight="600">NIGHTLY AI AUDIT — 6-Dimension Scoring</text>
+    <text x="400" y="260" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Correctness · Security · Performance · Maintainability · Test Coverage · Architecture Conformance → SARIF + Feishu/Slack</text>
+
+    <!-- DORA metrics bar -->
+    <rect x="100" y="285" width="600" height="30" rx="5" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="1"/>
+    <text x="400" y="304" text-anchor="middle" font-size="9" fill="var(--green,#10b981)" font-weight="600">DORA METRICS + AI PREDICTION — Deployment Frequency · Lead Time · MTTR · Change Failure Rate</text>
+  </svg>
+</div>
+
+
+<h2><span class="num">02</span> Classical Foundation — Source Books</h2>
+
+<p>
+Three books provide the classical framework for understanding CI/CD as an architectural concern, not just a DevOps practice.
+</p>
+<p class="cn-note">
+三本书提供了将CI/CD理解为架构关注点而非仅仅是DevOps实践的经典框架。
+</p>
+
+<div class="bookshelf">
+  <div class="book-card tier1">
+    <div class="book-title">Continuous Delivery</div>
+    <div class="book-author">Jez Humble & David Farley · 2010</div>
+    <div class="book-desc">The foundational text. Established the deployment pipeline as the central nervous system of software delivery. Key insight: every commit is a release candidate, and the pipeline's job is to disprove that hypothesis through progressively more rigorous testing stages. The commitment to "if it hurts, do it more frequently" transformed how the industry thinks about releases.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · DEPLOYMENT PIPELINE</span>
+  </div>
+  <div class="book-card tier1">
+    <div class="book-title">Accelerate</div>
+    <div class="book-author">Forsgren, Humble, Kim · 2018</div>
+    <div class="book-desc">The scientific validation. Four years of State of DevOps research distilled into 24 key capabilities that drive software delivery performance. The DORA metrics — deployment frequency, lead time, MTTR, change failure rate — became the industry standard for measuring delivery performance. Data proves: CI/CD excellence correlates with organizational performance.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · DORA METRICS</span>
+  </div>
+  <div class="book-card tier2">
+    <div class="book-title">Software Engineering at Google</div>
+    <div class="book-author">Winters, Manshreck, Wright · 2020</div>
+    <div class="book-desc">Google's internal engineering practices at planet scale. Covers testing culture (Chapter 11-14), code review as engineering practice, and the concept of "infrastructure as a shared service." Their approach to large-scale CI — testing millions of changes daily across a monorepo — provides the mental model for AI-augmented quality gates.</div>
+    <span class="book-tag tag-practice">PRACTICE · SCALE</span>
+  </div>
+</div>
+
+<p>
+What unites these books is the insight that CI/CD is not tooling — it's architecture. Humble gives you the pipeline model, Forsgren gives you the metrics to measure it, and Google shows how it works at extreme scale. The AI era extends this architecture with intelligence: the pipeline doesn't just execute stages, it <em>reasons</em> about quality.
+</p>
+<p class="cn-note">
+这些书的共同洞见：CI/CD不是工具——而是架构。Humble给出流水线模型，Forsgren给出衡量指标，Google展示极端规模下的运作。AI时代用智能扩展这一架构：流水线不仅执行阶段，还推理质量。
+</p>
+
+
+<h2><span class="num">03</span> AI Co-Evolution — Four Angles</h2>
+
+<h3>Angle A · AI as Code Review Gate — AI作为代码审查门控</h3>
+
+<p>
+<strong>Classical principle:</strong> Code review is the most effective defect-detection practice (McConnell, Google SWE). Human reviewers catch design flaws, logic errors, and maintainability issues that automated tests miss. But human review doesn't scale — senior engineers become bottlenecks, review quality varies by fatigue and familiarity.
+</p>
+
+<p>
+<strong>AI extension:</strong> A three-pass AI review gate embedded in the CI pipeline: Pass 1: static analysis (SonarQube/Semgrep) for known code smells and security vulnerabilities. Pass 2: LLM-driven requirements traceability — does this PR address what the ticket asked? Does it introduce scope creep? Pass 3: LLM best-practices audit against SOLID/DRY/KISS/YAGNI — producing a quality score and APPROVED/NEEDS_REVIEW/BLOCKED verdict. Human reviewers focus on the NEEDS_REVIEW items where AI judgment is uncertain.
+</p>
+
+<div class="code-block" data-lang="YAML">
+<pre><span class="cm"># .gitlab-ci.yml — AI review gate</span>
+<span class="kw">ai-review</span>:
+  <span class="fn">stage</span>: review
+  <span class="fn">script</span>:
+    - claude -p <span class="str">"Review this MR diff against:
+        1. JIRA ticket ${TICKET_ID} requirements
+        2. SOLID/DRY/KISS principles
+        3. Security best practices
+        Output: SARIF format with verdict"</span>
+      --output-format sarif > review.sarif
+  <span class="fn">rules</span>:
+    - <span class="kw">if</span>: <span class="str">$CI_PIPELINE_SOURCE == "merge_request_event"</span>
+  <span class="fn">artifacts</span>:
+    <span class="fn">reports</span>:
+      <span class="fn">sast</span>: review.sarif</pre>
+</div>
+<p class="cn-note">
+经典原则：代码审查是最有效的缺陷检测实践，但人工审查不可扩展。AI延伸：三遍AI审查门控——静态分析→需求可追溯性→最佳实践审计——产出APPROVED/NEEDS_REVIEW/BLOCKED判定，人类审查员聚焦AI判断不确定的项目。
+</p>
+
+<h3>Angle B · DORA Metrics + AI Prediction — DORA指标与AI预测</h3>
+
+<p>
+<strong>Classical principle:</strong> DORA metrics are lagging indicators — they tell you how well you performed <em>last month</em> but not what will happen <em>next week</em> (Accelerate, Ch. 2). Change failure rate measures past failures; it doesn't predict which upcoming changes are risky.
+</p>
+
+<p>
+<strong>AI extension:</strong> AI models transform DORA metrics from lagging to leading indicators. Trained on historical data — which types of changes caused failures, which authors and code areas have higher risk, which time windows have more incidents — the model predicts deployment risk for each incoming change. A PR that touches the payment processing module, was authored in the last hour of a Friday sprint, and modifies 15 files gets a higher risk score than a documentation update on Tuesday.
+</p>
+<p class="cn-note">
+经典原则：DORA指标是滞后指标——告诉你上个月表现如何而非下周会发生什么。AI延伸：AI模型将DORA从滞后转为领先指标，基于历史数据预测每个变更的部署风险——周五最后一小时修改支付模块的15个文件比周二的文档更新得到更高风险分。
+</p>
+
+<h3>Angle C · Claude Code Headless Integration — Claude Code无头模式集成</h3>
+
+<p>
+<strong>Classical principle:</strong> CI/CD tools execute predefined scripts. The intelligence lives in the configuration, not the executor. When a test fails, the CI system reports the failure but doesn't analyze <em>why</em> it failed or suggest a fix.
+</p>
+
+<p>
+<strong>AI extension:</strong> Claude Code's headless mode (<code>-p</code>) enables four integration patterns with GitLab CI: (1) <strong>Pre-merge review</strong>: AI reviews every MR before human reviewers see it, flagging issues and providing a quality score. (2) <strong>Post-merge audit</strong>: AI audits merged code for architectural drift that slipped past review. (3) <strong>Nightly quality scan</strong>: AI analyzes the entire codebase across 6 dimensions, generating a SARIF report with trending scores. (4) <strong>Incident auto-triage</strong>: when a deployment fails, AI analyzes logs, recent changes, and test results to suggest root cause and remediation.
+</p>
+<p class="cn-note">
+经典原则：CI/CD工具执行预定义脚本，智能在配置中而非执行器中。AI延伸：Claude Code无头模式(-p)启用四种GitLab CI集成模式：合并前审查、合并后审计、夜间质量扫描、事故自动分诊。
+</p>
+
+<h3>Angle D · Nightly AI Audit Platform — 夜间AI审计平台</h3>
+
+<p>
+<strong>Classical principle:</strong> Code quality dashboards (SonarQube, CodeClimate) provide static analysis results. But they measure limited dimensions — mostly code smells, duplication, and basic complexity. They don't assess architectural fitness, requirements coverage, or design quality.
+</p>
+
+<p>
+<strong>AI extension:</strong> A nightly AI audit platform scores the entire codebase across 6 dimensions: <strong>correctness</strong> (type safety, error handling), <strong>security</strong> (OWASP Top 10, dependency vulnerabilities), <strong>performance</strong> (N+1 queries, unbounded loops), <strong>maintainability</strong> (SOLID adherence, cognitive complexity), <strong>test coverage</strong> (branch coverage, mutation score), and <strong>architecture conformance</strong> (layer violations, dependency cycles). Results are output in SARIF format and pushed to Feishu/Slack with trend charts showing score evolution over time.
+</p>
+<p class="cn-note">
+经典原则：代码质量仪表板测量有限维度。AI延伸：夜间AI审计平台跨6个维度评分——正确性、安全性、性能、可维护性、测试覆盖率、架构一致性——以SARIF格式输出并推送到飞书/Slack，附带趋势图。
+</p>
+
+
+<h2><span class="num">04</span> Decision Table</h2>
+
+<table class="decision-table">
+<thead>
+<tr>
+  <th class="col-scenario">Scenario</th>
+  <th class="col-classic">Classical Approach</th>
+  <th class="col-ai">AI-Augmented Approach</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td class="col-scenario">Pre-merge Review</td>
+  <td><span class="classic-badge">HUMAN</span> Senior engineer reviews every PR. Quality varies by reviewer fatigue and familiarity with code area</td>
+  <td><span class="ai-badge">AI + HUMAN</span> AI provides first-pass review with quality score. Humans focus on NEEDS_REVIEW items where AI is uncertain</td>
+</tr>
+<tr>
+  <td class="col-scenario">Test Suite Design</td>
+  <td><span class="classic-badge">MANUAL</span> Developers write tests based on experience. Coverage gaps discovered in production</td>
+  <td><span class="ai-badge">AI GEN</span> AI analyzes code changes and generates targeted test cases for uncovered paths. Mutation testing validates test quality</td>
+</tr>
+<tr>
+  <td class="col-scenario">Deployment Risk</td>
+  <td><span class="classic-badge">GUT FEEL</span> Release manager assesses risk based on change size, area, and author. Subjective and inconsistent</td>
+  <td><span class="ai-badge">AI PREDICT</span> ML model predicts failure probability per change based on historical patterns, code area, change size, timing</td>
+</tr>
+<tr>
+  <td class="col-scenario">Incident Response</td>
+  <td><span class="classic-badge">MANUAL</span> On-call reads logs, checks dashboards, forms hypotheses. Speed depends on individual expertise</td>
+  <td><span class="ai-badge">AI TRIAGE</span> AI auto-correlates deployment timeline + error logs + metrics. Suggests root cause and remediation within minutes</td>
+</tr>
+<tr>
+  <td class="col-scenario">Architecture Conformance</td>
+  <td><span class="classic-badge">REVIEW</span> Architects manually review for layer violations. Spotted only in major design reviews</td>
+  <td><span class="ai-badge">AI FITNESS</span> AI-evaluated fitness functions run on every commit. Dependency cycles and layer violations blocked in CI</td>
+</tr>
+<tr>
+  <td class="col-scenario">Quality Tracking</td>
+  <td><span class="classic-badge">SONAR</span> SonarQube scores for code smells, duplication, basic complexity. Limited dimensions</td>
+  <td><span class="ai-badge">AI AUDIT</span> Nightly 6-dimension scoring with SARIF output. Trend analysis shows quality trajectory, not just snapshots</td>
+</tr>
+<tr>
+  <td class="col-scenario">Pipeline Failure</td>
+  <td><span class="classic-badge">LOG READ</span> Developer reads CI log output, searches for error message, fixes and retries</td>
+  <td><span class="ai-badge">AI DIAGNOSE</span> AI analyzes failure, identifies root cause (flaky test vs. real failure vs. infra issue), suggests specific fix</td>
+</tr>
+<tr>
+  <td class="col-scenario">Metrics Reporting</td>
+  <td><span class="classic-badge">DORA</span> Monthly DORA metric dashboards. Lagging indicators reviewed in retrospectives</td>
+  <td><span class="ai-badge">AI PREDICT</span> Real-time DORA + predictive analytics. AI forecasts next-sprint metrics and suggests process improvements</td>
+</tr>
+</tbody>
+</table>
+
+
+<h2><span class="num">05</span> Practical Checklist</h2>
+
+<div class="checklist">
+  <div class="check-item"><span class="check-stage stage-1">STAGE 1</span> Every commit triggers a CI build. No exceptions. No manual builds for "hot fixes"</div>
+  <div class="check-item"><span class="check-stage stage-1">STAGE 1</span> Pipeline includes lint, build, unit tests, and integration tests — all must pass to merge</div>
+  <div class="check-item"><span class="check-stage stage-2">STAGE 2</span> Measure DORA metrics monthly: deployment frequency, lead time, MTTR, change failure rate</div>
+  <div class="check-item"><span class="check-stage stage-2">STAGE 2</span> Add SAST/DAST security scanning to pipeline (Semgrep, Trivy for container images)</div>
+  <div class="check-item"><span class="check-stage stage-3">STAGE 3</span> Implement architecture fitness functions as CI gates — block layer violations and dependency cycles</div>
+  <div class="check-item"><span class="check-stage stage-3">STAGE 3</span> Add canary deployments with automated rollback on error rate breach</div>
+  <div class="check-item"><span class="check-stage stage-4">STAGE 4</span> Deploy AI code review gate: first-pass AI review before human reviewers see the MR</div>
+  <div class="check-item"><span class="check-stage stage-4">STAGE 4</span> Implement AI-powered deployment risk prediction using historical change/failure data</div>
+  <div class="check-item"><span class="check-stage stage-5">STAGE 5</span> Build nightly AI audit platform with 6-dimension scoring and trend reporting to Feishu/Slack</div>
+  <div class="check-item"><span class="check-stage stage-5">STAGE 5</span> Deploy AI incident auto-triage: when deployments fail, AI presents root cause analysis within minutes</div>
+  <div class="check-item"><span class="check-stage stage-6">STAGE 6</span> Implement predictive DORA: AI forecasts next-sprint metrics and recommends process improvements</div>
+  <div class="check-item"><span class="check-stage stage-6">STAGE 6</span> Enable AI-driven pipeline self-optimization: AI adjusts test parallelism, caching, and stage ordering</div>
+</div>
+<div class="checklist-note">Stages 1-3 = classical CI/CD maturity · Stages 4-6 = AI-augmented pipeline · Don't skip — each stage builds on the previous</div>
+
+
+<h2><span class="num">06</span> The Architect's Takeaway</h2>
+
+<p>
+Humble's deployment pipeline, Forsgren's DORA metrics, and Google's engineering-at-scale practices are not relics — they are the foundation that makes AI-augmented CI/CD safe and effective. An AI code review gate without a solid test suite underneath it is just expensive noise. An AI deployment risk predictor without historical DORA data has nothing to learn from. The classical pipeline stages — build, test, deploy — are the immune system's basic organs; AI quality gates are the adaptive immunity that learns and improves.
+</p>
+<p class="cn-note">
+Humble的部署流水线、Forsgren的DORA指标、Google的规模化工程实践不是遗物——它们是使AI增强CI/CD安全有效的基础。没有扎实测试套件的AI代码审查门控只是昂贵的噪声。经典流水线阶段是免疫系统的基本器官；AI质量门控是学习和改进的适应性免疫。
+</p>
+
+<p>
+The architect's role in CI/CD design is shifting from "configure the pipeline" to "design the quality policy." You define what "good" looks like across multiple dimensions — correctness, security, performance, maintainability, coverage, architecture conformance — and the AI-augmented pipeline enforces it continuously, at every commit, at every hour of the day.
+</p>
+<p class="cn-note">
+架构师在CI/CD设计中的角色从"配置流水线"转向"设计质量策略"。你定义多维度的"好"的样子，AI增强流水线在每次提交、每小时持续执行。
+</p>
+
+<div class="insight-box" style="margin-top:40px;">
+  <div class="label">Next in Series → Article 3.2</div>
+  <p style="margin:0; font-size:14px; line-height:1.6">
+    <strong>DNS, Load Balancing, and Network Architecture for Multi-DC</strong> — How Google's three-tier load balancing taxonomy and Nygard's stability patterns evolve with AI-powered traffic routing, predictive scaling, and natural language network telemetry. Running example: CoreDNS/VRRP two-datacenter architecture.
+    <br><span style="color:var(--text-dim); font-style:italic; font-family:'Noto Serif SC',serif;">下一篇：DNS、负载均衡与多数据中心网络架构。</span>
+  </p>
+</div>
+
+</main>
+
+<footer class="article-footer">
+  <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim)">
+    Software Knowledge Base · Layer 3: Infrastructure · Article 3.1 of 20<br>
+    Classical Foundations × AI Co-Evolution · 经典基础 × AI协同进化
+  </div>
+  <div class="nav-links">
+    <a class="nav-link" href="../L2-architecture/2.5-data-architecture-lakehouse.html">← 2.5 Data Architecture</a>
+    <a class="nav-link" href="./3.2-dns-load-balancing.html">Next: 3.2 DNS & Load Balancing →</a>
+  </div>
+</footer>
+
+</body>
+</html>

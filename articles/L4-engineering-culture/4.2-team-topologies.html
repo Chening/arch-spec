@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4.2 Team Topologies for AI-Augmented Organizations</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg-deep:#0a0e17;--bg-surface:#0f1420;--bg-card:#141b2d;--bg-card-hover:#1a2340;--border:#1e2a45;--border-accent:#2d4a7a;--cyan:#22d3ee;--cyan-dim:#0e7490;--cyan-glow:rgba(34,211,238,0.15);--purple:#a78bfa;--purple-dim:#6d5dbb;--orange:#f97316;--green:#10b981;--rose:#f43f5e;--yellow:#eab308;--text-primary:#e2e8f0;--text-secondary:#94a3b8;--text-dim:#64748b}*{margin:0;padding:0;box-sizing:border-box}body{background:var(--bg-deep);color:var(--text-primary);font-family:'IBM Plex Sans',sans-serif;line-height:1.75;font-size:16px;-webkit-font-smoothing:antialiased}.article-header{position:relative;padding:80px 0 60px;overflow:hidden;border-bottom:1px solid var(--border)}.article-header::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse 800px 400px at 20% 50%,rgba(34,211,238,0.06),transparent),radial-gradient(ellipse 600px 300px at 80% 30%,rgba(167,139,250,0.04),transparent)}.header-content{position:relative;max-width:860px;margin:0 auto;padding:0 32px}.series-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);border:1px solid var(--cyan-dim);padding:4px 12px;border-radius:3px;margin-bottom:20px;background:var(--cyan-glow)}.article-title{font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:700;line-height:1.25;margin-bottom:8px}.article-title-cn{font-family:'Noto Serif SC',serif;font-size:20px;font-weight:400;color:var(--text-dim);font-style:italic;margin-bottom:24px}.article-meta{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim);display:flex;gap:24px;flex-wrap:wrap}.meta-item{display:flex;align-items:center;gap:6px}.meta-dot{width:6px;height:6px;border-radius:50%}.article-body{max-width:860px;margin:0 auto;padding:48px 32px}h2{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--cyan);margin:56px 0 8px;padding-bottom:12px;border-bottom:1px solid var(--border);letter-spacing:-0.5px}.article-body>h2:first-child{margin-top:0}h2 .num{color:var(--text-dim);font-weight:400;margin-right:8px}h3{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;color:var(--purple);margin:36px 0 12px}p{margin-bottom:18px;font-size:15.5px}.cn-note{font-family:'Noto Serif SC',serif;font-style:italic;color:var(--text-dim);font-size:14px;line-height:1.8;margin:-8px 0 24px;padding-left:16px;border-left:2px solid var(--border)}code{font-family:'JetBrains Mono',monospace;font-size:0.88em;background:rgba(34,211,238,0.08);padding:2px 6px;border-radius:3px;color:var(--cyan)}.diagram-container{margin:40px -16px;padding:32px 24px;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;position:relative;overflow-x:auto}.diagram-container::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cyan),var(--purple),var(--orange))}.diagram-label{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);margin-bottom:20px}.bookshelf{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:24px 0;align-items:stretch}.book-card{background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:16px;transition:all 0.25s ease;position:relative;overflow:hidden;min-height:190px;display:flex;flex-direction:column}.book-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}.book-card.tier1::before{background:var(--cyan)}.book-card.tier2::before{background:var(--purple)}.book-card:hover{border-color:var(--border-accent);background:var(--bg-card-hover);transform:translateY(-2px)}.book-title{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;margin-bottom:4px;line-height:1.4}.book-author{font-size:11px;color:var(--text-dim)}.book-desc{font-size:12px;color:var(--text-secondary);margin-top:8px;line-height:1.5;flex:1}.book-tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 6px;border-radius:3px;margin-top:8px;letter-spacing:0.5px}.tag-foundation{background:rgba(34,211,238,0.1);color:var(--cyan);border:1px solid rgba(34,211,238,0.2)}.tag-practice{background:rgba(167,139,250,0.1);color:var(--purple);border:1px solid rgba(167,139,250,0.2)}.decision-table{width:100%;border-collapse:collapse;margin:24px 0;font-size:13px}.decision-table th{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;text-align:left;padding:12px 16px;border-bottom:2px solid var(--border-accent);color:var(--text-secondary);background:var(--bg-surface)}.decision-table td{padding:12px 16px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5}.decision-table tr:hover td{background:rgba(34,211,238,0.03)}.decision-table .col-scenario{width:22%;font-weight:500;color:var(--text-secondary)}.decision-table .col-classic{width:39%}.decision-table .col-ai{width:39%}.classic-badge,.ai-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:9px;padding:1px 5px;border-radius:2px;margin-right:4px;vertical-align:middle}.classic-badge{background:rgba(148,163,184,0.15);color:var(--text-secondary)}.ai-badge{background:rgba(34,211,238,0.12);color:var(--cyan)}.checklist{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:24px 0}.check-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:5px;font-size:13px;line-height:1.4;transition:border-color 0.2s}.check-item:hover{border-color:var(--border-accent)}.check-stage{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;padding:2px 7px;border-radius:3px;white-space:nowrap;flex-shrink:0}.stage-1{background:rgba(244,63,94,0.12);color:var(--rose);border:1px solid rgba(244,63,94,0.2)}.stage-2{background:rgba(249,115,22,0.12);color:var(--orange);border:1px solid rgba(249,115,22,0.2)}.stage-3{background:rgba(234,179,8,0.12);color:var(--yellow);border:1px solid rgba(234,179,8,0.2)}.stage-4{background:rgba(34,211,238,0.12);color:var(--cyan);border:1px solid rgba(34,211,238,0.2)}.stage-5{background:rgba(167,139,250,0.12);color:var(--purple);border:1px solid rgba(167,139,250,0.2)}.stage-6{background:rgba(16,185,129,0.12);color:var(--green);border:1px solid rgba(16,185,129,0.2)}.checklist-note{grid-column:1/-1;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);text-align:center;padding:8px;margin-top:4px}.insight-box{margin:32px 0;padding:24px;background:linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04));border:1px solid var(--border-accent);border-radius:8px;position:relative}.insight-box::before{content:'⚡';position:absolute;top:-12px;left:20px;background:var(--bg-deep);padding:0 8px;font-size:18px}.insight-box .label{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--cyan);margin-bottom:8px}.article-footer{max-width:860px;margin:0 auto;padding:40px 32px;border-top:1px solid var(--border);font-size:12px;color:var(--text-dim)}.nav-links{display:flex;justify-content:space-between;align-items:center;margin-top:20px}.nav-link{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--cyan);text-decoration:none;padding:8px 16px;border:1px solid var(--border);border-radius:4px;transition:all 0.2s}.nav-link:hover{border-color:var(--cyan);background:var(--cyan-glow)}@media(max-width:640px){.article-title{font-size:24px}.bookshelf{grid-template-columns:1fr}.checklist{grid-template-columns:1fr}.article-meta{flex-direction:column;gap:8px}}@media print{:root{--bg-deep:#fff;--bg-surface:#f8f9fa;--bg-card:#f1f3f5;--border:#dee2e6;--border-accent:#adb5bd;--text-primary:#212529;--text-secondary:#495057;--text-dim:#868e96;--cyan:#0c8599;--purple:#7048e8;--orange:#e8590c;--green:#099268;--rose:#e03131;--yellow:#e67700}body{font-size:11pt;line-height:1.5}.article-header::before,.diagram-container::before{display:none}.article-header{padding:24px 0}.book-card:hover{transform:none}.nav-links{display:none}}
+</style>
+</head>
+<body>
+
+<header class="article-header">
+  <div class="header-content">
+    <div class="series-badge">Layer 4 · Engineering Culture · 工程文化层</div>
+    <h1 class="article-title">Team Topologies for AI-Augmented Orgs</h1>
+    <div class="article-title-cn">AI增强组织的团队拓扑</div>
+    <div class="article-meta">
+      <span class="meta-item"><span class="meta-dot" style="background:var(--rose)"></span> Article 4.2 of 20</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--purple)"></span> ~18 min read</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--orange)"></span> 3 Source Books × 4 AI Angles</span>
+    </div>
+  </div>
+</header>
+
+<main class="article-body">
+
+<h2><span class="num">01</span> Core Insight — The Thesis</h2>
+
+<p>Skelton and Pais identified four fundamental team types — stream-aligned, platform, enabling, and complicated-subsystem — and three interaction modes — collaboration, X-as-a-Service, and facilitating. Their insight: team structure should mirror the desired software architecture (Conway's Law as a strategic tool), and cognitive load is the invisible constraint that limits team effectiveness.</p>
+<p class="cn-note">Skelton和Pais识别了四种基本团队类型和三种交互模式。核心洞见：团队结构应映射期望的软件架构（康威定律作为战略工具），认知负荷是限制团队效能的隐形约束。</p>
+
+<p>The AI era adds a fifth team type: <strong>the AI Platform Team</strong>. This team provides AI tooling, prompt libraries, model governance, cost management, and best practices to all stream-aligned teams — exactly as the classical platform team provides infrastructure services. Without it, every team reinvents AI integration independently, creating inconsistent quality, ungoverned costs, and security blind spots.</p>
+<p class="cn-note">AI时代增加了第五种团队类型：AI平台团队。该团队为所有面向流的团队提供AI工具、提示词库、模型治理、成本管理和最佳实践——正如经典平台团队提供基础设施服务一样。</p>
+
+<div class="insight-box">
+  <div class="label">The Reframing 核心重构</div>
+  <p style="margin:0;font-size:15px;line-height:1.7"><strong>AI reduces cognitive load — which means teams can own more.</strong> The primary constraint on team scope is cognitive load: how much complexity can a team of 5-8 people hold in their heads? AI dramatically reduces cognitive load for routine tasks (code review, log analysis, incident triage), freeing cognitive capacity for more domain complexity. This means AI-augmented stream-aligned teams can own larger domains without becoming overwhelmed — enabling fewer, larger teams with less cross-team coordination overhead.</p>
+</div>
+<p class="cn-note">AI减少认知负荷——意味着团队可以拥有更多。AI显著减少日常任务的认知负荷，释放认知容量用于更多领域复杂性。这意味着AI增强的面向流团队可以拥有更大领域而不至于不堪重负。</p>
+
+<!-- HERO DIAGRAM -->
+<div class="diagram-container">
+  <div class="diagram-label">◆ Hero Diagram — Team Topologies in the AI Era</div>
+  <svg viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;font-family:'JetBrains Mono',monospace;">
+    <!-- Stream-aligned teams -->
+    <rect x="50" y="20" width="200" height="80" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="1.5"/>
+    <text x="150" y="48" text-anchor="middle" font-size="10" fill="var(--green,#10b981)" font-weight="700">STREAM-ALIGNED</text>
+    <text x="150" y="65" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Invoice Team (4 eng + AI)</text>
+    <text x="150" y="80" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Owns: billing domain end-to-end</text>
+    <text x="150" y="93" text-anchor="middle" font-size="7" fill="var(--green,#10b981)">AI handles: reviews, tests, triage</text>
+
+    <rect x="300" y="20" width="200" height="80" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="1.5"/>
+    <text x="400" y="48" text-anchor="middle" font-size="10" fill="var(--green,#10b981)" font-weight="700">STREAM-ALIGNED</text>
+    <text x="400" y="65" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Auth Team (3 eng + AI)</text>
+    <text x="400" y="80" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Owns: identity, auth, SSO</text>
+    <text x="400" y="93" text-anchor="middle" font-size="7" fill="var(--green,#10b981)">AI handles: vuln scanning, secrets</text>
+
+    <rect x="550" y="20" width="200" height="80" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="1.5"/>
+    <text x="650" y="48" text-anchor="middle" font-size="10" fill="var(--green,#10b981)" font-weight="700">STREAM-ALIGNED</text>
+    <text x="650" y="65" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Reports Team (3 eng + AI)</text>
+    <text x="650" y="80" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">Owns: analytics, exports, dashboards</text>
+    <text x="650" y="93" text-anchor="middle" font-size="7" fill="var(--green,#10b981)">AI handles: data validation, SQL gen</text>
+
+    <!-- AI Platform Team (NEW) -->
+    <rect x="150" y="130" width="500" height="65" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="2"/>
+    <text x="400" y="155" text-anchor="middle" font-size="11" fill="var(--cyan,#22d3ee)" font-weight="700">AI PLATFORM TEAM (NEW) — AI平台团队</text>
+    <text x="400" y="175" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">AI Tooling · Prompt Libraries · Model Governance · Cost Management · Best Practices · Safety Guardrails</text>
+    <text x="400" y="188" text-anchor="middle" font-size="7" fill="var(--cyan,#22d3ee)">X-as-a-Service interaction mode with all stream-aligned teams</text>
+
+    <!-- Infrastructure Platform Team -->
+    <rect x="150" y="215" width="500" height="55" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--purple,#a78bfa)" stroke-width="1.2"/>
+    <text x="400" y="238" text-anchor="middle" font-size="10" fill="var(--purple,#a78bfa)" font-weight="700">INFRASTRUCTURE PLATFORM TEAM</text>
+    <text x="400" y="255" text-anchor="middle" font-size="8" fill="var(--text-secondary,#94a3b8)">CI/CD · Cloud Infra · Observability · Networking · Security Baseline</text>
+    <text x="400" y="265" text-anchor="middle" font-size="7" fill="var(--purple,#a78bfa)">X-as-a-Service — now AI-augmented internally</text>
+
+    <!-- Connections -->
+    <line x1="150" y1="100" x2="250" y2="130" stroke="var(--border,#1e2a45)" stroke-width="1" stroke-dasharray="4,3"/>
+    <line x1="400" y1="100" x2="400" y2="130" stroke="var(--border,#1e2a45)" stroke-width="1" stroke-dasharray="4,3"/>
+    <line x1="650" y1="100" x2="550" y2="130" stroke="var(--border,#1e2a45)" stroke-width="1" stroke-dasharray="4,3"/>
+  </svg>
+</div>
+
+
+<h2><span class="num">02</span> Classical Foundation — Source Books</h2>
+
+<div class="bookshelf">
+  <div class="book-card tier1">
+    <div class="book-title">Team Topologies</div>
+    <div class="book-author">Skelton & Pais · 2019</div>
+    <div class="book-desc">The definitive framework for organizing teams around software delivery. Four team types, three interaction modes, and cognitive load as the hidden constraint. Key insight: "Conway's Law is not just descriptive — it's prescriptive. Design your team structure to produce the architecture you want."</div>
+    <span class="book-tag tag-foundation">FOUNDATION · TEAM DESIGN</span>
+  </div>
+  <div class="book-card tier1">
+    <div class="book-title">The Manager's Path</div>
+    <div class="book-author">Camille Fournier · 2017</div>
+    <div class="book-desc">The career progression guide from engineer to CTO. Essential for understanding how AI changes each level: tech leads become "AI context designers," engineering managers become "human-AI system optimizers," and directors become "AI governance policy makers."</div>
+    <span class="book-tag tag-foundation">FOUNDATION · LEADERSHIP PATH</span>
+  </div>
+  <div class="book-card tier2">
+    <div class="book-title">An Elegant Puzzle</div>
+    <div class="book-author">Will Larson · 2019</div>
+    <div class="book-desc">Systems thinking applied to engineering management. Larson's "sizing teams" framework — fixed teams that flex scope rather than flexible teams chasing fixed scope — becomes even more powerful when AI reduces the cognitive load per-scope-unit, allowing fixed teams to absorb larger domains.</div>
+    <span class="book-tag tag-practice">PRACTICE · SYSTEMS THINKING</span>
+  </div>
+</div>
+
+<p>What unites these books is the understanding that team structure is not an HR problem — it's an architectural decision. Skelton gives you the framework, Fournier gives you the leadership model, and Larson gives you the systems thinking to scale it. AI disrupts all three: teams become smaller, leadership shifts from managing execution to managing judgment, and the system now includes AI agents as first-class participants.</p>
+<p class="cn-note">这些书的共同理解：团队结构不是HR问题——而是架构决策。AI颠覆三者：团队变小，领导力从管理执行转向管理判断力，系统现在包括AI代理作为一等参与者。</p>
+
+
+<h2><span class="num">03</span> AI Co-Evolution — Four Angles</h2>
+
+<h3>Angle A · The AI Platform Team — AI平台团队</h3>
+
+<p><strong>Classical principle:</strong> Platform teams provide shared services (CI/CD, cloud infrastructure, observability) as X-as-a-Service, reducing cognitive load on stream-aligned teams (Skelton & Pais, Ch. 5).</p>
+<p><strong>AI extension:</strong> The AI Platform Team provides AI-specific shared services: model access and governance (which models are approved, rate limits, cost budgets), prompt libraries and templates (organization-specific prompts that encode domain knowledge), AI quality standards (hallucination detection, output validation), cost dashboards (per-team AI spend tracking), and safety guardrails (what AI is allowed to do autonomously vs. requiring human approval). Without this team, each stream-aligned team builds its own ad-hoc AI integration — leading to inconsistent quality, ungoverned spending, and security gaps.</p>
+<p class="cn-note">经典原则：平台团队以X即服务模式提供共享服务。AI延伸：AI平台团队提供AI专属共享服务——模型访问和治理、提示词库、AI质量标准、成本仪表板和安全护栏。没有这个团队，每个团队各自构建临时AI集成，导致质量不一、支出失控和安全缺口。</p>
+
+<h3>Angle B · Cognitive Load Reduction Through AI — 通过AI减少认知负荷</h3>
+
+<p><strong>Classical principle:</strong> Cognitive load is the invisible constraint on team effectiveness (Skelton & Pais, Ch. 3). Three types: intrinsic (domain complexity), extraneous (bad tooling, poor docs), and germane (learning the domain). Teams should minimize extraneous load and focus on intrinsic/germane.</p>
+<p><strong>AI extension:</strong> AI dramatically reduces extraneous cognitive load. Instead of memorizing PromQL syntax, engineers ask natural language questions. Instead of reading 50-page runbooks during incidents, AI presents a targeted analysis. Instead of maintaining mental models of 200 API endpoints, engineers query the AI about the codebase. This freed-up cognitive capacity lets teams own larger domains — a team that previously needed 8 people for a single bounded context might handle two contexts with 5 people plus AI augmentation.</p>
+<p class="cn-note">经典原则：认知负荷是团队效能的隐形约束。AI延伸：AI显著减少外在认知负荷——自然语言查询取代专用语法，AI分析取代翻阅运维手册，AI问答取代维护心智模型。释放的认知容量让团队拥有更大领域。</p>
+
+<h3>Angle C · Conway's Law in the AI Era — AI时代的康威定律</h3>
+
+<p><strong>Classical principle:</strong> "Any organization that designs a system will produce a design whose structure is a copy of the organization's communication structure" (Mel Conway, 1968). Team Topologies uses this strategically: design teams to match the desired architecture.</p>
+<p><strong>AI extension:</strong> AI agents are new "communication nodes" in the organization. When an AI review bot participates in code review across all teams, it creates an implicit communication channel that crosses team boundaries — sharing patterns, enforcing consistency, and transferring knowledge. Conway's Law now applies to the human-AI system: the architecture reflects not just human communication but the AI communication patterns too. An organization where AI agents are siloed per-team will produce siloed AI capabilities. An organization with a centralized AI Platform Team will produce consistent, well-governed AI integration.</p>
+<p class="cn-note">经典原则：组织设计的系统结构会复制其沟通结构。AI延伸：AI代理是组织中新的"沟通节点"。AI审查机器人跨团队参与代码审查时，创建跨团队边界的隐式沟通渠道。康威定律现在适用于人机系统：架构反映的不仅是人类沟通，还有AI沟通模式。</p>
+
+<h3>Angle D · Smaller Teams, Bigger Impact — 更小团队，更大影响</h3>
+
+<p><strong>Classical principle:</strong> Brooks's Law: "Adding manpower to a late software project makes it later." The communication overhead grows quadratically with team size (n(n-1)/2 channels). Smaller teams have less overhead but limited bandwidth.</p>
+<p><strong>AI extension:</strong> AI breaks the Brooks's Law trade-off. A team of 4 with excellent AI augmentation can match the output of a team of 10 — without the 45 communication channels. AI handles the bandwidth-intensive work (code generation, review, testing, documentation) while humans focus on the judgment-intensive work (design, stakeholder alignment, trade-off decisions). The result: organizations can achieve the same output with 40-60% fewer engineers, or dramatically increase output with the same headcount — depending on whether growth or efficiency is the priority.</p>
+<p class="cn-note">经典原则：布鲁克斯定律——沟通开销随团队规模二次方增长。AI延伸：AI打破布鲁克斯定律的权衡。4人团队加上优秀AI增强可匹配10人团队的产出——没有45条沟通渠道。组织可以用少40-60%的工程师达到同样产出，或用同样人数显著增加产出。</p>
+
+
+<h2><span class="num">04</span> Decision Table</h2>
+
+<table class="decision-table">
+<thead><tr><th class="col-scenario">Scenario</th><th class="col-classic">Classical Approach</th><th class="col-ai">AI-Augmented Approach</th></tr></thead>
+<tbody>
+<tr><td class="col-scenario">Team Sizing</td><td><span class="classic-badge">7-9</span> Two-pizza teams. Sized by work volume and communication overhead</td><td><span class="ai-badge">4-6</span> Smaller teams with AI multiplier. Same output, reduced coordination cost</td></tr>
+<tr><td class="col-scenario">Platform Services</td><td><span class="classic-badge">INFRA</span> Platform team provides CI/CD, cloud, observability as X-as-a-Service</td><td><span class="ai-badge">AI PLATFORM</span> Add AI Platform Team: model governance, prompt libraries, cost management, safety guardrails</td></tr>
+<tr><td class="col-scenario">Cognitive Load</td><td><span class="classic-badge">MINIMIZE</span> Reduce extraneous load through better tooling and documentation</td><td><span class="ai-badge">AI REDUCE</span> AI eliminates most extraneous load. Teams can own larger domains with same cognitive capacity</td></tr>
+<tr><td class="col-scenario">Cross-team Knowledge</td><td><span class="classic-badge">DOCS</span> Wiki pages, architecture diagrams, cross-team meetings. High maintenance cost</td><td><span class="ai-badge">AI KB</span> AI agents share patterns across teams. .ai/ directories as living, queryable documentation</td></tr>
+<tr><td class="col-scenario">Conway's Law</td><td><span class="classic-badge">STRATEGY</span> Design team structure to match desired architecture. "Inverse Conway Maneuver"</td><td><span class="ai-badge">AI NODES</span> Include AI agents as communication nodes. AI Platform Team shapes cross-cutting AI architecture</td></tr>
+<tr><td class="col-scenario">Enabling Team</td><td><span class="classic-badge">FACILITATE</span> Temporary team helps stream-aligned teams adopt new practices. Dissolves after knowledge transfer</td><td><span class="ai-badge">AI ENABLE</span> AI Platform Team has permanent enabling role: continuously upskills teams on AI best practices</td></tr>
+<tr><td class="col-scenario">Interaction Mode</td><td><span class="classic-badge">3 MODES</span> Collaboration, X-as-a-Service, Facilitating between team pairs</td><td><span class="ai-badge">4 MODES</span> Add "AI-Mediated": AI agent acts as async intermediary between teams (shared review bot, cross-team analysis)</td></tr>
+<tr><td class="col-scenario">Scaling Strategy</td><td><span class="classic-badge">ADD TEAMS</span> More work → more teams → more coordination → more platform investment</td><td><span class="ai-badge">AI AMPLIFY</span> More work → same teams + more AI leverage → less coordination → AI platform scales horizontally</td></tr>
+</tbody>
+</table>
+
+
+<h2><span class="num">05</span> Practical Checklist</h2>
+
+<div class="checklist">
+  <div class="check-item"><span class="check-stage stage-1">STAGE 1</span> Map current team structure to the 4 fundamental types. Identify mismatches between team boundaries and software boundaries</div>
+  <div class="check-item"><span class="check-stage stage-1">STAGE 1</span> Assess cognitive load per team: which teams are overloaded? Where is extraneous load highest?</div>
+  <div class="check-item"><span class="check-stage stage-2">STAGE 2</span> Designate 1-2 engineers as the seed of an AI Platform function — they own model governance, prompt standards, cost tracking</div>
+  <div class="check-item"><span class="check-stage stage-2">STAGE 2</span> Establish organization-wide AI usage standards: approved models, rate limits, data classification for AI inputs</div>
+  <div class="check-item"><span class="check-stage stage-3">STAGE 3</span> Deploy shared AI tooling across all stream-aligned teams: common review bot, shared prompt library, centralized cost dashboard</div>
+  <div class="check-item"><span class="check-stage stage-3">STAGE 3</span> Re-assess cognitive load with AI in place — which teams can now absorb additional domain scope?</div>
+  <div class="check-item"><span class="check-stage stage-4">STAGE 4</span> Formalize the AI Platform Team with clear X-as-a-Service interface and SLOs for AI tooling availability</div>
+  <div class="check-item"><span class="check-stage stage-4">STAGE 4</span> Right-size stream-aligned teams: reduce where AI frees capacity, merge teams where domain boundaries can be consolidated</div>
+  <div class="check-item"><span class="check-stage stage-5">STAGE 5</span> Implement "AI-Mediated" interaction mode: shared AI agents that cross team boundaries for review, analysis, and knowledge sharing</div>
+  <div class="check-item"><span class="check-stage stage-5">STAGE 5</span> Update Conway's Law analysis: map AI communication patterns alongside human patterns to predict architecture evolution</div>
+  <div class="check-item"><span class="check-stage stage-6">STAGE 6</span> Achieve steady-state AI-augmented topology: fewer, larger-scope stream-aligned teams, mature AI Platform Team, minimal coordination overhead</div>
+  <div class="check-item"><span class="check-stage stage-6">STAGE 6</span> Continuous topology evolution: quarterly review of team boundaries as AI capabilities improve and domain complexity changes</div>
+</div>
+<div class="checklist-note">Stages 1-3 = adoption · Stages 4-6 = organizational redesign · Team topologies are living, not static</div>
+
+
+<h2><span class="num">06</span> The Architect's Takeaway</h2>
+
+<p>Skelton and Pais gave us the vocabulary to think about team design as an architectural decision. Fournier showed us the leadership path. Larson gave us systems thinking for engineering organizations. AI doesn't invalidate their frameworks — it extends them with a new team type (AI Platform), a new interaction mode (AI-Mediated), and a powerful lever for the cognitive load equation.</p>
+<p class="cn-note">Skelton和Pais给了我们将团队设计作为架构决策来思考的词汇。AI不会使他们的框架失效——而是用新团队类型、新交互模式和认知负荷方程的强力杠杆来扩展它们。</p>
+
+<p>The most important takeaway: <strong>don't add AI to a broken team structure.</strong> If your teams are misaligned with your software boundaries, if cognitive load is crushing your engineers, if you have too many hand-offs and too little ownership — AI will amplify those problems, not solve them. Fix the topology first, then add AI. And when you add AI, do it through a platform team that provides consistent, governed, well-supported AI services to everyone.</p>
+<p class="cn-note">最重要的要点：不要把AI加到破碎的团队结构上。如果团队与软件边界不对齐、认知负荷压垮工程师——AI会放大这些问题而非解决它们。先修复拓扑，再加AI。</p>
+
+<div class="insight-box" style="margin-top:40px;">
+  <div class="label">Next in Series → Article 4.3 (Final)</div>
+  <p style="margin:0;font-size:14px;line-height:1.6"><strong>Building Your Personal Knowledge System as a Software Architect</strong> — The knowledge tech tree (book dependency graph). AI as learning partner. This series as a RAG-ready KB. "Dialog with Books" via AI. The meta-article: how this series was built.
+  <br><span style="color:var(--text-dim);font-style:italic;font-family:'Noto Serif SC',serif;">终篇：构建你作为软件架构师的个人知识体系。</span></p>
+</div>
+
+</main>
+
+<footer class="article-footer">
+  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim)">Software Knowledge Base · Layer 4: Engineering Culture · Article 4.2 of 20<br>Classical Foundations × AI Co-Evolution · 经典基础 × AI协同进化</div>
+  <div class="nav-links">
+    <a class="nav-link" href="./4.1-lean-engineering-manifesto.html">← 4.1 Lean Engineering Manifesto</a>
+    <a class="nav-link" href="./4.3-personal-knowledge-system.html">Next: 4.3 Personal Knowledge System →</a>
+  </div>
+</footer>
+
+</body>
+</html>

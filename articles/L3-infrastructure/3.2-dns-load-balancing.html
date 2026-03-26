@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3.2 DNS, Load Balancing, and Network Architecture for Multi-DC</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<!--
+  CSS Architecture Note:
+  The canonical design system lives in templates/article-base.css.
+  For single-file distribution, it is inlined here.
+  When editing styles, update article-base.css first, then re-inline.
+-->
+<style>
+/* ═══ INLINED FROM templates/article-base.css ═══ */
+:root {
+  --bg-deep: #0a0e17;
+  --bg-surface: #0f1420;
+  --bg-card: #141b2d;
+  --bg-card-hover: #1a2340;
+  --border: #1e2a45;
+  --border-accent: #2d4a7a;
+  --cyan: #22d3ee;
+  --cyan-dim: #0e7490;
+  --cyan-glow: rgba(34, 211, 238, 0.15);
+  --purple: #a78bfa;
+  --purple-dim: #6d5dbb;
+  --purple-glow: rgba(167, 139, 250, 0.12);
+  --orange: #f97316;
+  --orange-glow: rgba(249, 115, 22, 0.12);
+  --green: #10b981;
+  --green-glow: rgba(16, 185, 129, 0.12);
+  --rose: #f43f5e;
+  --rose-glow: rgba(244, 63, 94, 0.12);
+  --yellow: #eab308;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg-deep); color:var(--text-primary); font-family:'IBM Plex Sans',sans-serif; line-height:1.75; font-size:16px; -webkit-font-smoothing:antialiased; }
+.article-header { position:relative; padding:80px 0 60px; overflow:hidden; border-bottom:1px solid var(--border); }
+.article-header::before { content:''; position:absolute; top:0;left:0;right:0;bottom:0; background:radial-gradient(ellipse 800px 400px at 20% 50%,rgba(34,211,238,0.06),transparent),radial-gradient(ellipse 600px 300px at 80% 30%,rgba(167,139,250,0.04),transparent); }
+.header-content { position:relative; max-width:860px; margin:0 auto; padding:0 32px; }
+.series-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--cyan); border:1px solid var(--cyan-dim); padding:4px 12px; border-radius:3px; margin-bottom:20px; background:var(--cyan-glow); }
+.article-title { font-family:'JetBrains Mono',monospace; font-size:36px; font-weight:700; line-height:1.25; color:var(--text-primary); margin-bottom:8px; }
+.article-title-cn { font-family:'Noto Serif SC',serif; font-size:20px; font-weight:400; color:var(--text-dim); font-style:italic; margin-bottom:24px; }
+.article-meta { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-dim); display:flex; gap:24px; flex-wrap:wrap; }
+.meta-item { display:flex; align-items:center; gap:6px; }
+.meta-dot { width:6px; height:6px; border-radius:50%; }
+.article-body { max-width:860px; margin:0 auto; padding:48px 32px; }
+h2 { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:var(--cyan); margin:56px 0 8px; padding-bottom:12px; border-bottom:1px solid var(--border); letter-spacing:-0.5px; }
+.article-body > h2:first-child { margin-top:0; }
+h2 .num { color:var(--text-dim); font-weight:400; margin-right:8px; }
+h3 { font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; color:var(--purple); margin:36px 0 12px; }
+p { margin-bottom:18px; color:var(--text-primary); font-size:15.5px; }
+.cn-note { font-family:'Noto Serif SC',serif; font-style:italic; color:var(--text-dim); font-size:14px; line-height:1.8; margin:-8px 0 24px; padding-left:16px; border-left:2px solid var(--border); }
+code { font-family:'JetBrains Mono',monospace; font-size:0.88em; background:rgba(34,211,238,0.08); padding:2px 6px; border-radius:3px; color:var(--cyan); }
+.diagram-container { margin:40px -16px; padding:32px 24px; background:var(--bg-surface); border:1px solid var(--border); border-radius:8px; position:relative; overflow-x:auto; }
+.diagram-container::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--cyan),var(--purple),var(--orange)); }
+.diagram-label { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:20px; }
+.diagram-sublabel { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-dim); margin-top:-16px; margin-bottom:16px; font-style:italic; }
+.bookshelf { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin:24px 0; align-items:stretch; }
+.book-card { background:var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:16px; transition:all 0.25s ease; position:relative; overflow:hidden; min-height:190px; display:flex; flex-direction:column; }
+.book-card::before { content:''; position:absolute; left:0;top:0;bottom:0; width:3px; }
+.book-card.tier1::before { background:var(--cyan); }
+.book-card.tier2::before { background:var(--purple); }
+.book-card:hover { border-color:var(--border-accent); background:var(--bg-card-hover); transform:translateY(-2px); }
+.book-title { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:4px; line-height:1.4; }
+.book-author { font-size:11px; color:var(--text-dim); }
+.book-desc { font-size:12px; color:var(--text-secondary); margin-top:8px; line-height:1.5; flex:1; }
+.book-tag { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:2px 6px; border-radius:3px; margin-top:8px; letter-spacing:0.5px; }
+.tag-foundation { background:rgba(34,211,238,0.1); color:var(--cyan); border:1px solid rgba(34,211,238,0.2); }
+.tag-practice { background:rgba(167,139,250,0.1); color:var(--purple); border:1px solid rgba(167,139,250,0.2); }
+.decision-table { width:100%; border-collapse:collapse; margin:24px 0; font-size:13px; }
+.decision-table th { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; text-align:left; padding:12px 16px; border-bottom:2px solid var(--border-accent); color:var(--text-secondary); background:var(--bg-surface); }
+.decision-table td { padding:12px 16px; border-bottom:1px solid var(--border); color:var(--text-primary); vertical-align:top; line-height:1.5; }
+.decision-table tr:hover td { background:rgba(34,211,238,0.03); }
+.decision-table .col-scenario { width:22%; font-weight:500; color:var(--text-secondary); }
+.decision-table .col-classic { width:39%; }
+.decision-table .col-ai { width:39%; }
+.classic-badge,.ai-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:9px; padding:1px 5px; border-radius:2px; margin-right:4px; vertical-align:middle; }
+.classic-badge { background:rgba(148,163,184,0.15); color:var(--text-secondary); }
+.ai-badge { background:rgba(34,211,238,0.12); color:var(--cyan); }
+.checklist { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:24px 0; }
+.check-item { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:5px; font-size:13px; color:var(--text-primary); line-height:1.4; transition:border-color 0.2s; }
+.check-item:hover { border-color:var(--border-accent); }
+.check-stage { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:600; padding:2px 7px; border-radius:3px; white-space:nowrap; flex-shrink:0; }
+.stage-1 { background:rgba(244,63,94,0.12); color:var(--rose); border:1px solid rgba(244,63,94,0.2); }
+.stage-2 { background:rgba(249,115,22,0.12); color:var(--orange); border:1px solid rgba(249,115,22,0.2); }
+.stage-3 { background:rgba(234,179,8,0.12); color:var(--yellow); border:1px solid rgba(234,179,8,0.2); }
+.stage-4 { background:rgba(34,211,238,0.12); color:var(--cyan); border:1px solid rgba(34,211,238,0.2); }
+.stage-5 { background:rgba(167,139,250,0.12); color:var(--purple); border:1px solid rgba(167,139,250,0.2); }
+.stage-6 { background:rgba(16,185,129,0.12); color:var(--green); border:1px solid rgba(16,185,129,0.2); }
+.insight-box { margin:32px 0; padding:24px; background:linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04)); border:1px solid var(--border-accent); border-radius:8px; position:relative; }
+.insight-box::before { content:'⚡'; position:absolute; top:-12px; left:20px; background:var(--bg-deep); padding:0 8px; font-size:18px; }
+.insight-box .label { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--cyan); margin-bottom:8px; }
+.code-block { background:#0d1117; border:1px solid var(--border); border-radius:6px; padding:20px; margin:20px 0; overflow-x:auto; position:relative; }
+.code-block::before { content:attr(data-lang); position:absolute; top:8px; right:12px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-dim); letter-spacing:0.5px; }
+.code-block pre { font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.6; color:var(--text-secondary); }
+.code-block .kw { color:var(--purple); }
+.code-block .fn { color:var(--cyan); }
+.code-block .str { color:var(--green); }
+.code-block .cm { color:var(--text-dim); font-style:italic; }
+.code-block .ann { color:var(--orange); }
+.code-block .tp { color:var(--yellow); }
+.evolution-steps { position:relative; padding-left:32px; margin:28px 0; }
+.evolution-steps::before { content:''; position:absolute; left:11px; top:8px; bottom:8px; width:2px; background:linear-gradient(to bottom,var(--cyan),var(--purple),var(--orange)); }
+.evo-step { position:relative; margin-bottom:24px; padding-left:20px; }
+.evo-step::before { content:''; position:absolute; left:-25px; top:8px; width:10px; height:10px; border-radius:50%; border:2px solid; }
+.evo-step:nth-child(1)::before { border-color:var(--text-dim); background:var(--bg-deep); }
+.evo-step:nth-child(2)::before { border-color:var(--text-secondary); background:var(--bg-deep); }
+.evo-step:nth-child(3)::before { border-color:var(--cyan-dim); background:var(--bg-deep); }
+.evo-step:nth-child(4)::before { border-color:var(--purple); background:var(--bg-deep); }
+.evo-step:nth-child(5)::before { border-color:var(--cyan); background:var(--cyan); }
+.evo-step:nth-child(6)::before { border-color:var(--green); background:var(--green); }
+.evo-step-title { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; margin-bottom:4px; }
+.evo-step-desc { font-size:13.5px; color:var(--text-secondary); line-height:1.6; }
+.article-footer { max-width:860px; margin:0 auto; padding:40px 32px; border-top:1px solid var(--border); font-size:12px; color:var(--text-dim); }
+.nav-links { display:flex; justify-content:space-between; align-items:center; margin-top:20px; }
+.nav-link { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--cyan); text-decoration:none; padding:8px 16px; border:1px solid var(--border); border-radius:4px; transition:all 0.2s; }
+.nav-link:hover { border-color:var(--cyan); background:var(--cyan-glow); }
+.checklist-note { grid-column: 1 / -1; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim); text-align:center; padding:8px; margin-top:4px; }
+@media (max-width:640px) {
+  .article-title { font-size:24px; }
+  .bookshelf { grid-template-columns:1fr; }
+  .checklist { grid-template-columns:1fr; }
+  .article-meta { flex-direction:column; gap:8px; }
+}
+@media print {
+  :root { --bg-deep:#fff; --bg-surface:#f8f9fa; --bg-card:#f1f3f5; --bg-card-hover:#f1f3f5; --border:#dee2e6; --border-accent:#adb5bd; --text-primary:#212529; --text-secondary:#495057; --text-dim:#868e96; --cyan:#0c8599; --purple:#7048e8; --orange:#e8590c; --green:#099268; --rose:#e03131; --yellow:#e67700; }
+  body { font-size:11pt; line-height:1.5; }
+  .article-header::before { display:none; }
+  .article-header { padding:24px 0; }
+  .diagram-container::before { display:none; }
+  .book-card:hover { transform:none; }
+  .nav-links { display:none; }
+  .code-block { border:1px solid #dee2e6; background:#f8f9fa; }
+  .code-block pre { color:#212529; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header class="article-header">
+  <div class="header-content">
+    <div class="series-badge">Layer 3 · Infrastructure · 基础设施层</div>
+    <h1 class="article-title">DNS, Load Balancing & Multi-DC</h1>
+    <div class="article-title-cn">DNS、负载均衡与多数据中心网络架构</div>
+    <div class="article-meta">
+      <span class="meta-item"><span class="meta-dot" style="background:var(--green)"></span> Article 3.2 of 20</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--purple)"></span> ~18 min read</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--orange)"></span> 3 Source Books × 4 AI Angles</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════ BODY ═══════════════ -->
+<main class="article-body">
+
+<!-- ─── §01 CORE INSIGHT ─── -->
+<h2><span class="num">01</span> Core Insight — The Thesis</h2>
+
+<p>
+Every distributed system ultimately depends on two invisible layers: DNS resolution and load balancing. DNS translates human-readable names into routable addresses; load balancers distribute traffic across healthy endpoints. Together they form the nervous system of your architecture — and like a real nervous system, you only notice them when something goes wrong. A DNS TTL misconfiguration can cascade into a global outage. A load balancer that doesn't drain connections gracefully can corrupt thousands of in-flight transactions.
+</p>
+<p class="cn-note">
+每个分布式系统最终依赖两个不可见层：DNS解析和负载均衡。它们共同构成架构的神经系统——如同真实的神经系统，只有出问题时才会注意到它们。DNS TTL配置错误可级联为全局中断，负载均衡器不优雅排空连接可损坏数千个在途事务。
+</p>
+
+<p>
+The classical approach treats DNS and load balancing as <strong>configuration problems</strong> — set the records, tune the weights, configure health checks, write a runbook for failover. Google's SRE book formalized load balancing into a three-tier taxonomy (DNS-based, virtual IP, and backend-level), and Nygard's <em>Release It!</em> gave us the stability patterns (Circuit Breaker, Bulkhead, Timeout) that prevent cascade failures at the network layer.
+</p>
+<p class="cn-note">
+经典方法将DNS和负载均衡视为配置问题——设置记录、调整权重、配置健康检查。Google SRE手册将负载均衡形式化为三层分类，Nygard给出了防止级联故障的稳定性模式。
+</p>
+
+<p>
+Here is the AI-era shift: <strong>the network doesn't just route — it thinks.</strong> AI-powered traffic management replaces static round-robin with real-time decisions based on latency profiles, error rate trends, server thermal state, and even predicted traffic patterns from historical data. The load balancer becomes an intelligent agent that optimizes for business outcomes (minimize p99 latency, maximize throughput within cost budget) rather than just distributing requests evenly.
+</p>
+<p class="cn-note">
+AI时代的转变：网络不仅路由——它思考。AI驱动的流量管理用基于延迟画像、错误率趋势和预测流量模式的实时决策取代静态轮询。负载均衡器成为优化业务结果的智能代理。
+</p>
+
+<div class="insight-box">
+  <div class="label">The Reframing 核心重构</div>
+  <p style="margin:0; font-size:15px; line-height:1.7">
+    <strong>Your network topology is a living organism.</strong> Classical DNS and load balancing treat the network as a static graph with fixed edges and weights. AI-augmented networking treats it as a dynamic system that continuously adapts — rerouting traffic before failures happen, scaling capacity before demand arrives, and learning from every request to optimize the next one. The architect's job shifts from designing the topology to designing the <em>adaptation policies</em> the AI follows.
+  </p>
+</div>
+<p class="cn-note">
+你的网络拓扑是一个活的有机体。经典方法将网络视为固定边和权重的静态图。AI增强的网络将其视为持续适应的动态系统。架构师的工作从设计拓扑转向设计AI遵循的适应策略。
+</p>
+
+<!-- HERO DIAGRAM: MULTI-DC ARCHITECTURE -->
+<div class="diagram-container">
+  <div class="diagram-label">◆ Hero Diagram — Multi-DC Architecture with AI Traffic Intelligence</div>
+  <svg viewBox="0 0 800 420" xmlns="http://www.w3.org/2000/svg" style="width:100%; font-family:'JetBrains Mono',monospace;">
+    <defs>
+      <marker id="arrowDns" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L8,3 L0,6" fill="var(--cyan,#22d3ee)"/>
+      </marker>
+    </defs>
+
+    <!-- GSLB Layer -->
+    <rect x="250" y="10" width="300" height="50" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1.5"/>
+    <text x="400" y="30" text-anchor="middle" font-size="11" fill="var(--cyan,#22d3ee)" font-weight="700">GSLB / GeoDNS</text>
+    <text x="400" y="46" text-anchor="middle" font-size="8" fill="var(--text-dim,#64748b)">Global Server Load Balancing · 全局服务器负载均衡</text>
+
+    <!-- AI Intelligence Layer -->
+    <rect x="200" y="75" width="400" height="40" rx="6" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <text x="400" y="95" text-anchor="middle" font-size="10" fill="var(--green,#10b981)" font-weight="600">AI TRAFFIC INTELLIGENCE LAYER — 实时流量分析 + 预测路由</text>
+
+    <!-- Arrow GSLB to AI -->
+    <line x1="400" y1="60" x2="400" y2="75" stroke="var(--cyan,#22d3ee)" stroke-width="1.5" marker-end="url(#arrowDns)"/>
+
+    <!-- DC Beijing -->
+    <rect x="30" y="140" width="340" height="260" rx="8" fill="var(--bg-surface,#0f1420)" stroke="var(--border-accent,#2d4a7a)" stroke-width="1.2"/>
+    <text x="200" y="162" text-anchor="middle" font-size="11" fill="var(--orange,#f97316)" font-weight="700">DC-BEIJING 北京数据中心</text>
+
+    <rect x="50" y="175" width="130" height="36" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--purple,#a78bfa)" stroke-width="1"/>
+    <text x="115" y="196" text-anchor="middle" font-size="9" fill="var(--purple,#a78bfa)" font-weight="600">CoreDNS Primary</text>
+
+    <rect x="200" y="175" width="150" height="36" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--yellow,#eab308)" stroke-width="1"/>
+    <text x="275" y="196" text-anchor="middle" font-size="9" fill="var(--yellow,#eab308)" font-weight="600">VRRP (Keepalived)</text>
+
+    <rect x="80" y="225" width="220" height="36" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1"/>
+    <text x="190" y="247" text-anchor="middle" font-size="9" fill="var(--cyan,#22d3ee)" font-weight="600">Nginx / Envoy — L7 Load Balancer</text>
+
+    <rect x="55" y="275" width="90" height="30" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="0.8"/>
+    <text x="100" y="294" text-anchor="middle" font-size="8" fill="var(--green,#10b981)">Invoice API</text>
+    <rect x="155" y="275" width="90" height="30" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="0.8"/>
+    <text x="200" y="294" text-anchor="middle" font-size="8" fill="var(--green,#10b981)">Auth Service</text>
+    <rect x="255" y="275" width="90" height="30" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="0.8"/>
+    <text x="300" y="294" text-anchor="middle" font-size="8" fill="var(--green,#10b981)">Report Svc</text>
+
+    <rect x="100" y="320" width="180" height="36" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--rose,#f43f5e)" stroke-width="1"/>
+    <text x="190" y="337" text-anchor="middle" font-size="9" fill="var(--rose,#f43f5e)" font-weight="500">MySQL Primary</text>
+    <text x="190" y="350" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Read/Write</text>
+
+    <!-- DC Shanghai -->
+    <rect x="430" y="140" width="340" height="260" rx="8" fill="var(--bg-surface,#0f1420)" stroke="var(--border-accent,#2d4a7a)" stroke-width="1.2"/>
+    <text x="600" y="162" text-anchor="middle" font-size="11" fill="var(--orange,#f97316)" font-weight="700">DC-SHANGHAI 上海数据中心</text>
+
+    <rect x="450" y="175" width="130" height="36" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--purple,#a78bfa)" stroke-width="1"/>
+    <text x="515" y="196" text-anchor="middle" font-size="9" fill="var(--purple,#a78bfa)" font-weight="600">CoreDNS Secondary</text>
+
+    <rect x="600" y="175" width="150" height="36" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--yellow,#eab308)" stroke-width="1"/>
+    <text x="675" y="196" text-anchor="middle" font-size="9" fill="var(--yellow,#eab308)" font-weight="600">VRRP (Keepalived)</text>
+
+    <rect x="480" y="225" width="220" height="36" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--cyan,#22d3ee)" stroke-width="1"/>
+    <text x="590" y="247" text-anchor="middle" font-size="9" fill="var(--cyan,#22d3ee)" font-weight="600">Nginx / Envoy — L7 Load Balancer</text>
+
+    <rect x="455" y="275" width="90" height="30" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="0.8"/>
+    <text x="500" y="294" text-anchor="middle" font-size="8" fill="var(--green,#10b981)">Invoice API</text>
+    <rect x="555" y="275" width="90" height="30" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="0.8"/>
+    <text x="600" y="294" text-anchor="middle" font-size="8" fill="var(--green,#10b981)">Auth Service</text>
+    <rect x="655" y="275" width="90" height="30" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--green,#10b981)" stroke-width="0.8"/>
+    <text x="700" y="294" text-anchor="middle" font-size="8" fill="var(--green,#10b981)">Report Svc</text>
+
+    <rect x="500" y="320" width="180" height="36" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--yellow,#eab308)" stroke-width="1"/>
+    <text x="590" y="337" text-anchor="middle" font-size="9" fill="var(--yellow,#eab308)" font-weight="500">MySQL Replica</text>
+    <text x="590" y="350" text-anchor="middle" font-size="7" fill="var(--text-dim,#64748b)">Read-Only</text>
+
+    <!-- Cross-DC connections -->
+    <line x1="280" y1="338" x2="500" y2="338" stroke="var(--orange,#f97316)" stroke-width="1" stroke-dasharray="6,3"/>
+    <text x="390" y="332" text-anchor="middle" font-size="7" fill="var(--orange,#f97316)">Semi-Sync Replication</text>
+
+    <line x1="180" y1="193" x2="450" y2="193" stroke="var(--purple,#a78bfa)" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="315" y="187" text-anchor="middle" font-size="7" fill="var(--purple,#a78bfa)">Zone Transfer (AXFR/IXFR)</text>
+
+    <line x1="300" y1="115" x2="200" y2="140" stroke="var(--green,#10b981)" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="500" y1="115" x2="600" y2="140" stroke="var(--green,#10b981)" stroke-width="1" stroke-dasharray="3,3"/>
+
+    <!-- Legend -->
+    <rect x="50" y="390" width="700" height="24" rx="4" fill="var(--bg-card,#141b2d)" stroke="var(--border,#1e2a45)" stroke-width="0.5"/>
+    <circle cx="100" cy="402" r="4" fill="var(--cyan,#22d3ee)"/>
+    <text x="110" y="406" font-size="7" fill="var(--text-dim,#64748b)">Load Balancer</text>
+    <circle cx="210" cy="402" r="4" fill="var(--purple,#a78bfa)"/>
+    <text x="220" y="406" font-size="7" fill="var(--text-dim,#64748b)">DNS</text>
+    <circle cx="280" cy="402" r="4" fill="var(--green,#10b981)"/>
+    <text x="290" y="406" font-size="7" fill="var(--text-dim,#64748b)">AI Intelligence</text>
+    <circle cx="390" cy="402" r="4" fill="var(--orange,#f97316)"/>
+    <text x="400" y="406" font-size="7" fill="var(--text-dim,#64748b)">Replication</text>
+    <circle cx="510" cy="402" r="4" fill="var(--yellow,#eab308)"/>
+    <text x="520" y="406" font-size="7" fill="var(--text-dim,#64748b)">HA / Failover</text>
+  </svg>
+</div>
+
+
+<!-- ─── §02 CLASSICAL FOUNDATION ─── -->
+<h2><span class="num">02</span> Classical Foundation — Source Books</h2>
+
+<p>
+Three books provide the classical framework for understanding DNS, load balancing, and network reliability at scale. Google's SRE books cover the theory and practice of operating planet-scale infrastructure, while Nygard focuses on the stability patterns that prevent individual failures from cascading into system-wide outages.
+</p>
+<p class="cn-note">
+三本书提供了理解DNS、负载均衡和大规模网络可靠性的经典框架。Google的SRE书籍涵盖运营全球规模基础设施的理论与实践，Nygard专注于防止单点故障级联为系统性故障的稳定性模式。
+</p>
+
+<div class="bookshelf">
+  <div class="book-card tier1">
+    <div class="book-title">Site Reliability Engineering</div>
+    <div class="book-author">Beyer, Jones, Petoff, Murphy · 2016</div>
+    <div class="book-desc">The definitive guide to operating reliable systems at Google scale. Chapter 19 on load balancing formalizes the three-tier taxonomy: DNS-based (coarse, geographic), virtual IP / L4 (network-level, connection-based), and backend-level / L7 (application-aware, request-level). Chapter 20 covers managing critical state across distributed systems — the foundational challenge of multi-DC architectures.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · LOAD BALANCING</span>
+  </div>
+  <div class="book-card tier1">
+    <div class="book-title">The Site Reliability Workbook</div>
+    <div class="book-author">Beyer, Murphy, Rensin, et al. · 2018</div>
+    <div class="book-desc">The practical companion to the SRE book. Covers canarying and progressive rollouts — essential for safe multi-DC deployments. Detailed treatment of SLOs for network services: what availability means for DNS, how to set error budgets for load balancer misrouting, and when to page humans vs. let automation handle the recovery.</div>
+    <span class="book-tag tag-foundation">FOUNDATION · SLO PRACTICE</span>
+  </div>
+  <div class="book-card tier2">
+    <div class="book-title">Release It!, 2nd Edition</div>
+    <div class="book-author">Michael Nygard · 2018</div>
+    <div class="book-desc">Nygard's stability patterns are the architect's toolkit for network-layer resilience. Circuit Breaker prevents a failing backend from consuming all connections. Bulkhead isolates failure domains. Timeout prevents indefinite waits. These patterns apply directly to load balancer configuration and cross-DC communication design.</div>
+    <span class="book-tag tag-practice">PRACTICE · STABILITY PATTERNS</span>
+  </div>
+</div>
+
+<p>
+What unites these books is a shared understanding that network reliability is not just a technical problem — it's an operational discipline. Google's SRE approach treats load balancing as a system with SLOs, error budgets, and continuous monitoring. Nygard's stability patterns are the defensive programming of the network layer. The AI era builds on this foundation: you can't intelligently route traffic without understanding why the classical patterns exist.
+</p>
+<p class="cn-note">
+这些书的共同认识：网络可靠性不仅是技术问题，更是运维纪律。Google的SRE方法将负载均衡视为有SLO和错误预算的系统。Nygard的稳定性模式是网络层的防御性编程。AI时代在此基础上构建。
+</p>
+
+
+<!-- ─── §03 AI CO-EVOLUTION ─── -->
+<h2><span class="num">03</span> AI Co-Evolution — Four Angles</h2>
+
+<p>
+The leap from static network configuration to intelligent, self-optimizing infrastructure follows the same pattern we've seen across this series: classical principles provide the foundation, AI extends them into territory that was previously impossible.
+</p>
+<p class="cn-note">
+从静态网络配置到智能自优化基础设施的跨越遵循本系列的一贯模式：经典原则提供基础，AI将其扩展到之前不可能的领域。
+</p>
+
+<!-- ANGLE A -->
+<h3>Angle A · AI-Powered Traffic Routing — AI驱动的流量路由</h3>
+
+<p>
+<strong>Classical principle:</strong> Load balancing algorithms distribute requests across backends using static strategies: round-robin, weighted round-robin, least connections, IP hash (SRE Book, Ch. 19). These algorithms are simple, predictable, and effective for homogeneous backends. But they are blind — they don't consider the actual state of the request being routed or the downstream dependencies it will invoke.
+</p>
+
+<p>
+<strong>AI extension:</strong> ML-driven traffic routing replaces static algorithms with real-time optimization. An AI model ingests telemetry from all layers — server CPU/memory utilization, request latency percentiles, error rates by endpoint, database connection pool saturation, even queue depths in async systems — and makes per-request routing decisions that optimize for business-defined objectives. The AI doesn't just balance load; it minimizes tail latency, maximizes throughput within cost constraints, and predicts which backend will handle a specific request type fastest.
+</p>
+
+<p>
+<strong>Concrete example:</strong> An AI routing policy for the invoice API:
+</p>
+
+<div class="code-block" data-lang="YAML">
+<pre><span class="cm"># ai-routing-policy.yaml</span>
+<span class="kw">service</span>: invoice-api
+<span class="kw">routing_model</span>: latency-optimized
+<span class="kw">objectives</span>:
+  <span class="fn">primary</span>: <span class="str">minimize p99 latency</span>
+  <span class="fn">secondary</span>: <span class="str">maximize throughput</span>
+  <span class="fn">constraint</span>: <span class="str">cross-dc traffic &lt; 15%</span>
+
+<span class="kw">features</span>:  <span class="cm"># signals the AI model consumes</span>
+  - <span class="str">backend_cpu_utilization</span>
+  - <span class="str">backend_p95_latency_5m</span>
+  - <span class="str">backend_error_rate_1m</span>
+  - <span class="str">backend_active_connections</span>
+  - <span class="str">request_payload_size</span>
+  - <span class="str">mysql_replication_lag</span>
+
+<span class="kw">fallback</span>: weighted-round-robin  <span class="cm"># if AI model unavailable</span>
+<span class="kw">circuit_breaker</span>:
+  <span class="fn">threshold</span>: <span class="str">5xx_rate &gt; 10%</span>
+  <span class="fn">action</span>: <span class="str">drain backend over 30s</span></pre>
+</div>
+<p class="cn-note">
+经典原则：静态负载均衡算法简单可预测但"盲目"。AI延伸：ML驱动的流量路由用实时优化取代静态算法，AI模型摄取所有层的遥测数据做逐请求路由决策。具体示例：AI路由策略优化p99延迟，约束跨DC流量低于15%，模型不可用时回退到加权轮询。
+</p>
+
+<!-- ANGLE B -->
+<h3>Angle B · Predictive Scaling — 预测性扩缩容</h3>
+
+<p>
+<strong>Classical principle:</strong> Auto-scaling reacts to current metrics: when CPU exceeds 70%, add instances; when it drops below 30%, remove them (SRE Workbook, Ch. 10). This reactive approach has an inherent lag — by the time metrics trigger scaling, users are already experiencing degradation. The cold-start time for new instances compounds the problem.
+</p>
+
+<p>
+<strong>AI extension:</strong> Predictive scaling uses time-series forecasting to provision capacity <em>before</em> demand arrives. An AI model trained on historical traffic patterns — daily cycles, weekly patterns, monthly billing rushes, seasonal peaks — predicts traffic 15-60 minutes ahead and pre-scales infrastructure accordingly. The model also detects anomalous patterns (a marketing campaign driving unexpected traffic) and triggers early scaling alerts.
+</p>
+
+<p>
+<strong>Concrete example:</strong> The invoice service sees predictable traffic spikes at month-end (batch invoicing), Chinese New Year period (annual reconciliation), and daily at 9 AM (start of business). A predictive model learns these patterns and pre-scales 20 minutes ahead, eliminating the cold-start penalty. When the model detects an unexpected 3x traffic surge at 2 PM on a Tuesday, it triggers an anomaly alert alongside scaling — because unexpected traffic may indicate a DDoS rather than legitimate demand.
+</p>
+<p class="cn-note">
+经典原则：自动扩缩容对当前指标做反应，存在固有延迟。AI延伸：预测性扩缩容使用时间序列预测在需求到来前供给容量。AI模型学习日常周期、月末高峰等模式，提前20分钟预扩展。异常流量时同时触发扩缩容和告警。
+</p>
+
+<!-- ANGLE C -->
+<h3>Angle C · Chaos Engineering + AI — 混沌工程与AI</h3>
+
+<p>
+<strong>Classical principle:</strong> Chaos engineering — deliberately injecting failures to discover weaknesses — was pioneered by Netflix's Chaos Monkey and formalized in Nygard's stability patterns. The classical approach is random: kill random instances, introduce random latency, drop random packets. Randomness ensures broad coverage but is inefficient — most random failures hit well-tested code paths while the truly dangerous scenarios are rarely explored.
+</p>
+
+<p>
+<strong>AI extension:</strong> AI-guided chaos engineering replaces random failure injection with intelligent, targeted experiments. An AI agent analyzes the system's dependency graph, recent change history, and production telemetry to identify the most likely failure modes and the least-tested recovery paths. It then designs chaos experiments that specifically target these weak spots.
+</p>
+
+<p>
+<strong>Concrete example:</strong> The AI chaos agent identifies that the Beijing-Shanghai replication link has never been tested under conditions where both latency increases (from 5ms to 50ms) and packet loss increases (from 0.01% to 2%) simultaneously. It designs a targeted experiment: gradually degrade the cross-DC link while monitoring MySQL replication lag, application error rates, and client-visible latency. The experiment reveals that the semi-sync replication timeout (10s default) is too aggressive — at 50ms latency with 2% packet loss, the replica falls behind and the primary starts blocking writes.
+</p>
+<p class="cn-note">
+经典原则：混沌工程通过随机注入故障发现弱点，但随机性低效。AI延伸：AI引导的混沌工程用智能靶向实验取代随机故障注入，分析依赖图和遥测数据，识别最可能的故障模式和最少测试的恢复路径。
+</p>
+
+<!-- ANGLE D -->
+<h3>Angle D · Natural Language Network Telemetry — 自然语言网络遥测</h3>
+
+<p>
+<strong>Classical principle:</strong> Network monitoring requires specialized query languages — PromQL for Prometheus, SQL for log analytics, vendor-specific CLIs for network devices. An SRE investigating a latency spike needs to compose queries like <code>histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service="invoice-api",dc="beijing"}[5m]))</code>. This expertise is a bottleneck: during incidents, the team member who knows PromQL best becomes a single point of failure.
+</p>
+
+<p>
+<strong>AI extension:</strong> Natural language interfaces for network telemetry democratize observability. Instead of composing PromQL, an engineer asks: <em>"Show me the p99 latency between DC-Beijing and DC-Shanghai for the invoice service over the last 4 hours, broken down by endpoint."</em> The AI translates this to the appropriate query, executes it, and presents the results with automatic anomaly highlighting. More importantly, it suggests follow-up investigations: <em>"The /api/invoices/batch endpoint shows a 3x latency increase starting at 14:23. This correlates with a MySQL replication lag spike. Would you like to see the replication metrics?"</em>
+</p>
+
+<p>
+<strong>Concrete example:</strong> During an incident, the on-call engineer types: <em>"Which DC is handling more traffic right now, and are there any backends with error rates above 1%?"</em> The AI responds with a formatted summary, identifies two backends in Beijing with elevated 5xx rates, and proactively suggests: <em>"These backends were deployed 45 minutes ago with commit abc123. The error pattern matches connection pool exhaustion under high concurrency. Recommend rolling back these two instances."</em>
+</p>
+<p class="cn-note">
+经典原则：网络监控需要专用查询语言，专业知识成为瓶颈。AI延伸：自然语言接口民主化可观测性——工程师用自然语言提问，AI翻译为查询、执行并呈现结果，自动高亮异常并建议后续调查。
+</p>
+
+
+<!-- ─── §04 DECISION TABLE ─── -->
+<h2><span class="num">04</span> Decision Table</h2>
+
+<p>
+For each networking scenario, the table shows the classical approach alongside the AI-augmented approach. The AI column extends rather than replaces the classical.
+</p>
+
+<table class="decision-table">
+<thead>
+<tr>
+  <th class="col-scenario">Scenario</th>
+  <th class="col-classic">Classical Approach</th>
+  <th class="col-ai">AI-Augmented Approach</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td class="col-scenario">DNS Strategy</td>
+  <td><span class="classic-badge">GEODNS</span> Static geographic routing with manual failover records. TTL tuned per-record (300s for services, 86400s for stable records)</td>
+  <td><span class="ai-badge">AI DNS</span> Dynamic health-aware DNS with AI-driven TTL optimization. AI predicts optimal TTL based on change frequency and cache-hit ratios</td>
+</tr>
+<tr>
+  <td class="col-scenario">Load Balancer Selection</td>
+  <td><span class="classic-badge">L4/L7</span> L4 (HAProxy/NLB) for raw throughput, L7 (Nginx/Envoy) for content-aware routing. Static backend weights</td>
+  <td><span class="ai-badge">AI ROUTING</span> L7 with ML-driven backend scoring. AI adjusts weights in real-time based on latency, error rates, and resource utilization</td>
+</tr>
+<tr>
+  <td class="col-scenario">Failover Approach</td>
+  <td><span class="classic-badge">ACTIVE-PASSIVE</span> DNS failover with health checks (30s intervals). Manual or scripted promotion of passive DC</td>
+  <td><span class="ai-badge">AI FAILOVER</span> Predictive failover that detects degradation trends before complete failure. AI initiates gradual traffic shift, not abrupt cutover</td>
+</tr>
+<tr>
+  <td class="col-scenario">Scaling Policy</td>
+  <td><span class="classic-badge">REACTIVE</span> CPU/memory threshold-based auto-scaling. Min/max instance counts with cooldown periods</td>
+  <td><span class="ai-badge">AI SCALE</span> Predictive scaling that pre-provisions capacity before demand arrives. AI learns traffic patterns and pre-scales 15-30 min ahead</td>
+</tr>
+<tr>
+  <td class="col-scenario">Chaos Testing</td>
+  <td><span class="classic-badge">RANDOM</span> Random instance termination (Chaos Monkey). Periodic game days with scripted failure scenarios</td>
+  <td><span class="ai-badge">AI CHAOS</span> Targeted chaos experiments designed by AI analysis of dependency graphs and untested failure paths</td>
+</tr>
+<tr>
+  <td class="col-scenario">Network Monitoring</td>
+  <td><span class="classic-badge">PROMQL</span> Expert-written dashboards and alerts. PromQL/SQL queries for specific metrics. Static threshold alerts</td>
+  <td><span class="ai-badge">AI NL</span> Natural language queries against telemetry. AI-generated anomaly detection without manual thresholds</td>
+</tr>
+<tr>
+  <td class="col-scenario">Traffic Splitting</td>
+  <td><span class="classic-badge">WEIGHT</span> Manual traffic percentages for canary deployments (1% → 5% → 25% → 100%). Fixed promotion criteria</td>
+  <td><span class="ai-badge">AI CANARY</span> AI-driven progressive rollout that adjusts speed based on real-time error/latency signals. Auto-rollback on regression</td>
+</tr>
+<tr>
+  <td class="col-scenario">Certificate Mgmt</td>
+  <td><span class="classic-badge">ACME</span> Let's Encrypt / ACME protocol with cron-based renewal. Manual monitoring of expiration</td>
+  <td><span class="ai-badge">AI CERT</span> AI monitors certificate health, predicts renewal failures, detects chain anomalies, alerts on near-expiry</td>
+</tr>
+</tbody>
+</table>
+
+
+<!-- ─── §05 PRACTICAL CHECKLIST ─── -->
+<h2><span class="num">05</span> Practical Checklist</h2>
+
+<p>
+Twelve concrete actions ordered by maturity stage. Each builds on the previous — don't skip stages.
+</p>
+
+<div class="checklist">
+  <div class="check-item">
+    <span class="check-stage stage-1">STAGE 1</span>
+    Deploy CoreDNS with zone files in version control — no more editing DNS records via web console
+  </div>
+  <div class="check-item">
+    <span class="check-stage stage-1">STAGE 1</span>
+    Implement L7 load balancing (Nginx/Envoy) with health checks at /health — 3s interval, 2 failures to mark unhealthy
+  </div>
+  <div class="check-item">
+    <span class="check-stage stage-2">STAGE 2</span>
+    Set up VRRP (Keepalived) for load balancer HA — eliminate single points of failure at the traffic entry point
+  </div>
+  <div class="check-item">
+    <span class="check-stage stage-2">STAGE 2</span>
+    Implement Nygard's stability patterns: Circuit Breaker on all cross-service calls, Bulkhead per DC, Timeout on every connection
+  </div>
+  <div class="check-item">
+    <span class="check-stage stage-3">STAGE 3</span>
+    Deploy multi-DC active-passive with CoreDNS zone transfer (AXFR/IXFR) and automated failover scripts
+  </div>
+  <div class="check-item">
+    <span class="check-stage stage-3">STAGE 3</span>
+    Implement canary deployments with traffic splitting (1% → 5% → 25% → 100%) and automated rollback on error rate breach
+  </div>
+  <div class="check-item">
+    <span class="check-stage stage-4">STAGE 4</span>
+    Deploy AI-powered traffic routing that considers backend health, latency, and resource utilization in real-time
+  </div>
+  <div class="check-item">
+    <span class="check-stage stage-4">STAGE 4</span>
+    Implement predictive scaling using historical traffic pattern analysis — pre-scale for known peaks
+  </div>
+  <div class="check-item">
+    <span class="check-stage stage-5">STAGE 5</span>
+    Deploy AI-guided chaos engineering that targets untested failure modes in the cross-DC network path
+  </div>
+  <div class="check-item">
+    <span class="check-stage stage-5">STAGE 5</span>
+    Implement natural language telemetry queries — on-call engineers investigate without memorizing PromQL
+  </div>
+  <div class="check-item">
+    <span class="check-stage stage-6">STAGE 6</span>
+    Enable predictive failover: AI detects degradation trends and initiates gradual traffic migration before failure
+  </div>
+  <div class="check-item">
+    <span class="check-stage stage-6">STAGE 6</span>
+    Implement self-optimizing network topology where AI continuously adjusts routing, scaling, and DNS TTLs
+  </div>
+</div>
+<div class="checklist-note">Stages 1-3 = classical network reliability · Stages 4-6 = AI-augmented networking · Don't skip — each stage builds on the previous</div>
+
+
+<!-- ─── §06 ARCHITECT'S TAKEAWAY ─── -->
+<h2><span class="num">06</span> The Architect's Takeaway</h2>
+
+<p>
+The Google SRE team's three-tier load balancing taxonomy and Nygard's stability patterns are not relics — they are the vocabulary you need to design AI-augmented network architectures. An AI traffic routing agent that doesn't understand Circuit Breaker semantics will route traffic into a failing backend. A predictive scaling system that doesn't respect Bulkhead isolation will scale the wrong partition. The classical patterns are the constraints within which AI optimization operates safely.
+</p>
+<p class="cn-note">
+Google SRE的三层负载均衡分类和Nygard的稳定性模式不是遗物——它们是设计AI增强网络架构所需的词汇。不理解断路器语义的AI流量路由代理会将流量路由到故障后端。经典模式是AI优化安全运行的约束。
+</p>
+
+<p>
+The multi-DC architecture we explored — CoreDNS with zone transfer, VRRP for HA, Envoy for intelligent L7 routing, MySQL semi-sync replication — is the physical substrate on which AI intelligence operates. The AI doesn't replace the VRRP failover mechanism; it decides <em>when</em> to trigger it, <em>how fast</em> to drain traffic, and <em>which</em> backends to prioritize during recovery. The architect's role shifts from manually configuring these systems to defining the policies and objectives that guide the AI's decisions.
+</p>
+<p class="cn-note">
+我们探索的多DC架构是AI智能运行的物理基底。AI不替代VRRP故障转移机制，而是决定何时触发、多快排空流量、恢复期间优先哪些后端。架构师的角色从手动配置转向定义引导AI决策的策略和目标。
+</p>
+
+<div class="insight-box" style="margin-top:40px;">
+  <div class="label">Next in Series → Article 3.3</div>
+  <p style="margin:0; font-size:14px; line-height:1.6">
+    <strong>Infrastructure as Code: From Scripts to AI-Managed Infrastructure</strong> — How the principles of idempotency, immutability, and version control evolve from Terraform modules to intent-based infrastructure where AI determines the optimal topology from declared business outcomes.
+    <br><span style="color:var(--text-dim); font-style:italic; font-family:'Noto Serif SC',serif;">下一篇：基础设施即代码——从脚本到AI管理的声明式基础设施。</span>
+  </p>
+</div>
+
+</main>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="article-footer">
+  <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim)">
+    Software Knowledge Base · Layer 3: Infrastructure · Article 3.2 of 20<br>
+    Classical Foundations × AI Co-Evolution · 经典基础 × AI协同进化
+  </div>
+  <div class="nav-links">
+    <a class="nav-link" href="./3.1-cicd-as-architecture.html">← 3.1 CI/CD as Architecture</a>
+    <a class="nav-link" href="./3.3-infrastructure-as-code.html">Next: 3.3 Infrastructure as Code →</a>
+  </div>
+</footer>
+
+</body>
+</html>
